@@ -1,0 +1,1106 @@
+{% extends 'base.html' %}
+
+{% block title %}Student Fees{% endblock %}
+{% block page_title %}Student Fees{% endblock %}
+
+{% block breadcrumb %}
+<li class="breadcrumb-item"><a href="{% url 'fee_dashboard' %}">Fees</a></li>
+<li class="breadcrumb-item active">Student Fees</li>
+{% endblock %}
+
+{% block content %}
+<div class="fees-container">
+    <!-- Hero Section -->
+    <div class="hero-section">
+        <div class="hero-gradient"></div>
+        <div class="hero-content">
+            <div class="fees-badge">
+                <i class="fas fa-list-check"></i> STUDENT ACCOUNTS
+            </div>
+            <h1 class="fees-title">Student Fee Accounts</h1>
+            <p class="hero-subtitle">Track and manage student fee payments</p>
+        </div>
+    </div>
+
+    <!-- Main Content -->
+    <div class="fees-content">
+        <!-- Filter Card -->
+        <div class="filter-card">
+            <div class="filter-header">
+                <div class="filter-icon">
+                    <i class="fas fa-sliders-h"></i>
+                </div>
+                <h3>Advanced Filters</h3>
+            </div>
+            <form method="get" class="filter-form">
+                <div class="filter-grid">
+                    <div class="form-group-filter">
+                        <label for="search" class="filter-label">
+                            <i class="fas fa-search"></i> Search Student
+                        </label>
+                        <input type="text" id="search" name="search" class="filter-input" placeholder="Name or admission number..." value="{{ search_query }}">
+                    </div>
+                    <div class="form-group-filter">
+                        <label for="class_id" class="filter-label">
+                            <i class="fas fa-building"></i> Filter by Class
+                        </label>
+                        <select id="class_id" name="class_id" class="filter-select">
+                            <option value="">All Classes</option>
+                            {% for class in classes %}
+                            <option value="{{ class.id }}" {% if class_filter == class.id|stringformat:"i" %}selected{% endif %}>{{ class.name }}</option>
+                            {% endfor %}
+                        </select>
+                    </div>
+                    <div class="form-group-filter">
+                        <label for="status" class="filter-label">
+                            <i class="fas fa-flag"></i> Filter by Status
+                        </label>
+                        <select id="status" name="status" class="filter-select">
+                            <option value="">All Status</option>
+                            <option value="Pending" {% if status_filter == 'Pending' %}selected{% endif %}>Pending</option>
+                            <option value="Partial" {% if status_filter == 'Partial' %}selected{% endif %}>Partial</option>
+                            <option value="Paid" {% if status_filter == 'Paid' %}selected{% endif %}>Paid</option>
+                        </select>
+                    </div>
+                </div>
+                <div class="filter-actions">
+                    <button type="submit" class="btn-apply-filter">
+                        <i class="fas fa-filter me-2"></i>Apply Filters
+                    </button>
+                    <a href="{% url 'student_fee_list' %}" class="btn-clear-filter">
+                        <i class="fas fa-redo me-2"></i>Clear All
+                    </a>
+                </div>
+            </form>
+        </div>
+
+        <!-- Fees Table Card -->
+        <div class="table-card">
+            <div class="table-header">
+                <div class="header-info">
+                    <h2 class="table-title">Student Fee Records</h2>
+                    <p class="table-subtitle">{{ student_fees.paginator.count }} total fee accounts</p>
+                </div>
+                <div class="table-actions-top">
+                    <span class="record-count">Showing {{ student_fees.count }} of {{ student_fees.paginator.count }}</span>
+                </div>
+            </div>
+
+            <!-- Desktop Table -->
+            <div class="table-wrapper">
+                <table class="fees-table">
+                    <thead>
+                        <tr>
+                            <th class="col-student">
+                                <i class="fas fa-user"></i> Student
+                            </th>
+                            <th class="col-class">
+                                <i class="fas fa-graduation-cap"></i> Class
+                            </th>
+                            <th class="col-fee">
+                                <i class="fas fa-receipt"></i> Fee Type
+                            </th>
+                            <th class="col-amount">
+                                <i class="fas fa-coins"></i> Total
+                            </th>
+                            <th class="col-paid">
+                                <i class="fas fa-check-circle"></i> Paid
+                            </th>
+                            <th class="col-balance">
+                                <i class="fas fa-exclamation-circle"></i> Balance
+                            </th>
+                            <th class="col-status">
+                                <i class="fas fa-flag"></i> Status
+                            </th>
+                            <th class="col-action">
+                                <i class="fas fa-cog"></i> Action
+                            </th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        {% for fee in student_fees %}
+                        <tr class="fee-row" data-status="{{ fee.status|lower }}">
+                            <td class="col-student">
+                                <div class="student-info">
+                                    <div class="student-avatar">
+                                        {{ fee.student.user.first_name|upper|first }}
+                                    </div>
+                                    <div>
+                                        <p class="student-name">{{ fee.student.user.get_full_name }}</p>
+                                        <small class="admission-no">{{ fee.student.admission_number }}</small>
+                                    </div>
+                                </div>
+                            </td>
+                            <td class="col-class">
+                                <span class="badge-class">{{ fee.student.class_enrolled.name }}</span>
+                            </td>
+                            <td class="col-fee">
+                                <div>
+                                    <p class="fee-type-name">{{ fee.fee_structure.fee_type.name }}</p>
+                                    <small class="term-label">{{ fee.fee_structure.get_term_display }}</small>
+                                </div>
+                            </td>
+                            <td class="col-amount">
+                                <span class="amount-total">${{ fee.fee_structure.amount }}</span>
+                            </td>
+                            <td class="col-paid">
+                                <span class="amount-paid">${{ fee.amount_paid }}</span>
+                            </td>
+                            <td class="col-balance">
+                                <span class="amount-balance">
+                                    {% if fee.balance > 0 %}
+                                        ${{ fee.balance }}
+                                    {% else %}
+                                        <span class="fully-paid">Fully Paid</span>
+                                    {% endif %}
+                                </span>
+                            </td>
+                            <td class="col-status">
+                                {% if fee.status == 'Paid' %}
+                                <span class="status-badge paid">
+                                    <i class="fas fa-check-circle"></i> Paid
+                                </span>
+                                {% elif fee.status == 'Partial' %}
+                                <span class="status-badge partial">
+                                    <i class="fas fa-hourglass-half"></i> Partial
+                                </span>
+                                {% else %}
+                                <span class="status-badge pending">
+                                    <i class="fas fa-exclamation-circle"></i> Pending
+                                </span>
+                                {% endif %}
+                            </td>
+                            <td class="col-action">
+                                {% if fee.status != 'Paid' %}
+                                <a href="{% url 'record_payment' fee.id %}" class="btn-action-pay" title="Record Payment">
+                                    <i class="fas fa-money-bill-wave"></i>
+                                </a>
+                                {% else %}
+                                <button class="btn-action-disabled" disabled title="Payment Complete">
+                                    <i class="fas fa-check"></i>
+                                </button>
+                                {% endif %}
+                            </td>
+                        </tr>
+                        {% empty %}
+                        <tr class="empty-row">
+                            <td colspan="8">
+                                <div class="empty-state">
+                                    <i class="fas fa-inbox"></i>
+                                    <h4>No Fee Records Found</h4>
+                                    <p>No student fee accounts match your filters.</p>
+                                </div>
+                            </td>
+                        </tr>
+                        {% endfor %}
+                    </tbody>
+                </table>
+            </div>
+
+            <!-- Pagination -->
+            {% if student_fees.has_other_pages %}
+            <div class="pagination-wrapper">
+                <nav class="custom-pagination">
+                    {% if student_fees.has_previous %}
+                    <a href="?page=1{% if search_query %}&search={{ search_query }}{% endif %}{% if class_filter %}&class_id={{ class_filter }}{% endif %}{% if status_filter %}&status={{ status_filter }}{% endif %}" class="page-btn" title="First Page">
+                        <i class="fas fa-chevron-left"></i> First
+                    </a>
+                    <a href="?page={{ student_fees.previous_page_number }}{% if search_query %}&search={{ search_query }}{% endif %}{% if class_filter %}&class_id={{ class_filter }}{% endif %}{% if status_filter %}&status={{ status_filter }}{% endif %}" class="page-btn prev-btn">
+                        <i class="fas fa-arrow-left"></i> Previous
+                    </a>
+                    {% endif %}
+
+                    <div class="page-info">
+                        Page <span class="current-page">{{ student_fees.number }}</span> of <span class="total-pages">{{ student_fees.paginator.num_pages }}</span>
+                    </div>
+
+                    {% if student_fees.has_next %}
+                    <a href="?page={{ student_fees.next_page_number }}{% if search_query %}&search={{ search_query }}{% endif %}{% if class_filter %}&class_id={{ class_filter }}{% endif %}{% if status_filter %}&status={{ status_filter }}{% endif %}" class="page-btn next-btn">
+                        Next <i class="fas fa-arrow-right"></i>
+                    </a>
+                    <a href="?page={{ student_fees.paginator.num_pages }}{% if search_query %}&search={{ search_query }}{% endif %}{% if class_filter %}&class_id={{ class_filter }}{% endif %}{% if status_filter %}&status={{ status_filter }}{% endif %}" class="page-btn" title="Last Page">
+                        Last <i class="fas fa-chevron-right"></i>
+                    </a>
+                    {% endif %}
+                </nav>
+            </div>
+            {% endif %}
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block extra_css %}
+<style>
+    /* ====== Container ====== */
+    .fees-container {
+        background: linear-gradient(135deg, #f5f7fa 0%, #c3cfe2 100%);
+        min-height: 100vh;
+        padding-bottom: 3rem;
+        animation: fadeIn 0.6s ease;
+    }
+
+    /* ====== Hero Section ====== */
+    .hero-section {
+        position: relative;
+        height: 320px;
+        display: flex;
+        align-items: flex-end;
+        padding: 3rem 2rem;
+        overflow: hidden;
+        margin-bottom: 3rem;
+    }
+
+    .hero-gradient {
+        position: absolute;
+        top: 0;
+        left: 0;
+        right: 0;
+        bottom: 0;
+        background: linear-gradient(135deg, #4e73df 0%, #1cc88a 100%);
+        z-index: 0;
+    }
+
+    .hero-section::before {
+        content: '';
+        position: absolute;
+        top: 0;
+        left: 0;
+        right: 0;
+        bottom: 0;
+        background: 
+            radial-gradient(circle at 20% 50%, rgba(255,255,255,0.1) 0%, transparent 50%),
+            radial-gradient(circle at 80% 80%, rgba(255,255,255,0.1) 0%, transparent 50%);
+        z-index: 1;
+    }
+
+    .hero-content {
+        position: relative;
+        z-index: 2;
+        width: 100%;
+        max-width: 1200px;
+        margin: 0 auto;
+        padding: 0 1rem;
+    }
+
+    .fees-badge {
+        display: inline-flex;
+        align-items: center;
+        gap: 0.5rem;
+        background: rgba(255, 255, 255, 0.25);
+        color: white;
+        padding: 0.6rem 1.2rem;
+        border-radius: 30px;
+        font-weight: 600;
+        font-size: 0.85rem;
+        margin-bottom: 1.5rem;
+        backdrop-filter: blur(10px);
+    }
+
+    .fees-title {
+        font-size: 2.5rem;
+        font-weight: 800;
+        color: white;
+        margin: 0 0 0.5rem 0;
+        text-shadow: 0 2px 10px rgba(0,0,0,0.2);
+    }
+
+    .hero-subtitle {
+        font-size: 1rem;
+        color: rgba(255, 255, 255, 0.9);
+        margin: 0;
+    }
+
+    /* ====== Content ====== */
+    .fees-content {
+        max-width: 1400px;
+        margin: 0 auto;
+        padding: 0 1rem;
+    }
+
+    /* ====== Filter Card ====== */
+    .filter-card {
+        background: linear-gradient(135deg, rgba(255, 255, 255, 0.95) 0%, rgba(255, 255, 255, 0.85) 100%);
+        border: 1px solid rgba(78, 115, 223, 0.1);
+        border-radius: 16px;
+        backdrop-filter: blur(10px);
+        padding: 2rem;
+        box-shadow: 0 8px 32px 0 rgba(31, 38, 135, 0.07);
+        margin-bottom: 2rem;
+        animation: slideInUp 0.6s ease;
+    }
+
+    .filter-header {
+        display: flex;
+        align-items: center;
+        gap: 1rem;
+        margin-bottom: 1.5rem;
+        padding-bottom: 1rem;
+        border-bottom: 2px solid rgba(78, 115, 223, 0.08);
+    }
+
+    .filter-icon {
+        width: 45px;
+        height: 45px;
+        border-radius: 10px;
+        background: linear-gradient(135deg, #4e73df 0%, #1cc88a 100%);
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        color: white;
+        font-size: 1.2rem;
+    }
+
+    .filter-header h3 {
+        margin: 0;
+        font-size: 1.2rem;
+        font-weight: 700;
+        color: #2e3440;
+    }
+
+    .filter-form {
+        display: flex;
+        flex-direction: column;
+        gap: 1.5rem;
+    }
+
+    .filter-grid {
+        display: grid;
+        grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
+        gap: 1.5rem;
+    }
+
+    .form-group-filter {
+        display: flex;
+        flex-direction: column;
+        gap: 0.5rem;
+    }
+
+    .filter-label {
+        font-weight: 600;
+        color: #2e3440;
+        font-size: 0.9rem;
+        display: flex;
+        align-items: center;
+        gap: 0.5rem;
+    }
+
+    .filter-label i {
+        color: #4e73df;
+    }
+
+    .filter-input,
+    .filter-select {
+        padding: 0.85rem 1rem;
+        border: 1.5px solid rgba(78, 115, 223, 0.2);
+        border-radius: 10px;
+        background: linear-gradient(135deg, rgba(255, 255, 255, 0.8) 0%, rgba(255, 255, 255, 0.6) 100%);
+        color: #2e3440;
+        font-size: 0.95rem;
+        transition: all 0.3s ease;
+        font-family: inherit;
+    }
+
+    .filter-input::placeholder {
+        color: rgba(108, 117, 125, 0.5);
+    }
+
+    .filter-input:focus,
+    .filter-select:focus {
+        outline: none;
+        border-color: #1cc88a;
+        background: white;
+        box-shadow: 0 0 0 4px rgba(28, 200, 138, 0.1);
+    }
+
+    .filter-actions {
+        display: flex;
+        gap: 1rem;
+        justify-content: flex-start;
+    }
+
+    .btn-apply-filter,
+    .btn-clear-filter {
+        padding: 0.85rem 2rem;
+        border-radius: 10px;
+        font-weight: 600;
+        font-size: 0.95rem;
+        text-decoration: none;
+        border: none;
+        cursor: pointer;
+        transition: all 0.3s ease;
+        display: inline-flex;
+        align-items: center;
+        justify-content: center;
+        gap: 0.5rem;
+    }
+
+    .btn-apply-filter {
+        background: linear-gradient(135deg, #4e73df 0%, #1cc88a 100%);
+        color: white;
+        box-shadow: 0 4px 15px rgba(78, 115, 223, 0.3);
+    }
+
+    .btn-apply-filter:hover {
+        transform: translateY(-2px);
+        box-shadow: 0 8px 25px rgba(78, 115, 223, 0.4);
+    }
+
+    .btn-clear-filter {
+        background: rgba(78, 115, 223, 0.1);
+        color: #4e73df;
+        border: 1.5px solid rgba(78, 115, 223, 0.2);
+    }
+
+    .btn-clear-filter:hover {
+        background: rgba(78, 115, 223, 0.2);
+        border-color: rgba(78, 115, 223, 0.3);
+    }
+
+    /* ====== Table Card ====== */
+    .table-card {
+        background: linear-gradient(135deg, rgba(255, 255, 255, 0.95) 0%, rgba(255, 255, 255, 0.85) 100%);
+        border: 1px solid rgba(78, 115, 223, 0.1);
+        border-radius: 16px;
+        backdrop-filter: blur(10px);
+        padding: 2rem;
+        box-shadow: 0 8px 32px 0 rgba(31, 38, 135, 0.07);
+        animation: slideInUp 0.6s ease 0.2s both;
+    }
+
+    .table-header {
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        margin-bottom: 1.5rem;
+        padding-bottom: 1.5rem;
+        border-bottom: 2px solid rgba(78, 115, 223, 0.08);
+    }
+
+    .header-info {
+        flex: 1;
+    }
+
+    .table-title {
+        margin: 0 0 0.3rem 0;
+        font-size: 1.3rem;
+        color: #2e3440;
+        font-weight: 700;
+    }
+
+    .table-subtitle {
+        margin: 0;
+        font-size: 0.9rem;
+        color: #6c757d;
+    }
+
+    .table-actions-top {
+        display: flex;
+        gap: 1rem;
+        align-items: center;
+    }
+
+    .record-count {
+        color: #6c757d;
+        font-size: 0.9rem;
+        font-weight: 500;
+    }
+
+    /* ====== Table Styles ====== */
+    .table-wrapper {
+        overflow-x: auto;
+    }
+
+    .fees-table {
+        width: 100%;
+        border-collapse: collapse;
+        margin-bottom: 2rem;
+    }
+
+    .fees-table thead th {
+        padding: 1.25rem 1rem;
+        text-align: left;
+        color: #2e3440;
+        font-weight: 700;
+        font-size: 0.95rem;
+        border-bottom: 2px solid rgba(78, 115, 223, 0.15);
+        background: rgba(78, 115, 223, 0.05);
+    }
+
+    .fees-table thead th i {
+        color: #4e73df;
+        margin-right: 0.5rem;
+    }
+
+    .fees-table tbody td {
+        padding: 1.25rem 1rem;
+        border-bottom: 1px solid rgba(78, 115, 223, 0.08);
+        color: #2e3440;
+        vertical-align: middle;
+    }
+
+    .fee-row {
+        transition: all 0.3s ease;
+    }
+
+    .fee-row:hover {
+        background: rgba(78, 115, 223, 0.05);
+    }
+
+    /* Column Widths */
+    .col-student { width: 20%; }
+    .col-class { width: 12%; }
+    .col-fee { width: 16%; }
+    .col-amount { width: 10%; }
+    .col-paid { width: 10%; }
+    .col-balance { width: 12%; }
+    .col-status { width: 12%; }
+    .col-action { width: 8%; text-align: center; }
+
+    /* Student Info */
+    .student-info {
+        display: flex;
+        align-items: center;
+        gap: 0.75rem;
+    }
+
+    .student-avatar {
+        width: 40px;
+        height: 40px;
+        border-radius: 50%;
+        background: linear-gradient(135deg, #4e73df 0%, #1cc88a 100%);
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        color: white;
+        font-weight: 700;
+        font-size: 0.95rem;
+        flex-shrink: 0;
+    }
+
+    .student-name {
+        margin: 0;
+        font-weight: 700;
+        color: #2e3440;
+        font-size: 0.95rem;
+    }
+
+    .admission-no {
+        display: block;
+        color: #6c757d;
+        font-size: 0.8rem;
+    }
+
+    /* Badges */
+    .badge-class {
+        display: inline-block;
+        background: rgba(78, 115, 223, 0.1);
+        color: #4e73df;
+        padding: 0.4rem 0.8rem;
+        border-radius: 6px;
+        font-size: 0.8rem;
+        font-weight: 600;
+        border: 1px solid rgba(78, 115, 223, 0.2);
+    }
+
+    .fee-type-name {
+        margin: 0 0 0.2rem 0;
+        font-weight: 600;
+        color: #2e3440;
+    }
+
+    .term-label {
+        display: block;
+        color: #6c757d;
+        font-size: 0.75rem;
+    }
+
+    /* Amounts */
+    .amount-total {
+        font-weight: 700;
+        color: #2e3440;
+    }
+
+    .amount-paid {
+        color: #1cc88a;
+        font-weight: 700;
+    }
+
+    .amount-balance {
+        font-weight: 700;
+        color: #f6c23e;
+    }
+
+    .fully-paid {
+        color: #1cc88a;
+        font-weight: 700;
+    }
+
+    /* Status Badges */
+    .status-badge {
+        display: inline-flex;
+        align-items: center;
+        gap: 0.4rem;
+        padding: 0.5rem 0.8rem;
+        border-radius: 6px;
+        font-size: 0.8rem;
+        font-weight: 600;
+    }
+
+    .status-badge.paid {
+        background: rgba(28, 200, 138, 0.15);
+        color: #1cc88a;
+        border: 1px solid rgba(28, 200, 138, 0.3);
+    }
+
+    .status-badge.partial {
+        background: rgba(246, 194, 62, 0.15);
+        color: #f6c23e;
+        border: 1px solid rgba(246, 194, 62, 0.3);
+    }
+
+    .status-badge.pending {
+        background: rgba(231, 76, 60, 0.15);
+        color: #e74c3c;
+        border: 1px solid rgba(231, 76, 60, 0.3);
+    }
+
+    /* Action Buttons */
+    .btn-action-pay,
+    .btn-action-disabled {
+        display: inline-flex;
+        align-items: center;
+        justify-content: center;
+        width: 36px;
+        height: 36px;
+        border-radius: 8px;
+        border: none;
+        cursor: pointer;
+        transition: all 0.3s ease;
+        font-size: 0.95rem;
+    }
+
+    .btn-action-pay {
+        background: linear-gradient(135deg, #4e73df 0%, #1cc88a 100%);
+        color: white;
+        box-shadow: 0 2px 8px rgba(78, 115, 223, 0.2);
+        text-decoration: none;
+    }
+
+    .btn-action-pay:hover {
+        transform: scale(1.1);
+        box-shadow: 0 4px 12px rgba(78, 115, 223, 0.3);
+    }
+
+    .btn-action-disabled {
+        background: rgba(78, 115, 223, 0.1);
+        color: #4e73df;
+        cursor: not-allowed;
+        opacity: 0.6;
+    }
+
+    /* Empty State */
+    .empty-state {
+        text-align: center;
+        padding: 3rem 1rem;
+    }
+
+    .empty-state i {
+        font-size: 3.5rem;
+        color: #ccc;
+        margin-bottom: 1rem;
+    }
+
+    .empty-state h4 {
+        margin: 1rem 0 0.5rem 0;
+        color: #6c757d;
+        font-size: 1.1rem;
+    }
+
+    .empty-state p {
+        margin: 0;
+        color: #9ca3af;
+        font-size: 0.9rem;
+    }
+
+    /* ====== Pagination ====== */
+    .pagination-wrapper {
+        display: flex;
+        justify-content: center;
+        padding-top: 1.5rem;
+        border-top: 2px solid rgba(78, 115, 223, 0.08);
+    }
+
+    .custom-pagination {
+        display: flex;
+        align-items: center;
+        gap: 1rem;
+        flex-wrap: wrap;
+        justify-content: center;
+    }
+
+    .page-btn {
+        padding: 0.6rem 1.2rem;
+        border-radius: 8px;
+        background: linear-gradient(135deg, rgba(78, 115, 223, 0.1) 0%, rgba(28, 200, 138, 0.1) 100%);
+        color: #4e73df;
+        border: 1px solid rgba(78, 115, 223, 0.2);
+        font-weight: 600;
+        font-size: 0.9rem;
+        cursor: pointer;
+        text-decoration: none;
+        transition: all 0.3s ease;
+        display: inline-flex;
+        align-items: center;
+        gap: 0.4rem;
+    }
+
+    .page-btn:hover {
+        background: linear-gradient(135deg, #4e73df 0%, #1cc88a 100%);
+        color: white;
+        border-color: transparent;
+        transform: translateY(-2px);
+    }
+
+    .page-btn:disabled {
+        opacity: 0.5;
+        cursor: not-allowed;
+    }
+
+    .page-info {
+        padding: 0.5rem 1rem;
+        background: rgba(78, 115, 223, 0.08);
+        border-radius: 8px;
+        color: #2e3440;
+        font-weight: 600;
+        font-size: 0.95rem;
+        white-space: nowrap;
+    }
+
+    .current-page,
+    .total-pages {
+        color: #4e73df;
+        font-weight: 700;
+    }
+
+    /* ====== Animations ====== */
+    @keyframes fadeIn {
+        from { opacity: 0; }
+        to { opacity: 1; }
+    }
+
+    @keyframes slideInUp {
+        from {
+            opacity: 0;
+            transform: translateY(30px);
+        }
+        to {
+            opacity: 1;
+            transform: translateY(0);
+        }
+    }
+
+    /* ====== Responsive Design ====== */
+    @media (max-width: 1200px) {
+        .col-student { width: 22%; }
+        .col-class { width: 13%; }
+        .col-fee { width: 15%; }
+    }
+
+    @media (max-width: 1024px) {
+        .fees-title {
+            font-size: 2rem;
+        }
+
+        .filter-grid {
+            grid-template-columns: repeat(2, 1fr);
+        }
+
+        .fees-table thead th {
+            padding: 1rem 0.75rem;
+            font-size: 0.9rem;
+        }
+
+        .fees-table tbody td {
+            padding: 1rem 0.75rem;
+        }
+
+        .col-student { width: 20%; }
+        .col-action { width: 10%; }
+    }
+
+    @media (max-width: 768px) {
+        .hero-section {
+            height: auto;
+            min-height: 280px;
+            padding: 2rem 1rem 2.5rem;
+            margin-bottom: 1.5rem;
+        }
+
+        .fees-badge {
+            font-size: 0.75rem;
+            padding: 0.5rem 1rem;
+        }
+
+        .fees-title {
+            font-size: 1.5rem;
+            margin-bottom: 0.5rem;
+        }
+
+        .hero-subtitle {
+            font-size: 0.9rem;
+        }
+
+        .fees-content {
+            padding: 0 0.75rem;
+        }
+
+        .filter-card,
+        .table-card {
+            padding: 1.5rem 1rem;
+            margin-bottom: 1.5rem;
+            border-radius: 12px;
+        }
+
+        .filter-grid {
+            grid-template-columns: 1fr;
+            gap: 1rem;
+        }
+
+        .filter-actions {
+            flex-direction: column;
+        }
+
+        .btn-apply-filter,
+        .btn-clear-filter {
+            width: 100%;
+        }
+
+        .table-header {
+            flex-direction: column;
+            align-items: flex-start;
+            gap: 1rem;
+        }
+
+        .table-actions-top {
+            width: 100%;
+            justify-content: space-between;
+        }
+
+        /* Hide columns on mobile */
+        .fees-table {
+            font-size: 0.9rem;
+        }
+
+        .fees-table thead th {
+            padding: 0.75rem 0.5rem;
+            font-size: 0.8rem;
+        }
+
+        .fees-table tbody td {
+            padding: 0.75rem 0.5rem;
+            font-size: 0.9rem;
+        }
+
+        .col-class,
+        .col-fee { display: none; }
+
+        .col-student { width: 35%; }
+        .col-amount { width: 15%; }
+        .col-paid { width: 12%; }
+        .col-balance { width: 15%; }
+        .col-status { width: auto; }
+        .col-action { width: 8%; }
+
+        .student-info {
+            flex-direction: column;
+            align-items: flex-start;
+            gap: 0.3rem;
+        }
+
+        .student-avatar {
+            width: 32px;
+            height: 32px;
+            font-size: 0.85rem;
+        }
+
+        .status-badge {
+            padding: 0.4rem 0.6rem;
+            font-size: 0.75rem;
+        }
+
+        .btn-action-pay,
+        .btn-action-disabled {
+            width: 32px;
+            height: 32px;
+            font-size: 0.9rem;
+        }
+    }
+
+    @media (max-width: 480px) {
+        .hero-section {
+            min-height: 240px;
+            padding: 1.5rem 1rem 2rem;
+        }
+
+        .fees-badge {
+            font-size: 0.7rem;
+            padding: 0.4rem 0.8rem;
+        }
+
+        .fees-title {
+            font-size: 1.25rem;
+            margin-bottom: 0.3rem;
+        }
+
+        .hero-subtitle {
+            font-size: 0.8rem;
+        }
+
+        .fees-content {
+            padding: 0 0.5rem;
+        }
+
+        .filter-card,
+        .table-card {
+            padding: 1.25rem 0.75rem;
+            border-radius: 10px;
+        }
+
+        .filter-header {
+            gap: 0.75rem;
+            margin-bottom: 1rem;
+            padding-bottom: 0.75rem;
+        }
+
+        .filter-icon {
+            width: 40px;
+            height: 40px;
+            font-size: 1.1rem;
+        }
+
+        .filter-header h3 {
+            font-size: 1rem;
+        }
+
+        .table-title {
+            font-size: 1.1rem;
+        }
+
+        .table-subtitle {
+            font-size: 0.85rem;
+        }
+
+        .record-count {
+            font-size: 0.8rem;
+        }
+
+        .page-btn {
+            padding: 0.5rem 1rem;
+            font-size: 0.8rem;
+        }
+
+        .page-info {
+            padding: 0.4rem 0.8rem;
+            font-size: 0.85rem;
+        }
+    }
+
+    /* Dark Mode Support */
+    [data-bs-theme="dark"] .fees-container {
+        background: linear-gradient(135deg, #1a1f2e 0%, #2d3436 100%);
+    }
+
+    [data-bs-theme="dark"] .filter-card,
+    [data-bs-theme="dark"] .table-card {
+        background: linear-gradient(135deg, rgba(45, 52, 64, 0.95) 0%, rgba(45, 52, 64, 0.85) 100%);
+    }
+
+    [data-bs-theme="dark"] .fees-title {
+        color: #e0e0e0;
+    }
+
+    [data-bs-theme="dark"] .hero-subtitle,
+    [data-bs-theme="dark"] .table-subtitle {
+        color: #b0b0b0;
+    }
+
+    [data-bs-theme="dark"] .filter-header h3,
+    [data-bs-theme="dark"] .table-title,
+    [data-bs-theme="dark"] .fees-table thead th,
+    [data-bs-theme="dark"] .student-name,
+    [data-bs-theme="dark"] .amount-total,
+    [data-bs-theme="dark"] .fee-type-name {
+        color: #e0e0e0;
+    }
+
+    [data-bs-theme="dark"] .filter-label,
+    [data-bs-theme="dark"] .table-actions-top,
+    [data-bs-theme="dark"] .record-count,
+    [data-bs-theme="dark"] .admission-no,
+    [data-bs-theme="dark"] .term-label {
+        color: #b0b0b0;
+    }
+
+    [data-bs-theme="dark"] .filter-input,
+    [data-bs-theme="dark"] .filter-select {
+        background: rgba(78, 115, 223, 0.1);
+        color: #e0e0e0;
+        border-color: rgba(78, 115, 223, 0.2);
+    }
+
+    [data-bs-theme="dark"] .filter-input::placeholder {
+        color: #7fb3ff;
+    }
+
+    [data-bs-theme="dark"] .filter-input:focus,
+    [data-bs-theme="dark"] .filter-select:focus {
+        background: rgba(28, 200, 138, 0.15);
+        border-color: #6dd5ed;
+        box-shadow: 0 0 0 4px rgba(109, 213, 237, 0.1);
+    }
+
+    [data-bs-theme="dark"] .btn-clear-filter {
+        background: rgba(78, 115, 223, 0.15);
+        color: #7fb3ff;
+        border-color: rgba(78, 115, 223, 0.3);
+    }
+
+    [data-bs-theme="dark"] .btn-clear-filter:hover {
+        background: rgba(78, 115, 223, 0.25);
+        border-color: rgba(78, 115, 223, 0.4);
+    }
+
+    [data-bs-theme="dark"] .fees-table thead th {
+        background: rgba(78, 115, 223, 0.08);
+        border-color: rgba(78, 115, 223, 0.15);
+    }
+
+    [data-bs-theme="dark"] .fees-table tbody td {
+        border-color: rgba(78, 115, 223, 0.08);
+    }
+
+    [data-bs-theme="dark"] .fee-row:hover {
+        background: rgba(78, 115, 223, 0.08);
+    }
+
+    [data-bs-theme="dark"] .badge-class {
+        background: rgba(78, 115, 223, 0.15);
+        color: #7fb3ff;
+        border-color: rgba(78, 115, 223, 0.3);
+    }
+
+    [data-bs-theme="dark"] .page-info {
+        background: rgba(78, 115, 223, 0.15);
+        color: #e0e0e0;
+    }
+
+    [data-bs-theme="dark"] .empty-state h4 {
+        color: #b0b0b0;
+    }
+
+    [data-bs-theme="dark"] .empty-state p {
+        color: #7fb3ff;
+    }
+</style>
+{% endblock %}

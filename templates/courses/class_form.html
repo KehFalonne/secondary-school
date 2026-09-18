@@ -1,0 +1,729 @@
+{% extends 'base.html' %}
+{% load crispy_forms_tags %}
+
+{% block title %}{{ title }}{% endblock %}
+{% block page_title %}{{ title }}{% endblock %}
+
+{% block breadcrumb %}
+<li class="breadcrumb-item"><a href="{% url 'class_list' %}">Classes</a></li>
+<li class="breadcrumb-item active">{% if class %}Edit{% else %}Add{% endif %}</li>
+{% endblock %}
+
+{% block page_actions %}
+<a href="{% url 'class_list' %}" class="btn-action-back">
+    <i class="fas fa-arrow-left me-2"></i>Back to Classes
+</a>
+{% endblock %}
+
+{% block content %}
+<div class="class-form-container">
+    <!-- Hero Section -->
+    <div class="form-hero">
+        <div class="hero-backdrop"></div>
+        <div class="hero-content">
+            <div class="form-icon">
+                <i class="fas fa-school"></i>
+            </div>
+            <h1 class="form-title">{{ title }}</h1>
+            <p class="form-subtitle">
+                {% if class %}
+                Update class information and manage enrollment
+                {% else %}
+                Create a new class and configure schedule
+                {% endif %}
+            </p>
+        </div>
+    </div>
+
+    <!-- Form Card -->
+    <div class="form-card-wrapper">
+        <form method="post" novalidate id="classForm">
+            {% csrf_token %}
+
+            <!-- Section: Basic Information -->
+            <div class="form-section">
+                <div class="section-header">
+                    <i class="fas fa-information-circle"></i>
+                    <h2>Basic Information</h2>
+                </div>
+                <div class="section-content">
+                    <div class="form-grid">
+                        <div class="form-group-wrapper">
+                            <label for="{{ form.name.id_for_label }}" class="form-label">
+                                <i class="fas fa-heading"></i> Class Name
+                            </label>
+                            <input type="text" 
+                                   name="{{ form.name.name }}" 
+                                   id="{{ form.name.id_for_label }}"
+                                   placeholder="e.g., Class 10-A"
+                                   class="form-control-custom {% if form.name.errors %}error{% endif %}"
+                                   value="{{ form.name.value|default:'' }}"
+                                   required>
+                            {% if form.name.errors %}
+                            <div class="error-message">
+                                {% for error in form.name.errors %}{{ error }}{% endfor %}
+                            </div>
+                            {% endif %}
+                        </div>
+
+                        <div class="form-group-wrapper">
+                            <label for="{{ form.section.id_for_label }}" class="form-label">
+                                <i class="fas fa-object-group"></i> Section
+                            </label>
+                            <input type="text" 
+                                   name="{{ form.section.name }}" 
+                                   id="{{ form.section.id_for_label }}"
+                                   placeholder="e.g., A, B, C"
+                                   class="form-control-custom {% if form.section.errors %}error{% endif %}"
+                                   value="{{ form.section.value|default:'' }}"
+                                   required>
+                            {% if form.section.errors %}
+                            <div class="error-message">
+                                {% for error in form.section.errors %}{{ error }}{% endfor %}
+                            </div>
+                            {% endif %}
+                        </div>
+                    </div>
+
+                    <div class="form-grid">
+                        <div class="form-group-wrapper">
+                            <label for="{{ form.room_number.id_for_label }}" class="form-label">
+                                <i class="fas fa-door-open"></i> Room Number
+                            </label>
+                            <input type="text" 
+                                   name="{{ form.room_number.name }}" 
+                                   id="{{ form.room_number.id_for_label }}"
+                                   placeholder="e.g., 101, 102"
+                                   class="form-control-custom"
+                                   value="{{ form.room_number.value|default:'' }}">
+                            {% if form.room_number.errors %}
+                            <div class="error-message">
+                                {% for error in form.room_number.errors %}{{ error }}{% endfor %}
+                            </div>
+                            {% endif %}
+                        </div>
+
+                        <div class="form-group-wrapper">
+                            <label for="{{ form.academic_year.id_for_label }}" class="form-label">
+                                <i class="fas fa-calendar-alt"></i> Academic Year
+                            </label>
+                            <input type="text" 
+                                   name="{{ form.academic_year.name }}" 
+                                   id="{{ form.academic_year.id_for_label }}"
+                                   placeholder="e.g., 2025-2026"
+                                   class="form-control-custom"
+                                   value="{{ form.academic_year.value|default:'' }}">
+                            {% if form.academic_year.errors %}
+                            <div class="error-message">
+                                {% for error in form.academic_year.errors %}{{ error }}{% endfor %}
+                            </div>
+                            {% endif %}
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Section: Capacity & Teacher -->
+            <div class="form-section">
+                <div class="section-header">
+                    <i class="fas fa-users-cog"></i>
+                    <h2>Enrollment & Management</h2>
+                </div>
+                <div class="section-content">
+                    <div class="form-grid">
+                        <div class="form-group-wrapper">
+                            <label for="{{ form.capacity.id_for_label }}" class="form-label">
+                                <i class="fas fa-user-check"></i> Class Capacity
+                            </label>
+                            <input type="number" 
+                                   name="{{ form.capacity.name }}" 
+                                   id="{{ form.capacity.id_for_label }}"
+                                   placeholder="e.g., 30"
+                                   class="form-control-custom {% if form.capacity.errors %}error{% endif %}"
+                                   value="{{ form.capacity.value|default:'' }}"
+                                   min="1"
+                                   max="100"
+                                   required>
+                            {% if form.capacity.errors %}
+                            <div class="error-message">
+                                {% for error in form.capacity.errors %}{{ error }}{% endfor %}
+                            </div>
+                            {% endif %}
+                        </div>
+
+                        <div class="form-group-wrapper">
+                            <label for="{{ form.class_teacher.id_for_label }}" class="form-label">
+                                <i class="fas fa-chalkboard-user"></i> Class Teacher
+                            </label>
+                            <select name="{{ form.class_teacher.name }}" 
+                                    id="{{ form.class_teacher.id_for_label }}"
+                                    class="form-control-custom {% if form.class_teacher.errors %}error{% endif %}">
+                                <option value="">-- Select a Teacher --</option>
+                                {% for value, label in form.class_teacher.field.choices %}
+                                    {% if value %}
+                                    <option value="{{ value }}" {% if form.class_teacher.value == value %}selected{% endif %}>
+                                        {{ label }}
+                                    </option>
+                                    {% endif %}
+                                {% endfor %}
+                            </select>
+                            {% if form.class_teacher.errors %}
+                            <div class="error-message">
+                                {% for error in form.class_teacher.errors %}{{ error }}{% endfor %}
+                            </div>
+                            {% endif %}
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Section: Schedule -->
+            <div class="form-section">
+                <div class="section-header">
+                    <i class="fas fa-clock"></i>
+                    <h2>Class Schedule</h2>
+                </div>
+                <div class="section-content">
+                    <div class="form-grid">
+                        <div class="form-group-wrapper">
+                            <label for="{{ form.start_time.id_for_label }}" class="form-label">
+                                <i class="fas fa-play-circle"></i> Start Time
+                            </label>
+                            <input type="time" 
+                                   name="{{ form.start_time.name }}" 
+                                   id="{{ form.start_time.id_for_label }}"
+                                   class="form-control-custom {% if form.start_time.errors %}error{% endif %}"
+                                   value="{{ form.start_time.value|default:'' }}">
+                            {% if form.start_time.errors %}
+                            <div class="error-message">
+                                {% for error in form.start_time.errors %}{{ error }}{% endfor %}
+                            </div>
+                            {% endif %}
+                        </div>
+
+                        <div class="form-group-wrapper">
+                            <label for="{{ form.end_time.id_for_label }}" class="form-label">
+                                <i class="fas fa-stop-circle"></i> End Time
+                            </label>
+                            <input type="time" 
+                                   name="{{ form.end_time.name }}" 
+                                   id="{{ form.end_time.id_for_label }}"
+                                   class="form-control-custom {% if form.end_time.errors %}error{% endif %}"
+                                   value="{{ form.end_time.value|default:'' }}">
+                            {% if form.end_time.errors %}
+                            <div class="error-message">
+                                {% for error in form.end_time.errors %}{{ error }}{% endfor %}
+                            </div>
+                            {% endif %}
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Section: Subjects -->
+            <div class="form-section">
+                <div class="section-header">
+                    <i class="fas fa-book"></i>
+                    <h2>Course Subjects</h2>
+                </div>
+                <div class="section-content">
+                    <div class="form-group-wrapper full-width">
+                        <label for="{{ form.subjects.id_for_label }}" class="form-label">
+                            <i class="fas fa-list"></i> Select Subjects
+                        </label>
+                        <div class="subjects-select-custom">
+                            <select name="{{ form.subjects.name }}" 
+                                    id="{{ form.subjects.id_for_label }}"
+                                    class="form-control-custom {% if form.subjects.errors %}error{% endif %}"
+                                    multiple>
+                                {% for value, label in form.subjects.field.choices %}
+                                <option value="{{ value }}" {% if value in form.subjects.value %}selected{% endif %}>
+                                    {{ label }}
+                                </option>
+                                {% endfor %}
+                            </select>
+                        </div>
+                        <div class="form-help-text">
+                            <i class="fas fa-info-circle"></i>
+                            Hold Ctrl (Cmd on Mac) to select multiple subjects
+                        </div>
+                        {% if form.subjects.errors %}
+                        <div class="error-message">
+                            {% for error in form.subjects.errors %}{{ error }}{% endfor %}
+                        </div>
+                        {% endif %}
+                    </div>
+                </div>
+            </div>
+
+            <!-- Form Actions -->
+            <div class="form-actions">
+                <a href="{% url 'class_list' %}" class="btn-action cancel-btn">
+                    <i class="fas fa-times me-2"></i>Cancel
+                </a>
+                <button type="submit" class="btn-action submit-btn">
+                    <i class="fas fa-check me-2"></i>
+                    {% if class %}Update Class{% else %}Create Class{% endif %}
+                </button>
+            </div>
+        </form>
+    </div>
+</div>
+{% endblock %}
+
+{% block extra_css %}
+<style>
+    /* ====== Container ====== */
+    .class-form-container {
+        background: linear-gradient(135deg, #f5f7fa 0%, #c3cfe2 100%);
+        min-height: 100vh;
+        padding: 2rem 0;
+        animation: fadeIn 0.6s ease;
+    }
+
+    /* ====== Hero Section ====== */
+    .form-hero {
+        position: relative;
+        background: linear-gradient(135deg, #4e73df 0%, #1cc88a 100%);
+        padding: 4rem 2rem;
+        margin-bottom: 3rem;
+        overflow: hidden;
+    }
+
+    .hero-backdrop {
+        position: absolute;
+        top: 0;
+        left: 0;
+        right: 0;
+        bottom: 0;
+        background: 
+            radial-gradient(circle at 20% 50%, rgba(255,255,255,0.1) 0%, transparent 50%),
+            radial-gradient(circle at 80% 80%, rgba(255,255,255,0.1) 0%, transparent 50%);
+        z-index: 0;
+    }
+
+    .hero-content {
+        position: relative;
+        z-index: 1;
+        max-width: 1200px;
+        margin: 0 auto;
+        text-align: center;
+        color: white;
+    }
+
+    .form-icon {
+        font-size: 4rem;
+        margin-bottom: 1rem;
+        animation: bounceIn 0.8s ease;
+    }
+
+    .form-title {
+        font-size: 2.5rem;
+        font-weight: 800;
+        margin: 1rem 0;
+        text-shadow: 0 2px 10px rgba(0,0,0,0.2);
+    }
+
+    .form-subtitle {
+        font-size: 1.1rem;
+        opacity: 0.95;
+        margin: 0;
+    }
+
+    /* ====== Form Card ====== */
+    .form-card-wrapper {
+        max-width: 900px;
+        margin: 0 auto 3rem;
+        padding: 0 1rem;
+        animation: slideInUp 0.6s ease 0.2s both;
+    }
+
+    /* ====== Form Sections ====== */
+    .form-section {
+        background: linear-gradient(135deg, rgba(255, 255, 255, 0.95) 0%, rgba(255, 255, 255, 0.85) 100%);
+        border: 1px solid rgba(78, 115, 223, 0.1);
+        border-radius: 20px;
+        backdrop-filter: blur(10px);
+        padding: 2rem;
+        margin-bottom: 2rem;
+        box-shadow: 0 8px 32px 0 rgba(31, 38, 135, 0.07);
+        animation: fadeInUp 0.6s ease forwards;
+    }
+
+    .form-section:nth-child(1) { animation-delay: 0.1s; }
+    .form-section:nth-child(2) { animation-delay: 0.2s; }
+    .form-section:nth-child(3) { animation-delay: 0.3s; }
+    .form-section:nth-child(4) { animation-delay: 0.4s; }
+
+    .section-header {
+        display: flex;
+        align-items: center;
+        gap: 1rem;
+        margin-bottom: 2rem;
+        padding-bottom: 1rem;
+        border-bottom: 2px solid rgba(78, 115, 223, 0.15);
+    }
+
+    .section-header i {
+        font-size: 1.5rem;
+        color: #4e73df;
+    }
+
+    .section-header h2 {
+        margin: 0;
+        font-size: 1.3rem;
+        color: #2e3440;
+        font-weight: 700;
+    }
+
+    .section-content {
+        display: flex;
+        flex-direction: column;
+        gap: 1.5rem;
+    }
+
+    /* ====== Form Grid ====== */
+    .form-grid {
+        display: grid;
+        grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
+        gap: 1.5rem;
+    }
+
+    /* ====== Form Groups ====== */
+    .form-group-wrapper {
+        display: flex;
+        flex-direction: column;
+        gap: 0.5rem;
+    }
+
+    .form-group-wrapper.full-width {
+        grid-column: 1 / -1;
+    }
+
+    .form-label {
+        display: flex;
+        align-items: center;
+        gap: 0.5rem;
+        font-weight: 600;
+        color: #2e3440;
+        font-size: 0.95rem;
+        text-transform: uppercase;
+        letter-spacing: 0.5px;
+    }
+
+    .form-label i {
+        color: #4e73df;
+    }
+
+    /* ====== Form Controls ====== */
+    .form-control-custom {
+        padding: 0.85rem 1.2rem;
+        border: 2px solid rgba(78, 115, 223, 0.2);
+        border-radius: 10px;
+        font-size: 1rem;
+        font-family: inherit;
+        background: rgba(255, 255, 255, 0.8);
+        color: #2e3440;
+        transition: all 0.3s ease;
+    }
+
+    .form-control-custom::placeholder {
+        color: rgba(108, 117, 125, 0.6);
+    }
+
+    .form-control-custom:focus {
+        outline: none;
+        border-color: #4e73df;
+        background: white;
+        box-shadow: 0 0 0 3px rgba(78, 115, 223, 0.1);
+    }
+
+    .form-control-custom.error {
+        border-color: #dc3545;
+        background: rgba(220, 53, 69, 0.05);
+    }
+
+    /* ====== Select Custom ====== */
+    .subjects-select-custom {
+        border: 2px solid rgba(78, 115, 223, 0.2);
+        border-radius: 10px;
+        padding: 1rem;
+        background: rgba(255, 255, 255, 0.8);
+        transition: all 0.3s ease;
+    }
+
+    .subjects-select-custom:focus-within {
+        border-color: #4e73df;
+        background: white;
+        box-shadow: 0 0 0 3px rgba(78, 115, 223, 0.1);
+    }
+
+    .subjects-select-custom select {
+        border: none;
+        outline: none;
+        width: 100%;
+        min-height: 120px;
+        padding: 0.5rem;
+        background: transparent;
+        color: #2e3440;
+        font-family: inherit;
+        font-size: 0.95rem;
+    }
+
+    .subjects-select-custom select option {
+        padding: 0.5rem;
+        color: #2e3440;
+    }
+
+    /* ====== Help Text ====== */
+    .form-help-text {
+        display: flex;
+        align-items: center;
+        gap: 0.5rem;
+        font-size: 0.85rem;
+        color: #6c757d;
+        margin-top: 0.5rem;
+        padding: 0.75rem 1rem;
+        background: rgba(78, 115, 223, 0.05);
+        border-radius: 8px;
+        border-left: 3px solid #4e73df;
+    }
+
+    .form-help-text i {
+        color: #4e73df;
+    }
+
+    /* ====== Error Message ====== */
+    .error-message {
+        font-size: 0.85rem;
+        color: #dc3545;
+        margin-top: 0.5rem;
+        display: flex;
+        align-items: center;
+        gap: 0.5rem;
+    }
+
+    .error-message::before {
+        content: '⚠';
+        font-weight: bold;
+    }
+
+    /* ====== Form Actions ====== */
+    .form-actions {
+        display: flex;
+        gap: 1rem;
+        justify-content: center;
+        flex-wrap: wrap;
+        animation: fadeInUp 0.6s ease 0.5s both;
+    }
+
+    .btn-action,
+    .btn-action-back {
+        display: inline-flex;
+        align-items: center;
+        padding: 0.9rem 2rem;
+        border-radius: 12px;
+        font-weight: 600;
+        text-decoration: none;
+        cursor: pointer;
+        border: none;
+        transition: all 0.3s ease;
+        font-size: 1rem;
+    }
+
+    .btn-action-back {
+        position: absolute;
+        top: 2rem;
+        right: 2rem;
+        background: rgba(255, 255, 255, 0.2);
+        color: white;
+        border: 2px solid white;
+    }
+
+    .btn-action-back:hover {
+        background: white;
+        color: #4e73df;
+        transform: translateY(-2px);
+    }
+
+    .cancel-btn {
+        background: linear-gradient(135deg, rgba(108, 117, 125, 0.1) 0%, rgba(108, 117, 125, 0.05) 100%);
+        color: #6c757d;
+        border: 2px solid #6c757d;
+    }
+
+    .cancel-btn:hover {
+        background: #6c757d;
+        color: white;
+        transform: translateY(-2px);
+        box-shadow: 0 10px 25px rgba(108, 117, 125, 0.2);
+    }
+
+    .submit-btn {
+        background: linear-gradient(135deg, #4e73df 0%, #1cc88a 100%);
+        color: white;
+        box-shadow: 0 4px 15px rgba(78, 115, 223, 0.3);
+    }
+
+    .submit-btn:hover {
+        transform: translateY(-2px);
+        box-shadow: 0 10px 30px rgba(78, 115, 223, 0.4);
+    }
+
+    .submit-btn:active {
+        transform: translateY(0);
+    }
+
+    /* ====== Animations ====== */
+    @keyframes fadeIn {
+        from { opacity: 0; }
+        to { opacity: 1; }
+    }
+
+    @keyframes slideInUp {
+        from {
+            opacity: 0;
+            transform: translateY(30px);
+        }
+        to {
+            opacity: 1;
+            transform: translateY(0);
+        }
+    }
+
+    @keyframes fadeInUp {
+        from {
+            opacity: 0;
+            transform: translateY(20px);
+        }
+        to {
+            opacity: 1;
+            transform: translateY(0);
+        }
+    }
+
+    @keyframes bounceIn {
+        from {
+            opacity: 0;
+            transform: scale(0.8);
+        }
+        to {
+            opacity: 1;
+            transform: scale(1);
+        }
+    }
+
+    /* ====== Responsive Design ====== */
+    @media (max-width: 1024px) {
+        .form-title {
+            font-size: 2rem;
+        }
+
+        .form-hero {
+            padding: 3rem 2rem;
+        }
+    }
+
+    @media (max-width: 768px) {
+        .class-form-container {
+            padding: 1rem 0;
+        }
+
+        .form-hero {
+            padding: 2rem 1rem;
+            margin-bottom: 2rem;
+        }
+
+        .form-title {
+            font-size: 1.5rem;
+        }
+
+        .form-icon {
+            font-size: 2.5rem;
+        }
+
+        .form-subtitle {
+            font-size: 0.95rem;
+        }
+
+        .form-card-wrapper {
+            padding: 0 0.5rem;
+        }
+
+        .form-section {
+            padding: 1.5rem 1rem;
+        }
+
+        .section-header h2 {
+            font-size: 1.1rem;
+        }
+
+        .form-grid {
+            grid-template-columns: 1fr;
+        }
+
+        .form-actions {
+            flex-direction: column-reverse;
+        }
+
+        .btn-action {
+            width: 100%;
+            justify-content: center;
+        }
+
+        .btn-action-back {
+            position: static;
+            margin-bottom: 1rem;
+        }
+    }
+
+    /* ====== Dark Mode Support ====== */
+    [data-bs-theme="dark"] .class-form-container {
+        background: linear-gradient(135deg, #1a1f2e 0%, #2d3436 100%);
+    }
+
+    [data-bs-theme="dark"] .form-section {
+        background: linear-gradient(135deg, rgba(45, 52, 64, 0.9) 0%, rgba(45, 52, 64, 0.8) 100%);
+    }
+
+    [data-bs-theme="dark"] .section-header h2,
+    [data-bs-theme="dark"] .form-label,
+    [data-bs-theme="dark"] .form-title {
+        color: #e0e0e0;
+    }
+
+    [data-bs-theme="dark"] .form-control-custom,
+    [data-bs-theme="dark"] .subjects-select-custom {
+        background: rgba(45, 52, 64, 0.5);
+        color: #e0e0e0;
+        border-color: rgba(78, 115, 223, 0.3);
+    }
+
+    [data-bs-theme="dark"] .form-control-custom:focus,
+    [data-bs-theme="dark"] .subjects-select-custom:focus-within {
+        background: rgba(45, 52, 64, 0.8);
+    }
+
+    [data-bs-theme="dark"] .subjects-select-custom select {
+        color: #e0e0e0;
+    }
+
+    [data-bs-theme="dark"] .form-help-text {
+        background: rgba(78, 115, 223, 0.1);
+    }
+</style>
+
+<script>
+    // Form submission animation
+    const classForm = document.getElementById('classForm');
+    if (classForm) {
+        classForm.addEventListener('submit', (e) => {
+            const submitBtn = classForm.querySelector('.submit-btn');
+            if (submitBtn) {
+                submitBtn.innerHTML = '<i class="fas fa-spinner fa-spin me-2"></i>Saving...';
+                submitBtn.disabled = true;
+            }
+        });
+    }
+</script>
+{% endblock %}

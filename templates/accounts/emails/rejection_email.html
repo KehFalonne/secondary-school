@@ -1,0 +1,119 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <style>
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background: #f5f5f5;
+            margin: 0;
+            padding: 20px;
+        }
+        .email-container {
+            max-width: 600px;
+            margin: 0 auto;
+            background: white;
+            border-radius: 8px;
+            box-shadow: 0 2px 8px rgba(0,0,0,0.1);
+            overflow: hidden;
+        }
+        .header {
+            background: linear-gradient(135deg, #dc3545 0%, #c82333 100%);
+            color: white;
+            padding: 30px;
+            text-align: center;
+        }
+        .header h1 {
+            margin: 0;
+            font-size: 24px;
+            font-weight: 700;
+        }
+        .content {
+            padding: 30px;
+        }
+        .greeting {
+            font-size: 16px;
+            color: #333;
+            margin-bottom: 20px;
+        }
+        .message {
+            color: #666;
+            line-height: 1.6;
+            margin-bottom: 20px;
+        }
+        .details-box {
+            background: #f9f9f9;
+            border-left: 4px solid #dc3545;
+            padding: 15px;
+            margin: 20px 0;
+            border-radius: 4px;
+        }
+        .detail-item {
+            padding: 10px 0;
+            color: #666;
+        }
+        .footer {
+            background: #f9f9f9;
+            padding: 20px;
+            text-align: center;
+            color: #999;
+            font-size: 12px;
+            border-top: 1px solid #eee;
+        }
+        .danger {
+            background: #f8d7da;
+            border: 1px solid #f5c6cb;
+            color: #721c24;
+            padding: 15px;
+            border-radius: 4px;
+            margin: 20px 0;
+        }
+    </style>
+</head>
+<body>
+    <div class="email-container">
+        <div class="header">
+            <h1>❌ Access Request Rejected</h1>
+        </div>
+        
+        <div class="content">
+            <p class="greeting">Dear {{ first_name }} {{ last_name }},</p>
+            
+            <p class="message">
+                Thank you for your interest in accessing the School System.
+            </p>
+            
+            <div class="danger">
+                ✗ Unfortunately, your access request has been <strong>REJECTED</strong>.
+            </div>
+            
+            <h3 style="color: #333;">Reason for Rejection</h3>
+            <div class="details-box">
+                <div class="detail-item">
+                    {{ rejection_reason }}
+                </div>
+            </div>
+            
+            <p class="message">
+                If you believe this decision was made in error or if you would like more information about why your request was rejected, please contact the school administration directly.
+            </p>
+            
+            <p class="message">
+                <strong>School Contact Information:</strong><br>
+                You can reach out to the administration office during business hours to discuss your application.
+            </p>
+            
+            <p style="color: #666;">
+                Best regards,<br>
+                <strong>{{ school_name }} Administration</strong>
+            </p>
+        </div>
+        
+        <div class="footer">
+            <p>This is an automated message. Please do not reply to this email.</p>
+            <p>&copy; 2024 School System. All rights reserved.</p>
+        </div>
+    </div>
+</body>
+</html>

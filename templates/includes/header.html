@@ -1,0 +1,537 @@
+<style>
+    :root {
+        --topbar-bg: rgba(255, 255, 255, 0.7);
+        --topbar-border-color: #e3e6f0;
+        --nav-link-color: #5a5c69;
+        --nav-link-hover-color: #2e2f37;
+        --profile-img-border-color: rgba(0,0,0,0.1);
+        --topbar-divider-color: #e3e6f0;
+        --search-bg: #f8f9fa;
+        --search-border-color: #dee2e6;
+        --search-text-color: #5a5c69;
+        --search-focus-bg: #fff;
+        --search-focus-border-color: #4e73df;
+        --search-placeholder-color: #858796;
+        --card-bg: #fff;
+        --heading-color: #2e2f37;
+        --border-color: #e3e6f0;
+        --input-bg: #fff;
+        --input-text: #6e707e;
+        --body-bg: #f8f9fc;
+        --body-color: #858796;
+        --dropdown-bg: #fff;
+        --dropdown-text: #3a3b45;
+        --dropdown-hover-bg: #f8f9fa;
+        --dropdown-border-color: #e3e6f0;
+        /* Table Colors */
+        --table-bg: #fff;
+        --table-color: #858796;
+        --table-border-color: #e3e6f0;
+        --table-striped-bg: rgba(0,0,0,0.02);
+        --table-hover-bg: rgba(0,0,0,0.04);
+
+        /* Unimaginable Dashboard Styles */
+        --glass-bg: rgba(255, 255, 255, 0.65);
+        --glass-border: rgba(255, 255, 255, 0.4);
+        --glass-shadow: 0 8px 32px 0 rgba(31, 38, 135, 0.1);
+        --neon-primary: #667eea;
+        --neon-success: #42e695;
+        --neon-info: #3bb2b8;
+        --neon-warning: #f6c23e;
+        --neon-danger: #e74a3b;
+        --text-main: #2d3748;
+    }
+
+    [data-bs-theme="dark"] {
+        --topbar-bg: rgba(26, 28, 35, 0.7);
+        --topbar-border-color: rgba(255,255,255,0.05);
+        --nav-link-color: #a0aec0;
+        --nav-link-hover-color: #fff;
+        --profile-img-border-color: rgba(255,255,255,0.1);
+        --topbar-divider-color: rgba(255,255,255,0.1);
+        --search-bg: rgba(255,255,255,0.05);
+        --search-border-color: rgba(255,255,255,0.05);
+        --search-text-color: #fff;
+        --search-focus-bg: rgba(255,255,255,0.1);
+        --search-placeholder-color: rgba(255,255,255,0.4);
+        --card-bg: #1e293b;
+        --heading-color: #fff;
+        --border-color: rgba(255,255,255,0.1);
+        --input-bg: #111827;
+        --input-text: #e5e7eb;
+        --body-bg: #0f172a;
+        --body-color: #9ca3af;
+        --dropdown-bg: #1e293b;
+        --dropdown-text: #e5e7eb;
+        --dropdown-hover-bg: #2d3748;
+        --dropdown-border-color: rgba(255,255,255,0.1);
+        /* Table Colors */
+        --table-bg: transparent;
+        --table-color: #9ca3af;
+        --table-border-color: var(--border-color);
+        --table-striped-bg: rgba(255,255,255,0.03);
+        --table-hover-bg: rgba(255,255,255,0.06);
+
+        /* Unimaginable Dashboard Styles */
+        --glass-bg: rgba(15, 23, 42, 0.6);
+        --glass-border: rgba(255, 255, 255, 0.08);
+        --glass-shadow: 0 8px 32px 0 rgba(0, 0, 0, 0.4);
+        --neon-primary: #3b82f6;
+        --neon-success: #34d399;
+        --neon-info: #38bdf8;
+        --neon-warning: #fbbf24;
+        --neon-danger: #f87171;
+        --text-main: #f1f5f9;
+    }
+
+    .topbar {
+        height: 4.375rem;
+        background: var(--topbar-bg);
+        border-bottom: 1px solid var(--topbar-border-color);
+        -webkit-backdrop-filter: blur(10px);
+        backdrop-filter: blur(10px);
+        transition: background-color 0.35s ease;
+    }
+    .topbar .nav-item .nav-link {
+        height: 4.375rem;
+        line-height: 4.375rem;
+
+        display: flex;
+        align-items: center;
+        padding: 0 0.75rem;
+        color: var(--nav-link-color);
+        transition: color 0.2s ease;
+    }
+    .topbar .nav-item .nav-link:hover {
+        color: var(--nav-link-hover-color);
+    }
+    .topbar .nav-item .nav-link .img-profile {
+        height: 2rem;
+        width: 2rem;
+        border: 2px solid var(--profile-img-border-color);
+    }
+    .topbar .topbar-divider {
+        width: 0;
+        border-right: 1px solid var(--topbar-divider-color);
+        height: calc(4.375rem - 2rem);
+        margin: auto 1rem;
+        /* subtle default divider as gradient */
+        width: 1px;
+        background: linear-gradient(180deg, transparent 0%, var(--topbar-divider-color) 50%, transparent 100%);
+        box-shadow: none;
+        transition: background 0.2s ease, box-shadow 0.2s ease;
+        }
+
+        /* Dark-mode accent divider */
+        [data-bs-theme="dark"] .topbar .topbar-divider {
+        border-right: none;
+        width: 2px;
+        margin: auto 1rem;
+        height: calc(4.375rem - 1.5rem);
+        background: linear-gradient(180deg, rgba(78,115,223,0.18), rgba(147,51,234,0.12));
+        box-shadow: 0 0 12px rgba(78,115,223,0.06), inset 0 0 6px rgba(147,51,234,0.04);
+        }
+        /* Dark-mode background accents for body */
+        [data-bs-theme="dark"] body,
+        [data-bs-theme="dark"] #content-wrapper {
+            background-color: var(--body-bg);
+            background-image:
+            radial-gradient(circle at 10% 10%, rgba(78, 115, 223, 0.08) 0%, transparent 40%),
+            radial-gradient(circle at 90% 80%, rgba(147, 51, 234, 0.06) 0%, transparent 40%),
+            radial-gradient(circle at 50% 50%, rgba(56, 189, 248, 0.04) 0%, transparent 50%);
+            background-blend-mode: screen;
+            color: var(--body-color);
+            transition: background 0.4s ease, color 0.2s ease;
+        }
+    
+
+    body, #content-wrapper {
+        background-color: var(--body-bg);
+        color: var(--body-color);
+        transition: background-color 0.2s ease, color 0.2s ease;
+    }
+
+    /* Card & Component Styling for Dark Mode */
+    .card {
+        background-color: var(--card-bg);
+        border-color: var(--border-color);
+        color: var(--body-color);
+    }
+    .card-header {
+        background-color: rgba(0,0,0,0.03);
+        border-bottom-color: var(--border-color);
+    }
+    [data-bs-theme="dark"] .card-header {
+        background-color: rgba(255,255,255,0.03);
+    }
+    h1, h2, h3, h4, h5, h6, .h1, .h2, .h3, .h4, .h5, .h6 {
+        color: var(--heading-color) !important;
+    }
+    hr {
+        border-color: var(--border-color);
+    }
+    .form-control, .form-select {
+        background-color: var(--input-bg);
+        border-color: var(--border-color);
+        color: var(--input-text);
+    }
+    .form-control:focus, .form-select:focus {
+        background-color: var(--input-bg);
+        color: var(--input-text);
+    }
+
+    /* Dropdown Styles */
+    .dropdown-menu {
+        background-color: var(--dropdown-bg);
+        border-color: var(--dropdown-border-color);
+        border: 1px solid var(--dropdown-border-color);
+        border-radius: 12px;
+        backdrop-filter: blur(10px);
+        box-shadow: 0 8px 24px rgba(0, 0, 0, 0.12);
+        animation: dropdownSlideIn 0.2s ease-out;
+        min-width: 200px;
+        padding: 0.5rem 0;
+    }
+
+    @keyframes dropdownSlideIn {
+        from {
+            opacity: 0;
+            transform: translateY(-8px);
+        }
+        to {
+            opacity: 1;
+            transform: translateY(0);
+        }
+    }
+
+    .dropdown-item {
+        color: var(--dropdown-text);
+        padding: 0.75rem 1.25rem;
+        font-weight: 500;
+        transition: all 0.2s ease;
+        border-radius: 6px;
+        margin: 0 0.5rem;
+        position: relative;
+    }
+
+    .dropdown-item:hover, .dropdown-item:focus {
+        background-color: var(--dropdown-hover-bg);
+        color: var(--neon-primary);
+        transform: translateX(4px);
+        border-radius: 8px;
+    }
+
+    .dropdown-item i {
+        width: 18px;
+        text-align: center;
+        color: inherit;
+        transition: transform 0.2s ease;
+    }
+
+    .dropdown-item:hover i {
+        transform: scale(1.2);
+    }
+
+    .dropdown-divider {
+        margin: 0.5rem 0;
+        border-color: var(--dropdown-border-color);
+        opacity: 0.5;
+    }
+
+    /* Text Visibility Fixes */
+    .text-gray-900, .text-gray-800, .text-dark, .text-black {
+        color: var(--heading-color) !important;
+    }
+    .text-gray-700, .text-gray-600, .text-secondary, .text-muted, .small {
+        color: var(--body-color) !important;
+    }
+    
+    /* Table Styles */
+    .table {
+        --bs-table-bg: var(--table-bg);
+        --bs-table-color: var(--table-color);
+        --bs-table-border-color: var(--table-border-color);
+        --bs-table-striped-bg: var(--table-striped-bg);
+        --bs-table-hover-bg: var(--table-hover-bg);
+        color: var(--bs-table-color);
+    }
+    .table th, .table td {
+        color: inherit;
+    }
+    .table thead th {
+        color: var(--heading-color);
+    }
+    .table-hover > tbody > tr:hover > * {
+        color: var(--heading-color);
+    }
+
+    /* Search Bar Styling */
+    .navbar-search .form-control {
+        background-color: var(--search-bg);
+        border: 1px solid var(--search-border-color);
+        color: var(--search-text-color);
+        transition: background-color 0.2s ease, border-color 0.2s ease;
+    }
+    .navbar-search .form-control:focus {
+        background-color: var(--search-focus-bg);
+        border-color: var(--search-focus-border-color);
+        color: var(--search-text-color);
+        box-shadow: none;
+    }
+    .navbar-search .form-control::placeholder {
+        color: var(--search-placeholder-color);
+    }
+
+    /* Dark Mode Specific Overrides */
+    [data-bs-theme="dark"] .dropdown-item:hover,
+    [data-bs-theme="dark"] .dropdown-item:focus {
+        color: #ffffff;
+    }
+
+    [data-bs-theme="dark"] .dropdown-divider {
+        border-top-color: var(--dropdown-border-color);
+    }
+
+    [data-bs-theme="dark"] .dropdown-item i {
+        color: #9ca3af !important;
+    }
+
+    /* Smooth theme transition */
+    html {
+        transition: background-color 0.35s ease, color 0.25s ease;
+    }
+
+    body,
+    #content-wrapper,
+    .card,
+    .navbar,
+    .dropdown-menu,
+    .form-control,
+    .form-select {
+        transition:
+            background-color 0.35s ease,
+            border-color 0.25s ease,
+            color 0.25s ease,
+            box-shadow 0.25s ease;
+    }
+    @media (max-width: 576px) {
+    .topbar .nav-item .nav-link span {
+        display: none !important;
+    }
+    }
+    @media (max-width: 576px) {
+    .topbar .nav-link {
+        min-width: 44px;
+        justify-content: center;
+    }
+    }
+    [data-bs-theme="dark"] #theme-icon {
+    text-shadow: 0 0 8px rgba(147,51,234,0.6);
+    }
+
+    /* --- UNIMAGINABLE DASHBOARD STYLES --- */
+    .glass-panel, .glass-card, .stat-card {
+        background: var(--glass-bg) !important;
+        backdrop-filter: blur(20px) saturate(180%);
+        -webkit-backdrop-filter: blur(20px) saturate(180%);
+        border: 1px solid var(--glass-border) !important;
+        box-shadow: var(--glass-shadow) !important;
+        border-radius: 24px !important;
+        color: var(--text-main);
+    }
+
+    .welcome-banner {
+        background: linear-gradient(135deg, rgba(102, 126, 234, 0.1) 0%, rgba(118, 75, 162, 0.1) 100%) !important;
+    }
+
+    .decoration-circle {
+        position: absolute;
+        top: -50%;
+        right: -10%;
+        width: 300px;
+        height: 300px;
+        background: radial-gradient(circle, rgba(118, 75, 162, 0.2) 0%, transparent 70%);
+        border-radius: 50%;
+        filter: blur(40px);
+    }
+
+    /* Stat Cards */
+    .stat-card {
+        transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+    }
+    .stat-card:hover {
+        transform: translateY(-5px) scale(1.02);
+        box-shadow: 0 15px 30px rgba(0,0,0,0.15) !important;
+        border-color: var(--glass-border) !important;
+    }
+
+    .icon-box {
+        height: 48px;
+        width: 48px;
+        border-radius: 16px;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        font-size: 1.2rem;
+        transition: transform 0.3s ease;
+    }
+    .stat-card:hover .icon-box {
+        transform: rotate(10deg) scale(1.1);
+    }
+
+    /* Glow Effects */
+    .glow-primary { background: rgba(102, 126, 234, 0.1); color: var(--neon-primary); box-shadow: 0 0 15px rgba(102, 126, 234, 0.2); }
+    .glow-success { background: rgba(66, 230, 149, 0.1); color: var(--neon-success); box-shadow: 0 0 15px rgba(66, 230, 149, 0.2); }
+    .glow-info { background: rgba(59, 178, 184, 0.1); color: var(--neon-info); box-shadow: 0 0 15px rgba(59, 178, 184, 0.2); }
+    .glow-warning { background: rgba(246, 194, 62, 0.1); color: var(--neon-warning); box-shadow: 0 0 15px rgba(246, 194, 62, 0.2); }
+
+    /* Text Gradients */
+    .text-gradient-primary { background: linear-gradient(to right, var(--neon-primary), #764ba2); -webkit-background-clip: text; -webkit-text-fill-color: transparent; }
+    .text-gradient-success { background: linear-gradient(to right, var(--neon-success), #34d399); -webkit-background-clip: text; -webkit-text-fill-color: transparent; }
+    .text-gradient-info { background: linear-gradient(to right, var(--neon-info), #38bdf8); -webkit-background-clip: text; -webkit-text-fill-color: transparent; }
+    .text-gradient-warning { background: linear-gradient(to right, var(--neon-warning), #fbbf24); -webkit-background-clip: text; -webkit-text-fill-color: transparent; }
+    .text-gradient-danger { background: linear-gradient(to right, var(--neon-danger), #f87171); -webkit-background-clip: text; -webkit-text-fill-color: transparent; }
+
+    /* Tabs & Tables */
+    .nav-tabs-custom { border-bottom: 1px solid var(--glass-border); }
+    .nav-tabs-custom .nav-link { color: var(--text-main); opacity: 0.6; border: none; font-weight: 600; transition: all 0.3s; }
+    .nav-tabs-custom .nav-link:hover { opacity: 1; transform: translateY(-2px); }
+    .nav-tabs-custom .nav-link.active { color: var(--neon-primary); opacity: 1; background: transparent; border-bottom: 2px solid var(--neon-primary); }
+    
+    .glass-badge { background: rgba(255,255,255,0.1); border: 1px solid var(--glass-border); color: var(--text-main); backdrop-filter: blur(5px); }
+    
+    /* Buttons */
+    .btn-glass {
+        background: rgba(255,255,255,0.1);
+        border: 1px solid var(--glass-border);
+        color: var(--text-main);
+        transition: all 0.3s;
+    }
+    .btn-glass:hover {
+        background: rgba(255,255,255,0.2);
+        transform: translateY(-2px);
+        box-shadow: 0 5px 15px rgba(0,0,0,0.1);
+        color: var(--neon-primary);
+    }
+
+    .glass-stat-box {
+        background: rgba(255,255,255,0.05);
+        border: 1px solid var(--glass-border);
+    }
+
+    .quick-action-btn {
+        transition: all 0.2s;
+    }
+    
+    .quick-action-btn:hover {
+        background-color: rgba(255,255,255,0.2) !important;
+        border-color: var(--neon-primary) !important;
+        transform: translateY(-2px);
+        box-shadow: 0 0 15px rgba(102, 126, 234, 0.2) !important;
+    }
+
+</style>
+
+<nav class="navbar navbar-expand topbar mb-4 static-top shadow">
+    <div class="container-fluid px-4">
+        {% if user.is_authenticated %}
+        <button class="btn btn-link nav-link me-3" type="button" id="sidebarToggleBtn" aria-label="Toggle sidebar">
+            <i class="fas fa-bars"></i>
+        </button>
+        {% endif %}
+
+        <!-- Topbar Search -->
+         {% if user.is_authenticated %}
+        <form class="d-none d-sm-inline-block form-inline me-auto ms-md-3 my-2 my-md-0 mw-100 navbar-search" method="GET" action="{% url 'landing' %}">
+            <div class="input-group">
+                <input type="search" class="form-control small" placeholder="Search the system" aria-label="Search the system" name="q">
+                <button class="btn btn-primary" type="submit">
+                    <i class="fas fa-search fa-sm"></i>
+                </button>
+            </div>
+        </form>
+        {% endif %}
+        <ul class="navbar-nav ms-auto">
+            <!-- Theme Toggle -->
+            <li class="nav-item">
+                <button class="btn btn-link nav-link" type="button" id="themeToggleBtn" aria-label="Toggle theme">
+                    <i id="theme-icon" class="fas fa-sun"></i>
+                </button>
+            </li>
+
+            <div class="topbar-divider d-none d-sm-block"></div>
+
+            {% if user.is_authenticated %}
+                <li class="nav-item dropdown no-arrow">
+                    <a class="nav-link dropdown-toggle d-flex align-items-center" href="#" id="userDropdown" role="button" data-bs-toggle="dropdown" aria-expanded="false" style="transition: all 0.3s ease;">
+                        <span class="me-2 d-none d-lg-inline small fw-600">{{ user.get_full_name|default:user.username }}</span>
+                        {% if user.profile_picture %}
+                            <img class="img-profile rounded-circle" src="{{ user.profile_picture.url }}" style="object-fit: cover; width: 32px; height: 32px; border: 2px solid rgba(102, 126, 234, 0.3); transition: all 0.3s ease;">
+                        {% else %}
+                            <div class="img-profile rounded-circle bg-primary text-white d-flex align-items-center justify-content-center" style="width: 32px; height: 32px; border: 2px solid rgba(102, 126, 234, 0.3); font-size: 12px; font-weight: bold; transition: all 0.3s ease;">
+                                {{ user.username|slice:":1"|upper }}
+                            </div>
+                        {% endif %}
+                    </a>
+                    <ul class="dropdown-menu dropdown-menu-end shadow" aria-labelledby="userDropdown">
+                        <li><h6 class="dropdown-header" style="padding: 0.75rem 1.25rem; font-weight: 700; color: var(--heading-color);">
+                            <i class="fas fa-user-circle me-2" style="color: var(--neon-primary);"></i>{{ user.get_full_name|default:user.username }}
+                        </h6></li>
+                        <li><hr class="dropdown-divider"></li>
+                        <li><a class="dropdown-item" href="{% url 'profile' %}" style="display: flex; align-items: center;">
+                            <i class="fas fa-user fa-sm me-2"></i><span>Profile</span>
+                        </a></li>
+                        <li><a class="dropdown-item" href="{% url 'change_password' %}" style="display: flex; align-items: center;">
+                            <i class="fas fa-key fa-sm me-2"></i><span>Change Password</span>
+                        </a></li>
+                        <li><hr class="dropdown-divider"></li>
+                        <li><a class="dropdown-item" href="{% url 'logout' %}" style="color: var(--neon-danger); display: flex; align-items: center;">
+                            <i class="fas fa-sign-out-alt fa-sm me-2"></i><span>Logout</span>
+                        </a></li>
+                    </ul>
+                </li>
+            {% else %}
+                <li class="nav-item">
+                    <a class="nav-link" href="{% url 'login' %}">
+                        <i class="fas fa-sign-in-alt me-1"></i>Login
+                    </a>
+                </li>
+            {% endif %}
+        </ul>
+    </div>
+</nav>
+
+<script>
+document.addEventListener('DOMContentLoaded', () => {
+    const html = document.documentElement;
+    const btn = document.getElementById('themeToggleBtn');
+    const icon = document.getElementById('theme-icon');
+
+    function setIcon(theme) {
+        if (!icon) return;
+        icon.className = theme === 'dark' ? 'fas fa-moon' : 'fas fa-sun';
+    }
+
+    function applyTheme(theme) {
+        html.setAttribute('data-bs-theme', theme);
+        setIcon(theme);
+    }
+
+    function preferredTheme() {
+        return localStorage.getItem('theme') ||
+            (matchMedia('(prefers-color-scheme: dark)').matches ? 'dark' : 'light');
+    }
+
+    applyTheme(preferredTheme());
+
+    btn?.addEventListener('click', () => {
+        const theme = html.getAttribute('data-bs-theme') === 'dark' ? 'light' : 'dark';
+        localStorage.setItem('theme', theme);
+        applyTheme(theme);
+    });
+
+    window.addEventListener('storage', e => {
+        if (e.key === 'theme') applyTheme(e.newValue);
+    });
+});
+</script>

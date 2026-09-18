@@ -1,0 +1,869 @@
+{% extends 'base.html' %}
+
+{% block title %}Delete Exam - {{ exam.name }}{% endblock %}
+{% block page_title %}Exam Deletion Portal{% endblock %}
+
+{% block breadcrumb %}
+<li class="breadcrumb-item"><a href="{% url 'exam_list' %}"><i class="fas fa-list-check me-1"></i>Exams</a></li>
+<li class="breadcrumb-item"><a href="{% url 'exam_detail' exam.id %}">{{ exam.name }}</a></li>
+<li class="breadcrumb-item active"><i class="fas fa-trash me-1"></i>Deletion</li>
+{% endblock %}
+
+{% block content %}
+<div class="delete-portal-container">
+    <!-- Animated Background -->
+    <div class="delete-bg-animation"></div>
+    
+    <!-- Main Content -->
+    <div class="delete-content-wrapper">
+        <!-- Warning Header Section -->
+        <div class="warning-header-section">
+            <div class="warning-icon-circle">
+                <i class="fas fa-exclamation-triangle"></i>
+            </div>
+            <h1 class="delete-main-title">Permanent Deletion</h1>
+            <p class="delete-subtitle">This action cannot be undone. Review all details carefully.</p>
+        </div>
+
+        <!-- Delete Confirmation Card -->
+        <div class="delete-confirmation-card">
+            <!-- Exam Details Section -->
+            <div class="exam-details-section">
+                <div class="section-header danger-header">
+                    <h3><i class="fas fa-file-alt"></i> Exam Information</h3>
+                </div>
+                
+                <div class="exam-details-grid">
+                    <div class="detail-block">
+                        <div class="detail-icon exam-icon">
+                            <i class="fas fa-book"></i>
+                        </div>
+                        <div class="detail-content">
+                            <span class="detail-label">Exam Name</span>
+                            <span class="detail-value exam-name">{{ exam.name }}</span>
+                        </div>
+                    </div>
+
+                    <div class="detail-block">
+                        <div class="detail-icon subject-icon">
+                            <i class="fas fa-flask"></i>
+                        </div>
+                        <div class="detail-content">
+                            <span class="detail-label">Subject</span>
+                            <span class="detail-value">{{ exam.subject.name }}</span>
+                        </div>
+                    </div>
+
+                    <div class="detail-block">
+                        <div class="detail-icon class-icon">
+                            <i class="fas fa-door-open"></i>
+                        </div>
+                        <div class="detail-content">
+                            <span class="detail-label">Class</span>
+                            <span class="detail-value">{{ exam.class_name.name }}</span>
+                        </div>
+                    </div>
+
+                    <div class="detail-block">
+                        <div class="detail-icon type-icon">
+                            <i class="fas fa-graduation-cap"></i>
+                        </div>
+                        <div class="detail-content">
+                            <span class="detail-label">Exam Type</span>
+                            <span class="detail-value">{{ exam.exam_type }}</span>
+                        </div>
+                    </div>
+
+                    <div class="detail-block">
+                        <div class="detail-icon date-icon">
+                            <i class="fas fa-calendar-alt"></i>
+                        </div>
+                        <div class="detail-content">
+                            <span class="detail-label">Conducted On</span>
+                            <span class="detail-value">{{ exam.date_conducted|date:"l, d F Y" }}</span>
+                        </div>
+                    </div>
+
+                    <div class="detail-block">
+                        <div class="detail-icon marks-icon">
+                            <i class="fas fa-percent"></i>
+                        </div>
+                        <div class="detail-content">
+                            <span class="detail-label">Total Marks</span>
+                            <span class="detail-value">{{ exam.total_marks }}</span>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Grading Impact Section -->
+            <div class="grading-impact-section">
+                <div class="section-header impact-header">
+                    <h3><i class="fas fa-chart-line"></i> Impact Analysis</h3>
+                </div>
+                
+                <div class="impact-stats">
+                    <div class="impact-card graded-card">
+                        <div class="impact-number">{{ exam.students_graded }}</div>
+                        <div class="impact-label">Students Graded</div>
+                        <div class="impact-bar">
+                            <div class="impact-fill" style="width: {% widthratio exam.students_graded exam.total_students 100 %}%"></div>
+                        </div>
+                    </div>
+
+                    <div class="impact-card total-card">
+                        <div class="impact-number">{{ exam.total_students }}</div>
+                        <div class="impact-label">Total Students</div>
+                        <div class="impact-percentage">{{ exam.total_students }}</div>
+                    </div>
+
+                    <div class="impact-card danger-card">
+                        <div class="impact-number">{{ exam.students_graded }}</div>
+                        <div class="impact-label">Records to Delete</div>
+                        <div class="impact-warning">⚠️ Permanent Loss</div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Critical Warning Section -->
+            <div class="critical-warning-section">
+                <div class="warning-box critical">
+                    <div class="warning-icon-box">
+                        <i class="fas fa-exclamation-circle"></i>
+                    </div>
+                    <div class="warning-content">
+                        <h4 class="warning-title">⚠️ Critical: Cascading Deletions</h4>
+                        <p class="warning-text">
+                            Deleting this exam will permanently remove <strong>{{ exam.students_graded }} grade records</strong> associated with this examination. 
+                            This will directly impact:
+                        </p>
+                        <ul class="warning-list">
+                            <li><i class="fas fa-circle-check"></i> Student individual grade records</li>
+                            <li><i class="fas fa-circle-check"></i> Grade report cards and transcripts</li>
+                            <li><i class="fas fa-circle-check"></i> Academic performance statistics</li>
+                            <li><i class="fas fa-circle-check"></i> GPA calculations and rankings</li>
+                        </ul>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Confirmation Required Section -->
+            <div class="confirmation-section">
+                <div class="confirmation-box">
+                    <div class="confirmation-prompt">
+                        <span class="prompt-icon">🔒</span>
+                        <h4>Type exam name to confirm deletion</h4>
+                        <p>This is a safety measure to prevent accidental deletion</p>
+                    </div>
+                    <form method="post" id="deleteForm">
+                        {% csrf_token %}
+                        <input type="text" 
+                               class="confirmation-input" 
+                               id="confirmationInput"
+                               placeholder="Enter: {{ exam.name }}"
+                               autocomplete="off"
+                               required>
+                        <span class="confirmation-hint">Must match exactly: <strong>{{ exam.name }}</strong></span>
+                    </form>
+                </div>
+            </div>
+
+            <!-- Action Buttons -->
+            <div class="action-buttons-section">
+                <a href="{% url 'exam_detail' exam.id %}" class="action-btn cancel-btn">
+                    <i class="fas fa-arrow-left"></i>
+                    <span>Cancel & Go Back</span>
+                </a>
+                <button type="submit" 
+                        form="deleteForm"
+                        class="action-btn delete-btn" 
+                        id="deleteBtn"
+                        disabled>
+                    <i class="fas fa-trash-alt"></i>
+                    <span>Permanently Delete Exam</span>
+                </button>
+            </div>
+
+            <!-- Final Warning -->
+            <div class="final-warning">
+                <i class="fas fa-shield-alt"></i>
+                <span>This action is irreversible. All associated data will be permanently deleted from the system.</span>
+            </div>
+        </div>
+    </div>
+</div>
+
+{% endblock %}
+
+{% block extra_css %}
+<style>
+    /* ============= PREMIUM DELETE CONFIRMATION STYLING ============= */
+    
+    .delete-portal-container {
+        position: relative;
+        min-height: 100vh;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        padding: 40px 20px;
+        overflow: hidden;
+    }
+
+    .delete-bg-animation {
+        position: fixed;
+        top: 0;
+        left: 0;
+        width: 100%;
+        height: 100%;
+        background: linear-gradient(135deg, rgba(220, 53, 69, 0.05) 0%, rgba(220, 53, 69, 0.02) 50%, rgba(255, 193, 7, 0.02) 100%);
+        z-index: -1;
+        animation: deleteBgFlow 15s ease-in-out infinite;
+    }
+
+    @keyframes deleteBgFlow {
+        0%, 100% { opacity: 1; transform: scale(1); }
+        50% { opacity: 0.9; transform: scale(1.05); }
+    }
+
+    .delete-content-wrapper {
+        width: 100%;
+        max-width: 700px;
+        animation: deleteContentSlide 0.6s ease-out;
+    }
+
+    @keyframes deleteContentSlide {
+        from {
+            opacity: 0;
+            transform: translateY(40px);
+        }
+        to {
+            opacity: 1;
+            transform: translateY(0);
+        }
+    }
+
+    /* Warning Header */
+    .warning-header-section {
+        text-align: center;
+        margin-bottom: 40px;
+    }
+
+    .warning-icon-circle {
+        width: 100px;
+        height: 100px;
+        background: linear-gradient(135deg, #dc3545 0%, #a71d2a 100%);
+        border-radius: 50%;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        margin: 0 auto 20px;
+        font-size: 48px;
+        color: white;
+        box-shadow: 0 10px 40px rgba(220, 53, 69, 0.3);
+        animation: warningPulse 2s ease-in-out infinite;
+    }
+
+    @keyframes warningPulse {
+        0%, 100% { transform: scale(1); }
+        50% { transform: scale(1.1); }
+    }
+
+    .delete-main-title {
+        font-size: 36px;
+        font-weight: 800;
+        color: #2e3440;
+        margin: 0 0 8px;
+    }
+
+    [data-bs-theme="dark"] .delete-main-title {
+        color: #e0e0e0;
+    }
+
+    .delete-subtitle {
+        font-size: 16px;
+        color: #6c757d;
+        margin: 0;
+    }
+
+    [data-bs-theme="dark"] .delete-subtitle {
+        color: #b0b0b0;
+    }
+
+    /* Main Delete Card */
+    .delete-confirmation-card {
+        background: linear-gradient(135deg, #ffffff 0%, #f8f9fa 100%);
+        border-radius: 24px;
+        overflow: hidden;
+        box-shadow: 0 20px 60px rgba(220, 53, 69, 0.15);
+        border: 2px solid rgba(220, 53, 69, 0.1);
+    }
+
+    [data-bs-theme="dark"] .delete-confirmation-card {
+        background: linear-gradient(135deg, #2d3142 0%, #1a1d23 100%);
+        border-color: rgba(220, 53, 69, 0.2);
+    }
+
+    /* Section Headers */
+    .section-header {
+        padding: 24px 28px;
+        border-bottom: 2px solid rgba(220, 53, 69, 0.1);
+    }
+
+    [data-bs-theme="dark"] .section-header {
+        border-bottom-color: rgba(220, 53, 69, 0.2);
+    }
+
+    .danger-header {
+        background: linear-gradient(135deg, rgba(220, 53, 69, 0.08) 0%, rgba(220, 53, 69, 0.04) 100%);
+    }
+
+    .impact-header {
+        background: linear-gradient(135deg, rgba(255, 193, 7, 0.08) 0%, rgba(255, 193, 7, 0.04) 100%);
+    }
+
+    .section-header h3 {
+        margin: 0;
+        font-size: 18px;
+        font-weight: 800;
+        color: #2e3440;
+        display: flex;
+        align-items: center;
+        gap: 10px;
+    }
+
+    [data-bs-theme="dark"] .section-header h3 {
+        color: #e0e0e0;
+    }
+
+    /* Exam Details Grid */
+    .exam-details-section,
+    .grading-impact-section {
+        padding: 28px;
+    }
+
+    .exam-details-grid {
+        display: grid;
+        grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+        gap: 16px;
+    }
+
+    .detail-block {
+        display: flex;
+        align-items: flex-start;
+        gap: 12px;
+        padding: 14px;
+        background: linear-gradient(135deg, rgba(78, 115, 223, 0.05) 0%, rgba(28, 200, 138, 0.02) 100%);
+        border-radius: 12px;
+        transition: all 0.3s ease;
+    }
+
+    [data-bs-theme="dark"] .detail-block {
+        background: linear-gradient(135deg, rgba(78, 115, 223, 0.08) 0%, rgba(28, 200, 138, 0.04) 100%);
+    }
+
+    .detail-block:hover {
+        background: linear-gradient(135deg, rgba(78, 115, 223, 0.1) 0%, rgba(28, 200, 138, 0.05) 100%);
+        transform: translateY(-2px);
+    }
+
+    .detail-icon {
+        width: 44px;
+        height: 44px;
+        border-radius: 10px;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        font-size: 20px;
+        flex-shrink: 0;
+        color: white;
+    }
+
+    .exam-icon { background: linear-gradient(135deg, #4e73df 0%, #224abe 100%); }
+    .subject-icon { background: linear-gradient(135deg, #1cc88a 0%, #128a5f 100%); }
+    .class-icon { background: linear-gradient(135deg, #f6c23e 0%, #d4a017 100%); }
+    .type-icon { background: linear-gradient(135deg, #e74c3c 0%, #c0392b 100%); }
+    .date-icon { background: linear-gradient(135deg, #9b59b6 0%, #8e44ad 100%); }
+    .marks-icon { background: linear-gradient(135deg, #3498db 0%, #2980b9 100%); }
+
+    .detail-content {
+        flex: 1;
+        display: flex;
+        flex-direction: column;
+    }
+
+    .detail-label {
+        font-size: 10px;
+        font-weight: 700;
+        color: #6c757d;
+        text-transform: uppercase;
+        letter-spacing: 0.5px;
+    }
+
+    [data-bs-theme="dark"] .detail-label {
+        color: #b0b0b0;
+    }
+
+    .detail-value {
+        font-size: 14px;
+        font-weight: 700;
+        color: #2e3440;
+        margin-top: 2px;
+    }
+
+    [data-bs-theme="dark"] .detail-value {
+        color: #e0e0e0;
+    }
+
+    .exam-name {
+        font-size: 15px;
+        color: #dc3545;
+        font-weight: 800;
+    }
+
+    /* Impact Stats */
+    .impact-stats {
+        display: grid;
+        grid-template-columns: repeat(auto-fit, minmax(150px, 1fr));
+        gap: 16px;
+    }
+
+    .impact-card {
+        padding: 20px;
+        border-radius: 12px;
+        text-align: center;
+        transition: all 0.3s ease;
+    }
+
+    .impact-card:hover {
+        transform: translateY(-4px);
+    }
+
+    .graded-card {
+        background: linear-gradient(135deg, #e7f0ff 0%, #f0f5ff 100%);
+        border: 2px solid rgba(78, 115, 223, 0.2);
+    }
+
+    [data-bs-theme="dark"] .graded-card {
+        background: linear-gradient(135deg, #3a4a6b 0%, #2d3a54 100%);
+    }
+
+    .total-card {
+        background: linear-gradient(135deg, #e8f5e9 0%, #f1f8e9 100%);
+        border: 2px solid rgba(28, 200, 138, 0.2);
+    }
+
+    [data-bs-theme="dark"] .total-card {
+        background: linear-gradient(135deg, #2d4a3d 0%, #1b3a2d 100%);
+    }
+
+    .danger-card {
+        background: linear-gradient(135deg, #ffebee 0%, #ffcdd2 100%);
+        border: 2px solid rgba(220, 53, 69, 0.3);
+        animation: dangerShake 0.5s ease-in-out;
+    }
+
+    [data-bs-theme="dark"] .danger-card {
+        background: linear-gradient(135deg, #5a2d2d 0%, #3d1a1a 100%);
+    }
+
+    @keyframes dangerShake {
+        0%, 100% { transform: translateX(0); }
+        25% { transform: translateX(-2px); }
+        75% { transform: translateX(2px); }
+    }
+
+    .impact-number {
+        font-size: 28px;
+        font-weight: 800;
+        color: #2e3440;
+        margin-bottom: 4px;
+    }
+
+    [data-bs-theme="dark"] .impact-number {
+        color: #e0e0e0;
+    }
+
+    .impact-label {
+        font-size: 12px;
+        font-weight: 700;
+        color: #6c757d;
+        text-transform: uppercase;
+    }
+
+    [data-bs-theme="dark"] .impact-label {
+        color: #b0b0b0;
+    }
+
+    .impact-bar {
+        height: 6px;
+        background: rgba(0, 0, 0, 0.1);
+        border-radius: 3px;
+        margin-top: 10px;
+        overflow: hidden;
+    }
+
+    .impact-fill {
+        height: 100%;
+        background: linear-gradient(90deg, #4e73df 0%, #224abe 100%);
+        border-radius: 3px;
+        transition: width 0.6s ease;
+    }
+
+    .impact-percentage {
+        font-size: 11px;
+        color: #6c757d;
+        margin-top: 6px;
+    }
+
+    .impact-warning {
+        font-size: 12px;
+        font-weight: 700;
+        color: #dc3545;
+        margin-top: 6px;
+    }
+
+    /* Critical Warning */
+    .critical-warning-section {
+        padding: 0 28px 28px;
+    }
+
+    .warning-box {
+        padding: 24px;
+        border-radius: 14px;
+        display: flex;
+        gap: 16px;
+        border-left: 4px solid #dc3545;
+    }
+
+    .warning-box.critical {
+        background: linear-gradient(135deg, #ffebee 0%, #ffe0e6 100%);
+    }
+
+    [data-bs-theme="dark"] .warning-box.critical {
+        background: linear-gradient(135deg, #5a2d2d 0%, #4a1f1f 100%);
+        border-left-color: #ff7675;
+    }
+
+    .warning-icon-box {
+        width: 40px;
+        height: 40px;
+        background: #dc3545;
+        border-radius: 10px;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        font-size: 20px;
+        color: white;
+        flex-shrink: 0;
+    }
+
+    .warning-content {
+        flex: 1;
+    }
+
+    .warning-title {
+        font-size: 15px;
+        font-weight: 800;
+        color: #dc3545;
+        margin: 0 0 8px;
+    }
+
+    [data-bs-theme="dark"] .warning-title {
+        color: #ff7675;
+    }
+
+    .warning-text {
+        font-size: 13px;
+        color: #6c757d;
+        margin: 0 0 12px;
+    }
+
+    [data-bs-theme="dark"] .warning-text {
+        color: #b0b0b0;
+    }
+
+    .warning-list {
+        list-style: none;
+        padding: 0;
+        margin: 0;
+        font-size: 12px;
+    }
+
+    .warning-list li {
+        padding: 4px 0;
+        color: #6c757d;
+        display: flex;
+        align-items: center;
+        gap: 8px;
+    }
+
+    [data-bs-theme="dark"] .warning-list li {
+        color: #b0b0b0;
+    }
+
+    .warning-list i {
+        color: #dc3545;
+        font-size: 10px;
+    }
+
+    /* Confirmation Section */
+    .confirmation-section {
+        padding: 28px;
+        border-top: 2px solid rgba(220, 53, 69, 0.1);
+        background: linear-gradient(135deg, rgba(220, 53, 69, 0.03) 0%, transparent 100%);
+    }
+
+    [data-bs-theme="dark"] .confirmation-section {
+        border-top-color: rgba(220, 53, 69, 0.2);
+        background: linear-gradient(135deg, rgba(220, 53, 69, 0.05) 0%, transparent 100%);
+    }
+
+    .confirmation-box {
+        text-align: center;
+    }
+
+    .confirmation-prompt {
+        margin-bottom: 20px;
+    }
+
+    .prompt-icon {
+        font-size: 32px;
+        display: block;
+        margin-bottom: 12px;
+    }
+
+    .confirmation-prompt h4 {
+        font-size: 16px;
+        font-weight: 800;
+        color: #2e3440;
+        margin: 0 0 4px;
+    }
+
+    [data-bs-theme="dark"] .confirmation-prompt h4 {
+        color: #e0e0e0;
+    }
+
+    .confirmation-prompt p {
+        font-size: 12px;
+        color: #6c757d;
+        margin: 0;
+    }
+
+    [data-bs-theme="dark"] .confirmation-prompt p {
+        color: #b0b0b0;
+    }
+
+    .confirmation-input {
+        width: 100%;
+        padding: 16px;
+        border: 2px solid #e9ecef;
+        border-radius: 10px;
+        background: white;
+        color: #2e3440;
+        font-size: 14px;
+        font-weight: 600;
+        font-family: 'Courier New', monospace;
+        transition: all 0.3s ease;
+        margin-bottom: 8px;
+    }
+
+    [data-bs-theme="dark"] .confirmation-input {
+        background: #3a3f52;
+        border-color: #4a5568;
+        color: #e0e0e0;
+    }
+
+    .confirmation-input:focus {
+        border-color: #dc3545;
+        box-shadow: 0 0 0 4px rgba(220, 53, 69, 0.15);
+        outline: none;
+    }
+
+    .confirmation-hint {
+        font-size: 11px;
+        color: #6c757d;
+        display: block;
+    }
+
+    [data-bs-theme="dark"] .confirmation-hint {
+        color: #b0b0b0;
+    }
+
+    /* Action Buttons */
+    .action-buttons-section {
+        padding: 28px;
+        display: flex;
+        gap: 16px;
+        border-top: 2px solid rgba(220, 53, 69, 0.1);
+    }
+
+    [data-bs-theme="dark"] .action-buttons-section {
+        border-top-color: rgba(220, 53, 69, 0.2);
+    }
+
+    .action-btn {
+        flex: 1;
+        padding: 16px 24px;
+        border: none;
+        border-radius: 12px;
+        font-weight: 700;
+        font-size: 14px;
+        cursor: pointer;
+        transition: all 0.3s ease;
+        display: inline-flex;
+        align-items: center;
+        justify-content: center;
+        gap: 10px;
+        text-decoration: none;
+    }
+
+    .cancel-btn {
+        background: #e9ecef;
+        color: #2e3440;
+    }
+
+    [data-bs-theme="dark"] .cancel-btn {
+        background: #3a3f52;
+        color: #e0e0e0;
+    }
+
+    .cancel-btn:hover {
+        background: #dee2e6;
+        transform: translateY(-2px);
+    }
+
+    [data-bs-theme="dark"] .cancel-btn:hover {
+        background: #4a5568;
+    }
+
+    .delete-btn {
+        background: linear-gradient(135deg, #dc3545 0%, #a71d2a 100%);
+        color: white;
+        box-shadow: 0 4px 16px rgba(220, 53, 69, 0.3);
+    }
+
+    .delete-btn:hover:not(:disabled) {
+        transform: translateY(-3px);
+        box-shadow: 0 8px 24px rgba(220, 53, 69, 0.4);
+    }
+
+    .delete-btn:disabled {
+        opacity: 0.5;
+        cursor: not-allowed;
+    }
+
+    /* Final Warning */
+    .final-warning {
+        padding: 16px 28px 28px;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        gap: 12px;
+        color: #6c757d;
+        font-size: 12px;
+        font-style: italic;
+    }
+
+    [data-bs-theme="dark"] .final-warning {
+        color: #b0b0b0;
+    }
+
+    .final-warning i {
+        color: #dc3545;
+        font-size: 14px;
+    }
+
+    /* Responsive */
+    @media (max-width: 768px) {
+        .delete-portal-container {
+            padding: 20px;
+        }
+
+        .warning-header-section {
+            margin-bottom: 30px;
+        }
+
+        .delete-main-title {
+            font-size: 28px;
+        }
+
+        .warning-icon-circle {
+            width: 80px;
+            height: 80px;
+            font-size: 40px;
+        }
+
+        .exam-details-grid {
+            grid-template-columns: 1fr;
+        }
+
+        .action-buttons-section {
+            flex-direction: column;
+        }
+
+        .action-btn {
+            width: 100%;
+        }
+    }
+</style>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+    // Confirmation input validation
+    const confirmationInput = document.getElementById('confirmationInput');
+    const deleteBtn = document.getElementById('deleteBtn');
+    const examName = '{{ exam.name }}';
+
+    if (confirmationInput && deleteBtn) {
+        confirmationInput.addEventListener('input', function() {
+            deleteBtn.disabled = this.value !== examName;
+            
+            if (this.value === examName) {
+                deleteBtn.style.animation = 'deleteButtonPulse 0.6s ease';
+            }
+        });
+
+        // Add visual feedback
+        confirmationInput.addEventListener('focus', function() {
+            this.style.borderColor = '#dc3545';
+        });
+
+        confirmationInput.addEventListener('blur', function() {
+            if (this.value !== examName) {
+                this.style.borderColor = '#e9ecef';
+            }
+        });
+
+        // Prevent form submission with Enter key until confirmed
+        document.getElementById('deleteForm').addEventListener('submit', function(e) {
+            if (confirmationInput.value !== examName) {
+                e.preventDefault();
+                confirmationInput.focus();
+                confirmationInput.style.animation = 'confirmationShake 0.4s ease';
+            }
+        });
+    }
+
+    // Add animation styles
+    const style = document.createElement('style');
+    style.textContent = `
+        @keyframes deleteButtonPulse {
+            0%, 100% { transform: scale(1); }
+            50% { transform: scale(1.05); }
+        }
+        
+        @keyframes confirmationShake {
+            0%, 100% { transform: translateX(0); }
+            25% { transform: translateX(-8px); }
+            75% { transform: translateX(8px); }
+        }
+    `;
+    document.head.appendChild(style);
+
+    // Auto-focus on confirmation input
+    window.addEventListener('DOMContentLoaded', function() {
+        confirmationInput.focus();
+    });
+</script>
+{% endblock %}

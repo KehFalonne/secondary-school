@@ -1,0 +1,1299 @@
+{% extends 'base.html' %}
+
+{% block title %}Class Timetable{% endblock %}
+{% block page_title %}Class Timetable{% endblock %}
+
+{% block breadcrumb %}
+<li class="breadcrumb-item"><a href="{% url 'class_list' %}">Classes</a></li>
+<li class="breadcrumb-item active">Timetable</li>
+{% endblock %}
+
+{% block page_actions %}
+<div class="action-buttons">
+    {% if user.user_type != 'student' %}
+    <a href="{% url 'timetable_form' %}" class="btn-primary-action" title="Create New Timetable">
+        <i class="fas fa-plus me-2"></i>Add Timetable
+    </a>
+    {% endif %}
+    <button class="btn-icon-action" onclick="printDiv('timetableContent')" title="Print Timetable">
+        <i class="fas fa-print"></i>
+    </button>
+    <div class="dropdown-menu-custom">
+        <button class="btn-icon-action dropdown-toggle" data-bs-toggle="dropdown" title="More Options">
+            <i class="fas fa-download"></i>
+        </button>
+        <ul class="dropdown-menu-items">
+            <li><a href="#"><i class="fas fa-file-pdf me-2"></i>Download PDF</a></li>
+            <li><a href="#"><i class="fas fa-image me-2"></i>Download Image</a></li>
+            {% if user.user_type != 'student' %}<li><a href="{% url 'timetable_form' %}"><i class="fas fa-edit me-2"></i>Edit Timetable</a></li>{% endif %}
+        </ul>
+    </div>
+</div>
+{% endblock %}
+
+{% block content %}
+<div class="timetable-container">
+    <!-- Filter Card -->
+    <div class="filter-card-tt">
+        <div class="filter-header">
+            <i class="fas fa-sliders-h"></i>
+            <h5>Select Class & Week</h5>
+        </div>
+        <form method="get" class="filter-form-tt">
+            <div class="filter-grid">
+                <div class="filter-group">
+                    <label class="filter-label">Class</label>
+                    <select name="class_id" class="filter-select" onchange="this.form.submit()">
+                        <option value="">-- Select Class --</option>
+                        {% for class in classes %}
+                        <option value="{{ class.id }}" {% if selected_class.id == class.id %}selected{% endif %}>
+                            {{ class.name }} - Section {{ class.section }}
+                        </option>
+                        {% endfor %}
+                    </select>
+                </div>
+                <div class="filter-group">
+                    <label class="filter-label">Week</label>
+                    <select name="week" class="filter-select" onchange="this.form.submit()">
+                        <option value="current">Current Week</option>
+                        <option value="next">Next Week</option>
+                    </select>
+                </div>
+            </div>
+        </form>
+    </div>
+
+    {% if selected_class %}
+    <!-- Class Header Info -->
+    <div class="class-header-info">
+        <div class="class-title">
+            <h2>{{ selected_class.name }} <span class="section-badge">Section {{ selected_class.section }}</span></h2>
+            <p class="class-subtitle">Weekly Schedule</p>
+        </div>
+        <div class="class-meta">
+            <div class="meta-item">
+                <i class="fas fa-clock"></i>
+                <div>
+                    <span class="meta-label">Class Hours</span>
+                    <span class="meta-value">{{ selected_class.start_time|time:"g:i A" }} - {{ selected_class.end_time|time:"g:i A" }}</span>
+                </div>
+            </div>
+            <div class="meta-item">
+                <i class="fas fa-user-tie"></i>
+                <div>
+                    <span class="meta-label">Class Teacher</span>
+                    <span class="meta-value">{{ selected_class.class_teacher.user.get_full_name }}</span>
+                </div>
+            </div>
+            <div class="meta-item">
+                <i class="fas fa-book"></i>
+                <div>
+                    <span class="meta-label">Total Periods</span>
+                    <span class="meta-value">{{ periods|length }}</span>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Timetable Grid -->
+    <div id="timetableContent" class="timetable-wrapper">
+        <div class="timetable-grid">
+            <!-- Period Header -->
+            <div class="timetable-period-header">
+                <div class="period-slot">Day/Period</div>
+                {% for period in periods %}
+                <div class="period-slot">
+                    <div class="period-num">P{{ period.number }}</div>
+                    <div class="period-time">{{ period.start_time|time:"g:i" }}-{{ period.end_time|time:"g:i" }}</div>
+                </div>
+                {% endfor %}
+            </div>
+
+            <!-- Days -->
+            {% for day in days %}
+            <div class="timetable-row">
+                <div class="day-slot">
+                    <div class="day-name">{{ day.name }}</div>
+                    <div class="day-date">{{ day.date|date:"d M" }}</div>
+                </div>
+                {% for period in periods %}
+                <div class="period-slot">
+                    {% for entry in timetable_entries %}
+                        {% if entry.day == day.name and entry.period == period.number %}
+                        <div class="timetable-entry {% if entry.subject.is_elective %}elective-subject{% else %}core-subject{% endif %}">
+                            <div class="entry-subject">{{ entry.subject.name }}</div>
+                            <div class="entry-teacher">{{ entry.teacher.user.get_full_name|truncatewords:2 }}</div>
+                            <div class="entry-room">Room {{ entry.room|default:"—" }}</div>
+                        </div>
+                        {% endif %}
+                    {% empty %}
+                    <div class="period-empty">—</div>
+                    {% endfor %}
+                </div>
+                {% endfor %}
+            </div>
+            {% endfor %}
+        </div>
+    </div>
+
+    <!-- Legend -->
+    <div class="timetable-legend">
+        <div class="legend-title">
+            <i class="fas fa-key"></i>Legend
+        </div>
+        <div class="legend-items">
+            <div class="legend-item core-subject">Core Subject</div>
+            <div class="legend-item elective-subject">Elective Subject</div>
+            <div class="legend-item practical-subject">Practical/Lab</div>
+            <div class="legend-item break-subject">Break/Recess</div>
+        </div>
+    </div>
+
+    <!-- Teachers Schedule -->
+    <div class="teachers-schedule-section">
+        <div class="section-header">
+            <i class="fas fa-chalkboard-user"></i>
+            <h3>Teachers Schedule</h3>
+        </div>
+
+        <div class="teachers-grid">
+            {% for entry in timetable_entries %}
+            <div class="teacher-schedule-card">
+                <div class="card-designation">{{ entry.teacher.designation }}</div>
+                
+                <div class="card-teacher-info">
+                    {% if entry.teacher.user.profile_picture %}
+                    <img src="{{ entry.teacher.user.profile_picture.url }}" alt="{{ entry.teacher.user.get_full_name }}" class="teacher-avatar">
+                    {% else %}
+                    <div class="teacher-avatar-placeholder">
+                        <i class="fas fa-user-tie"></i>
+                    </div>
+                    {% endif %}
+                    <div class="teacher-details">
+                        <h6>{{ entry.teacher.user.get_full_name }}</h6>
+                        <p>{{ entry.teacher.designation }}</p>
+                    </div>
+                </div>
+
+                <div class="card-schedule-info">
+                    <div class="schedule-row">
+                        <span class="schedule-label"><i class="fas fa-book"></i>Subject</span>
+                        <span class="schedule-value">{{ entry.subject.name }}</span>
+                    </div>
+                    <div class="schedule-row">
+                        <span class="schedule-label"><i class="fas fa-calendar"></i>Day</span>
+                        <span class="schedule-value">{{ entry.day }}</span>
+                    </div>
+                    <div class="schedule-row">
+                        <span class="schedule-label"><i class="fas fa-clock"></i>Period</span>
+                        <span class="schedule-value">Period {{ entry.period }}</span>
+                    </div>
+                    <div class="schedule-row">
+                        <span class="schedule-label"><i class="fas fa-door-open"></i>Room</span>
+                        <span class="schedule-value">{{ entry.room|default:"—" }}</span>
+                    </div>
+                </div>
+            </div>
+            {% empty %}
+            <div style="grid-column: 1 / -1; text-align: center; padding: 3rem 1rem;">
+                <i class="fas fa-inbox" style="font-size: 2.5rem; color: rgba(0,0,0,0.2); margin-bottom: 1rem;"></i>
+                <p style="color: rgba(0,0,0,0.5);">No teacher schedules found</p>
+            </div>
+            {% endfor %}
+        </div>
+    </div>
+
+    {% else %}
+    <!-- No Class Selected -->
+    <div class="empty-state">
+        <div class="empty-icon">
+            <i class="fas fa-calendar-alt"></i>
+        </div>
+        <h3>No Class Selected</h3>
+        <p>Please select a class from the dropdown above to view its timetable</p>
+    </div>
+    {% endif %}
+</div>
+
+{% endblock %}
+
+{% block extra_css %}
+<style>
+    /* ====== Timetable Container ====== */
+    .timetable-container {
+        max-width: 1400px;
+        margin: 0 auto;
+        animation: slideDown 0.6s ease;
+    }
+
+    /* ====== Filter Card ====== */
+    .filter-card-tt {
+        background: linear-gradient(135deg, rgba(255, 255, 255, 0.08) 0%, rgba(255, 255, 255, 0.02) 100%);
+        border: 1px solid rgba(78, 115, 223, 0.12);
+        border-radius: 20px;
+        backdrop-filter: blur(10px);
+        padding: 1.75rem;
+        margin-bottom: 2rem;
+        animation: fadeInUp 0.6s ease;
+    }
+
+    .filter-header {
+        display: flex;
+        align-items: center;
+        gap: 0.75rem;
+        margin-bottom: 1.5rem;
+        font-weight: 600;
+        color: #4e73df;
+    }
+
+    .filter-header i {
+        font-size: 1.1rem;
+    }
+
+    .filter-header h5 {
+        margin: 0;
+        font-size: 1rem;
+    }
+
+    .filter-form-tt {
+        margin: 0;
+    }
+
+    .filter-grid {
+        display: grid;
+        grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
+        gap: 1.25rem;
+    }
+
+    .filter-group {
+        display: flex;
+        flex-direction: column;
+        gap: 0.5rem;
+    }
+
+    .filter-label {
+        font-weight: 600;
+        color: rgba(0, 0, 0, 0.7);
+        font-size: 0.9rem;
+    }
+
+    [data-bs-theme="dark"] .filter-label {
+        color: rgba(255, 255, 255, 0.8);
+    }
+
+    .filter-select {
+        padding: 0.75rem 1rem;
+        background: linear-gradient(135deg, rgba(78, 115, 223, 0.08) 0%, rgba(28, 200, 138, 0.04) 100%);
+        border: 1px solid rgba(78, 115, 223, 0.15);
+        border-radius: 10px;
+        color: rgba(0, 0, 0, 0.8);
+        font-weight: 500;
+        transition: all 0.3s ease;
+        cursor: pointer;
+    }
+
+    [data-bs-theme="dark"] .filter-select {
+        background: linear-gradient(135deg, rgba(78, 115, 223, 0.12) 0%, rgba(28, 200, 138, 0.08) 100%);
+        color: rgba(255, 255, 255, 0.9);
+    }
+
+    .filter-select:hover {
+        border-color: rgba(78, 115, 223, 0.25);
+        box-shadow: 0 4px 12px rgba(78, 115, 223, 0.1);
+    }
+
+    .filter-select:focus {
+        outline: none;
+        border-color: rgba(78, 115, 223, 0.4);
+        box-shadow: 0 6px 16px rgba(78, 115, 223, 0.15);
+    }
+
+    /* ====== Class Header Info ====== */
+    .class-header-info {
+        background: linear-gradient(135deg, rgba(78, 115, 223, 0.08) 0%, rgba(28, 200, 138, 0.04) 100%);
+        border: 1px solid rgba(78, 115, 223, 0.12);
+        border-radius: 20px;
+        backdrop-filter: blur(10px);
+        padding: 2rem;
+        margin-bottom: 2rem;
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        animation: fadeInUp 0.6s ease 0.1s forwards;
+        opacity: 0;
+    }
+
+    .class-title h2 {
+        margin: 0 0 0.5rem 0;
+        font-size: 1.75rem;
+        font-weight: 700;
+        background: linear-gradient(135deg, #4e73df 0%, #1cc88a 100%);
+        background-clip: text;
+        -webkit-background-clip: text;
+        -webkit-text-fill-color: transparent;
+    }
+
+    .class-title .section-badge {
+        background: linear-gradient(135deg, rgba(78, 115, 223, 0.15), rgba(28, 200, 138, 0.1));
+        padding: 0.35rem 0.8rem;
+        border-radius: 12px;
+        font-size: 0.85rem;
+        font-weight: 600;
+        color: #4e73df;
+        -webkit-text-fill-color: #4e73df;
+    }
+
+    .class-subtitle {
+        margin: 0;
+        color: rgba(0, 0, 0, 0.5);
+        font-size: 0.9rem;
+    }
+
+    [data-bs-theme="dark"] .class-subtitle {
+        color: rgba(255, 255, 255, 0.6);
+    }
+
+    .class-meta {
+        display: flex;
+        gap: 2rem;
+        flex-wrap: wrap;
+        justify-content: flex-end;
+    }
+
+    .meta-item {
+        display: flex;
+        align-items: center;
+        gap: 0.75rem;
+    }
+
+    .meta-item i {
+        color: #4e73df;
+        font-size: 1.25rem;
+        width: 32px;
+        height: 32px;
+        background: rgba(78, 115, 223, 0.1);
+        border-radius: 8px;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+    }
+
+    .meta-label {
+        display: block;
+        color: rgba(0, 0, 0, 0.5);
+        font-size: 0.8rem;
+        font-weight: 600;
+    }
+
+    [data-bs-theme="dark"] .meta-label {
+        color: rgba(255, 255, 255, 0.6);
+    }
+
+    .meta-value {
+        display: block;
+        color: rgba(0, 0, 0, 0.8);
+        font-weight: 600;
+        font-size: 0.95rem;
+    }
+
+    [data-bs-theme="dark"] .meta-value {
+        color: rgba(255, 255, 255, 0.9);
+    }
+
+    /* ====== Timetable Grid ====== */
+    .timetable-wrapper {
+        animation: fadeInUp 0.6s ease 0.2s forwards;
+        opacity: 0;
+    }
+
+    .timetable-grid {
+        background: linear-gradient(135deg, rgba(255, 255, 255, 0.08) 0%, rgba(255, 255, 255, 0.02) 100%);
+        border: 1px solid rgba(78, 115, 223, 0.12);
+        border-radius: 16px;
+        backdrop-filter: blur(10px);
+        padding: 0;
+        margin-bottom: 2rem;
+        display: table;
+        width: 100%;
+        border-collapse: collapse;
+        overflow-x: auto;
+    }
+
+    .timetable-period-header, .timetable-row {
+        display: table-row;
+    }
+
+    .day-slot, .period-slot {
+        padding: 1.25rem 1rem;
+        text-align: center;
+        display: table-cell;
+        vertical-align: middle;
+        gap: 0.25rem;
+        min-height: 100px;
+        border-right: 1px solid rgba(78, 115, 223, 0.08);
+        border-bottom: 1px solid rgba(78, 115, 223, 0.08);
+        transition: all 0.3s ease;
+        width: 140px;
+    }
+
+    .day-slot {
+        width: 120px;
+        background: linear-gradient(135deg, rgba(78, 115, 223, 0.04), rgba(28, 200, 138, 0.02));
+        position: sticky;
+        left: 0;
+        z-index: 10;
+        min-width: 120px;
+    }
+
+    .timetable-period-header .period-slot {
+        background: linear-gradient(135deg, rgba(78, 115, 223, 0.08), rgba(28, 200, 138, 0.04));
+        font-weight: 600;
+        color: #4e73df;
+        border-bottom: 2px solid rgba(78, 115, 223, 0.15);
+        position: sticky;
+        top: 0;
+        z-index: 11;
+    }
+
+    .timetable-period-header .day-slot {
+        background: linear-gradient(135deg, rgba(78, 115, 223, 0.08), rgba(28, 200, 138, 0.04));
+        font-weight: 600;
+        color: #4e73df;
+        border-bottom: 2px solid rgba(78, 115, 223, 0.15);
+        position: sticky;
+        top: 0;
+        left: 0;
+        z-index: 12;
+    }
+
+    .period-num {
+        font-size: 0.9rem;
+        font-weight: 700;
+        color: #4e73df;
+    }
+
+    .period-time {
+        font-size: 0.75rem;
+        color: rgba(0, 0, 0, 0.5);
+        font-weight: 500;
+    }
+
+    [data-bs-theme="dark"] .period-time {
+        color: rgba(255, 255, 255, 0.6);
+    }
+
+    .day-name {
+        font-weight: 700;
+        color: rgba(0, 0, 0, 0.8);
+        font-size: 0.95rem;
+    }
+
+    [data-bs-theme="dark"] .day-name {
+        color: rgba(255, 255, 255, 0.9);
+    }
+
+    .day-date {
+        font-size: 0.8rem;
+        color: rgba(0, 0, 0, 0.5);
+    }
+
+    [data-bs-theme="dark"] .day-date {
+        color: rgba(255, 255, 255, 0.6);
+    }
+
+    .timetable-entry, .period-empty {
+        padding: 0.75rem;
+        border-radius: 8px;
+        font-size: 0.85rem;
+        transition: all 0.3s cubic-bezier(0.34, 1.56, 0.64, 1);
+    }
+
+    .timetable-entry {
+        display: flex;
+        flex-direction: column;
+        justify-content: center;
+        align-items: center;
+        gap: 0.35rem;
+        cursor: pointer;
+        transform: scale(0.95);
+    }
+
+    .timetable-entry:hover {
+        transform: scale(1.05);
+        box-shadow: 0 8px 20px rgba(78, 115, 223, 0.2);
+    }
+
+    .timetable-entry.core-subject {
+        background: linear-gradient(135deg, rgba(78, 115, 223, 0.15), rgba(78, 115, 223, 0.08));
+        border-left: 3px solid #4e73df;
+        color: #4e73df;
+    }
+
+    .timetable-entry.elective-subject {
+        background: linear-gradient(135deg, rgba(255, 193, 7, 0.15), rgba(255, 193, 7, 0.08));
+        border-left: 3px solid #ffc107;
+        color: #ff9800;
+    }
+
+    .entry-subject {
+        font-weight: 700;
+        font-size: 0.9rem;
+    }
+
+    .entry-teacher, .entry-room {
+        font-size: 0.75rem;
+        opacity: 0.8;
+    }
+
+    .period-empty {
+        color: rgba(0, 0, 0, 0.3);
+        font-weight: 500;
+    }
+
+    /* ====== Legend ====== */
+    .timetable-legend {
+        background: linear-gradient(135deg, rgba(255, 255, 255, 0.08) 0%, rgba(255, 255, 255, 0.02) 100%);
+        border: 1px solid rgba(78, 115, 223, 0.12);
+        border-radius: 16px;
+        backdrop-filter: blur(10px);
+        padding: 1.5rem;
+        margin-bottom: 2rem;
+        animation: fadeInUp 0.6s ease 0.3s forwards;
+        opacity: 0;
+    }
+
+    .legend-title {
+        display: flex;
+        align-items: center;
+        gap: 0.5rem;
+        font-weight: 600;
+        color: #4e73df;
+        margin-bottom: 1rem;
+    }
+
+    .legend-items {
+        display: flex;
+        flex-wrap: wrap;
+        gap: 1.5rem;
+    }
+
+    .legend-item {
+        display: flex;
+        align-items: center;
+        gap: 0.75rem;
+        padding: 0.6rem 1rem;
+        border-radius: 8px;
+        font-size: 0.9rem;
+        font-weight: 500;
+    }
+
+    .legend-item::before {
+        content: '';
+        width: 24px;
+        height: 24px;
+        border-radius: 4px;
+        flex-shrink: 0;
+    }
+
+    .legend-item.core-subject::before {
+        background: linear-gradient(135deg, rgba(78, 115, 223, 0.15), rgba(78, 115, 223, 0.08));
+        border-left: 3px solid #4e73df;
+    }
+
+    .legend-item.elective-subject::before {
+        background: linear-gradient(135deg, rgba(255, 193, 7, 0.15), rgba(255, 193, 7, 0.08));
+        border-left: 3px solid #ffc107;
+    }
+
+    .legend-item.practical-subject::before {
+        background: linear-gradient(135deg, rgba(76, 175, 80, 0.15), rgba(76, 175, 80, 0.08));
+        border-left: 3px solid #4caf50;
+    }
+
+    .legend-item.break-subject::before {
+        background: linear-gradient(135deg, rgba(33, 150, 243, 0.15), rgba(33, 150, 243, 0.08));
+        border-left: 3px solid #2196f3;
+    }
+
+    /* ====== Teachers Schedule ====== */
+    .teachers-schedule-section {
+        animation: fadeInUp 0.6s ease 0.4s forwards;
+        opacity: 0;
+    }
+
+    .section-header {
+        display: flex;
+        align-items: center;
+        gap: 0.75rem;
+        margin-bottom: 1.5rem;
+        font-weight: 600;
+    }
+
+    .section-header i {
+        color: #4e73df;
+        font-size: 1.25rem;
+    }
+
+    .section-header h3 {
+        margin: 0;
+        color: rgba(0, 0, 0, 0.8);
+        font-size: 1.25rem;
+    }
+
+    [data-bs-theme="dark"] .section-header h3 {
+        color: rgba(255, 255, 255, 0.9);
+    }
+
+    .teachers-grid {
+        display: grid;
+        grid-template-columns: repeat(auto-fill, minmax(280px, 1fr));
+        gap: 1.5rem;
+    }
+
+    .teacher-schedule-card {
+        background: linear-gradient(135deg, rgba(78, 115, 223, 0.08) 0%, rgba(28, 200, 138, 0.04) 100%);
+        border: 1px solid rgba(78, 115, 223, 0.12);
+        border-radius: 16px;
+        backdrop-filter: blur(10px);
+        padding: 1.5rem;
+        transition: all 0.3s ease;
+        animation: fadeInUp 0.6s ease forwards;
+        opacity: 0;
+    }
+
+    .teacher-schedule-card:nth-child(1) { animation-delay: 0.45s; }
+    .teacher-schedule-card:nth-child(2) { animation-delay: 0.5s; }
+    .teacher-schedule-card:nth-child(3) { animation-delay: 0.55s; }
+    .teacher-schedule-card:nth-child(n+4) { animation-delay: 0.6s; }
+
+    .teacher-schedule-card:hover {
+        transform: translateY(-4px);
+        box-shadow: 0 12px 28px rgba(78, 115, 223, 0.2);
+    }
+
+    .card-designation {
+        display: inline-block;
+        padding: 0.35rem 0.8rem;
+        background: linear-gradient(135deg, rgba(78, 115, 223, 0.15), rgba(28, 200, 138, 0.1));
+        color: #4e73df;
+        border-radius: 8px;
+        font-size: 0.75rem;
+        font-weight: 700;
+        margin-bottom: 1rem;
+    }
+
+    .card-teacher-info {
+        display: flex;
+        align-items: center;
+        gap: 1rem;
+        margin-bottom: 1.5rem;
+        padding-bottom: 1.5rem;
+        border-bottom: 1px solid rgba(78, 115, 223, 0.1);
+    }
+
+    .teacher-avatar {
+        width: 56px;
+        height: 56px;
+        border-radius: 12px;
+        object-fit: cover;
+        border: 2px solid rgba(78, 115, 223, 0.15);
+    }
+
+    .teacher-avatar-placeholder {
+        width: 56px;
+        height: 56px;
+        border-radius: 12px;
+        background: linear-gradient(135deg, rgba(78, 115, 223, 0.15), rgba(28, 200, 138, 0.1));
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        color: #4e73df;
+        font-size: 1.5rem;
+        border: 2px solid rgba(78, 115, 223, 0.15);
+    }
+
+    .teacher-details h6 {
+        margin: 0 0 0.25rem 0;
+        color: rgba(0, 0, 0, 0.8);
+        font-weight: 700;
+    }
+
+    [data-bs-theme="dark"] .teacher-details h6 {
+        color: rgba(255, 255, 255, 0.9);
+    }
+
+    .teacher-details p {
+        margin: 0;
+        color: rgba(0, 0, 0, 0.5);
+        font-size: 0.85rem;
+    }
+
+    [data-bs-theme="dark"] .teacher-details p {
+        color: rgba(255, 255, 255, 0.6);
+    }
+
+    .schedule-row {
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        padding: 0.6rem 0;
+        border-bottom: 1px solid rgba(78, 115, 223, 0.06);
+    }
+
+    .schedule-row:last-child {
+        border-bottom: none;
+    }
+
+    .schedule-label {
+        color: rgba(0, 0, 0, 0.5);
+        font-size: 0.85rem;
+        font-weight: 500;
+        display: flex;
+        align-items: center;
+        gap: 0.4rem;
+    }
+
+    [data-bs-theme="dark"] .schedule-label {
+        color: rgba(255, 255, 255, 0.6);
+    }
+
+    .schedule-label i {
+        color: #4e73df;
+        width: 16px;
+    }
+
+    .schedule-value {
+        color: rgba(0, 0, 0, 0.7);
+        font-weight: 600;
+        font-size: 0.9rem;
+    }
+
+    [data-bs-theme="dark"] .schedule-value {
+        color: rgba(255, 255, 255, 0.8);
+    }
+
+    /* ====== Empty State ====== */
+    .empty-state {
+        background: linear-gradient(135deg, rgba(255, 255, 255, 0.08) 0%, rgba(255, 255, 255, 0.02) 100%);
+        border: 1px solid rgba(78, 115, 223, 0.12);
+        border-radius: 20px;
+        backdrop-filter: blur(10px);
+        padding: 4rem 2rem;
+        text-align: center;
+        animation: slideDown 0.6s ease;
+    }
+
+    .empty-icon {
+        font-size: 3rem;
+        color: rgba(78, 115, 223, 0.2);
+        margin-bottom: 1.5rem;
+    }
+
+    .empty-state h3 {
+        color: rgba(0, 0, 0, 0.8);
+        margin-bottom: 0.5rem;
+    }
+
+    [data-bs-theme="dark"] .empty-state h3 {
+        color: rgba(255, 255, 255, 0.9);
+    }
+
+    .empty-state p {
+        color: rgba(0, 0, 0, 0.5);
+    }
+
+    [data-bs-theme="dark"] .empty-state p {
+        color: rgba(255, 255, 255, 0.6);
+    }
+
+    /* ====== Page Action Buttons ====== */
+    .action-buttons {
+        display: flex;
+        gap: 0.75rem;
+        align-items: center;
+    }
+
+    .btn-primary-action {
+        padding: 0.65rem 1.25rem;
+        border-radius: 10px;
+        background: linear-gradient(135deg, #4e73df 0%, #1cc88a 100%);
+        border: 1px solid rgba(78, 115, 223, 0.2);
+        color: white;
+        font-weight: 600;
+        font-size: 0.95rem;
+        display: inline-flex;
+        align-items: center;
+        justify-content: center;
+        cursor: pointer;
+        transition: all 0.3s ease;
+        text-decoration: none;
+    }
+
+    .btn-primary-action:hover {
+        background: linear-gradient(135deg, #3d5cd1 0%, #18a876 100%);
+        transform: translateY(-2px);
+        box-shadow: 0 8px 20px rgba(78, 115, 223, 0.25);
+        color: white;
+    }
+
+    .btn-primary-action:active {
+        transform: translateY(0);
+    }
+
+    .btn-icon-action {
+        width: 40px;
+        height: 40px;
+        border-radius: 10px;
+        background: linear-gradient(135deg, rgba(78, 115, 223, 0.1), rgba(28, 200, 138, 0.08));
+        border: 1px solid rgba(78, 115, 223, 0.15);
+        color: #4e73df;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        cursor: pointer;
+        transition: all 0.3s ease;
+        font-size: 1rem;
+    }
+
+    .btn-icon-action:hover {
+        background: linear-gradient(135deg, rgba(78, 115, 223, 0.15), rgba(28, 200, 138, 0.12));
+        border-color: rgba(78, 115, 223, 0.25);
+        transform: translateY(-2px);
+    }
+
+    .dropdown-menu-items {
+        position: absolute;
+        top: 100%;
+        right: 0;
+        background: linear-gradient(135deg, rgba(255, 255, 255, 0.95), rgba(255, 255, 255, 0.9));
+        border: 1px solid rgba(78, 115, 223, 0.1);
+        border-radius: 12px;
+        backdrop-filter: blur(10px);
+        list-style: none;
+        padding: 0.5rem 0;
+        margin: 0.5rem 0 0 0;
+        min-width: 180px;
+        display: none;
+        z-index: 1000;
+    }
+
+    .dropdown-menu-custom.show .dropdown-menu-items {
+        display: block;
+    }
+
+    .dropdown-menu-items li a {
+        display: flex;
+        align-items: center;
+        padding: 0.75rem 1rem;
+        color: rgba(0, 0, 0, 0.7);
+        text-decoration: none;
+        transition: all 0.2s ease;
+    }
+
+    .dropdown-menu-items li a:hover {
+        background: rgba(78, 115, 223, 0.08);
+        color: #4e73df;
+    }
+
+    /* ====== Animations ====== */
+    @keyframes slideDown {
+        from {
+            opacity: 0;
+            transform: translateY(-20px);
+        }
+        to {
+            opacity: 1;
+            transform: translateY(0);
+        }
+    }
+
+    @keyframes fadeInUp {
+        from {
+            opacity: 0;
+            transform: translateY(20px);
+        }
+        to {
+            opacity: 1;
+            transform: translateY(0);
+        }
+    }
+
+    /* ====== Responsive Design ====== */
+    @media (max-width: 1024px) {
+        .day-slot, .period-slot {
+            width: 120px;
+            padding: 1rem 0.75rem;
+            min-height: 90px;
+            font-size: 0.85rem;
+        }
+
+        .class-header-info {
+            flex-direction: column;
+            gap: 1.5rem;
+            text-align: center;
+        }
+
+        .class-meta {
+            justify-content: center;
+        }
+    }
+
+    @media (max-width: 768px) {
+        .filter-grid {
+            grid-template-columns: 1fr;
+        }
+
+        .class-header-info {
+            padding: 1.5rem;
+        }
+
+        .class-meta {
+            flex-direction: column;
+            gap: 1rem;
+            width: 100%;
+        }
+
+        .day-slot, .period-slot {
+            width: 100px;
+            padding: 0.75rem 0.5rem;
+            min-height: 80px;
+            font-size: 0.8rem;
+        }
+
+        .teachers-grid {
+            grid-template-columns: 1fr;
+        }
+
+        .legend-items {
+            flex-direction: column;
+            gap: 0.75rem;
+        }
+
+        .legend-item {
+            width: 100%;
+        }
+    }
+
+    @media (max-width: 480px) {
+        .timetable-container {
+            margin: 0 -1rem;
+        }
+
+        .filter-card-tt,
+        .class-header-info,
+        .timetable-legend,
+        .empty-state {
+            border-radius: 12px;
+            margin-left: 1rem;
+            margin-right: 1rem;
+        }
+
+        .class-title h2 {
+            font-size: 1.25rem;
+        }
+
+        .day-slot, .period-slot {
+            width: 90px;
+            padding: 0.5rem 0.25rem;
+            min-height: 70px;
+            font-size: 0.75rem;
+        }
+
+        .period-num {
+            font-size: 0.8rem;
+        }
+
+        .period-time {
+            font-size: 0.65rem;
+        }
+
+        .day-name {
+            font-size: 0.85rem;
+        }
+
+        .day-date {
+            font-size: 0.75rem;
+        }
+
+        .entry-subject {
+            font-size: 0.75rem;
+        }
+
+        .entry-teacher, .entry-room {
+            font-size: 0.7rem;
+        }
+    }
+
+    /* ====== Print Styles ====== */
+    @media print {
+        /* Hide UI Elements */
+        .sidebar,
+        .navbar,
+        .breadcrumb,
+        .action-buttons,
+        .filter-card-tt,
+        .timetable-legend,
+        .teachers-schedule-section,
+        .empty-state {
+            display: none !important;
+        }
+
+        /* Page Setup */
+        @page {
+            size: A3 landscape;
+            margin: 10mm;
+        }
+
+        body {
+            margin: 0;
+            padding: 0;
+            background: white;
+            color: black;
+        }
+
+        .timetable-container {
+            max-width: 100%;
+            margin: 0;
+            animation: none;
+        }
+
+        /* Class Header */
+        .class-header-info {
+            background: white;
+            border: 1px solid #000;
+            border-radius: 0;
+            backdrop-filter: none;
+            padding: 1.5rem;
+            margin-bottom: 1.5rem;
+            display: block;
+            animation: none;
+            page-break-after: avoid;
+        }
+
+        .class-header-info {
+            flex-direction: column;
+            gap: 1rem;
+        }
+
+        .class-title h2 {
+            margin: 0 0 0.5rem 0;
+            font-size: 1.5rem;
+            color: black;
+            -webkit-text-fill-color: black;
+            background: none;
+            background-clip: unset;
+            -webkit-background-clip: unset;
+        }
+
+        .class-title .section-badge {
+            background: #f0f0f0;
+            color: black;
+            -webkit-text-fill-color: black;
+            border: 1px solid #333;
+        }
+
+        .class-subtitle {
+            color: black;
+        }
+
+        .class-meta {
+            display: flex;
+            gap: 2rem;
+            flex-wrap: wrap;
+            justify-content: flex-start;
+        }
+
+        .meta-item {
+            display: flex;
+            align-items: center;
+            gap: 0.5rem;
+        }
+
+        .meta-item i {
+            color: #000;
+            background: #f0f0f0;
+            border: 1px solid #333;
+        }
+
+        .meta-label {
+            color: #333;
+        }
+
+        .meta-value {
+            color: black;
+        }
+
+        /* Timetable Wrapper */
+        .timetable-wrapper {
+            animation: none;
+            opacity: 1 !important;
+            page-break-inside: avoid;
+        }
+
+        /* Timetable Grid */
+        .timetable-grid {
+            background: white;
+            border: 2px solid #000;
+            border-radius: 0;
+            backdrop-filter: none;
+            padding: 0;
+            margin-bottom: 0;
+            display: table;
+            width: 100%;
+            border-collapse: collapse;
+            page-break-inside: avoid;
+            box-shadow: none;
+        }
+
+        .timetable-period-header, .timetable-row {
+            display: table-row;
+            page-break-inside: avoid;
+        }
+
+        .day-slot, .period-slot {
+            padding: 1rem;
+            text-align: center;
+            display: table-cell;
+            vertical-align: middle;
+            min-height: 100px;
+            border: 1px solid #000;
+            transition: none;
+            width: 140px;
+            page-break-inside: avoid;
+            background: white;
+            color: black;
+        }
+
+        .day-slot {
+            width: 120px;
+            background: #f5f5f5;
+            position: static;
+            z-index: auto;
+            min-width: 120px;
+            font-weight: bold;
+        }
+
+        .timetable-period-header .period-slot {
+            background: #e8e8e8;
+            font-weight: bold;
+            color: black;
+            border: 1px solid #000;
+            position: static;
+            z-index: auto;
+        }
+
+        .timetable-period-header .day-slot {
+            background: #e8e8e8;
+            font-weight: bold;
+            color: black;
+            border: 1px solid #000;
+            position: static;
+            z-index: auto;
+        }
+
+        .period-num {
+            font-size: 0.9rem;
+            font-weight: bold;
+            color: black;
+        }
+
+        .period-time {
+            font-size: 0.75rem;
+            color: black;
+            font-weight: normal;
+        }
+
+        .day-name {
+            font-weight: bold;
+            color: black;
+            font-size: 0.95rem;
+        }
+
+        .day-date {
+            font-size: 0.8rem;
+            color: black;
+        }
+
+        .timetable-entry, .period-empty {
+            padding: 0.75rem;
+            border-radius: 0;
+            font-size: 0.85rem;
+            transition: none;
+            page-break-inside: avoid;
+        }
+
+        .timetable-entry {
+            display: flex;
+            flex-direction: column;
+            justify-content: center;
+            align-items: center;
+            gap: 0.35rem;
+            cursor: auto;
+            transform: none;
+            background: white;
+            border-left: 3px solid #000;
+            color: black;
+        }
+
+        .timetable-entry:hover {
+            transform: none;
+            box-shadow: none;
+        }
+
+        .timetable-entry.core-subject {
+            background: #f9f9f9;
+            border-left: 3px solid #666;
+            color: black;
+        }
+
+        .timetable-entry.elective-subject {
+            background: #fefef0;
+            border-left: 3px solid #999;
+            color: black;
+        }
+
+        .entry-subject {
+            font-weight: bold;
+            font-size: 0.9rem;
+            color: black;
+        }
+
+        .entry-teacher, .entry-room {
+            font-size: 0.75rem;
+            color: black;
+            opacity: 1;
+        }
+
+        .period-empty {
+            color: black;
+            font-weight: normal;
+        }
+
+        /* Print specific page breaks */
+        .class-header-info {
+            orphans: 3;
+            widows: 3;
+        }
+
+        .timetable-wrapper {
+            orphans: 3;
+            widows: 3;
+        }
+
+        /* Ensure no background colors interfere */
+        * {
+            background-attachment: scroll !important;
+        }
+
+        /* Print title */
+        body::before {
+            content: "Class Timetable - {{ selected_class.name }} (Section {{ selected_class.section }})";
+            display: block;
+            font-size: 1.2rem;
+            font-weight: bold;
+            margin-bottom: 1rem;
+            color: black;
+        }
+    }
+</style>
+{% endblock %}

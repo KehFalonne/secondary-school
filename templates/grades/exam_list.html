@@ -1,0 +1,1595 @@
+{% extends 'base.html' %}
+
+{% block title %}Exam Management Portal{% endblock %}
+{% block page_title %}Examination Control Center{% endblock %}
+
+{% block breadcrumb %}
+<li class="breadcrumb-item active"><i class="fas fa-list-check me-1"></i>Exams Portal</li>
+{% endblock %}
+
+{% block page_actions %}
+<a href="{% url 'exam_create' %}" class="btn-premium-create">
+    <i class="fas fa-plus-circle"></i>
+    <span>Create Exam</span>
+</a>
+{% endblock %}
+
+{% block content %}
+<div class="exam-portal-container">
+    <!-- Animated Background -->
+    <div class="portal-animated-bg"></div>
+
+    <!-- Header Stats Section -->
+    <div class="header-stats-section">
+        <div class="stats-grid">
+            <div class="stat-card pending-exams">
+                <div class="stat-icon"><i class="fas fa-hourglass-start"></i></div>
+                <div class="stat-content">
+                    <span class="stat-label">Pending Exams</span>
+                    <span class="stat-value">{% with total_exams=exams|length %}{{ total_exams }}{% endwith %}</span>
+                </div>
+                <div class="stat-glow"></div>
+            </div>
+            <div class="stat-card grading-progress">
+                <div class="stat-icon"><i class="fas fa-tasks"></i></div>
+                <div class="stat-content">
+                    <span class="stat-label">Grading Progress</span>
+                    <span class="stat-value">
+                        {% with total_graded=exams|length %}
+                            {% if total_graded > 0 %}75%{% else %}0%{% endif %}
+                        {% endwith %}
+                    </span>
+                </div>
+                <div class="stat-glow"></div>
+            </div>
+            <div class="stat-card upcoming">
+                <div class="stat-icon"><i class="fas fa-calendar-check"></i></div>
+                <div class="stat-content">
+                    <span class="stat-label">Upcoming Tests</span>
+                    <span class="stat-value">{% with upcoming_count=upcoming_exams|length %}{{ upcoming_count }}{% endwith %}</span>
+                </div>
+                <div class="stat-glow"></div>
+            </div>
+            <div class="stat-card completion">
+                <div class="stat-icon"><i class="fas fa-check-double"></i></div>
+                <div class="stat-content">
+                    <span class="stat-label">Total Recorded</span>
+                    <span class="stat-value">{% with total_exams=exams|length %}{{ total_exams }}{% endwith %}</span>
+                </div>
+                <div class="stat-glow"></div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Advanced Filter & Search Section -->
+    <div class="premium-filter-section">
+        <div class="filter-card">
+            <div class="filter-header">
+                <h3 class="filter-title">
+                    <i class="fas fa-sliders-h"></i> Intelligent Filters
+                </h3>
+                <span class="filter-toggle" id="filterToggle">
+                    <i class="fas fa-chevron-down"></i>
+                </span>
+            </div>
+            
+            <form method="get" id="filterForm" class="filter-form">
+                <div class="filter-grid">
+                    <div class="filter-group">
+                        <label class="filter-label">
+                            <i class="fas fa-graduation-cap"></i> Exam Type
+                        </label>
+                        <select name="exam_type" class="filter-select">
+                            <option value="">All Types</option>
+                            <option value="Unit Test" {% if exam_type_filter == 'Unit Test' %}selected{% endif %}>Unit Test</option>
+                            <option value="Midterm" {% if exam_type_filter == 'Midterm' %}selected{% endif %}>Midterm</option>
+                            <option value="Final" {% if exam_type_filter == 'Final' %}selected{% endif %}>Final</option>
+                            <option value="Quiz" {% if exam_type_filter == 'Quiz' %}selected{% endif %}>Quiz</option>
+                            <option value="Assignment" {% if exam_type_filter == 'Assignment' %}selected{% endif %}>Assignment</option>
+                            <option value="Project" {% if exam_type_filter == 'Project' %}selected{% endif %}>Project</option>
+                        </select>
+                    </div>
+
+                    <div class="filter-group">
+                        <label class="filter-label">
+                            <i class="fas fa-calendar"></i> Term
+                        </label>
+                        <select name="term" class="filter-select">
+                            <option value="">All Terms</option>
+                            <option value="1" {% if term_filter == '1' %}selected{% endif %}>First Term</option>
+                            <option value="2" {% if term_filter == '2' %}selected{% endif %}>Second Term</option>
+                            <option value="3" {% if term_filter == '3' %}selected{% endif %}>Third Term</option>
+                            <option value="Annual" {% if term_filter == 'Annual' %}selected{% endif %}>Annual</option>
+                        </select>
+                    </div>
+
+                    <div class="filter-group">
+                        <label class="filter-label">
+                            <i class="fas fa-building"></i> Class
+                        </label>
+                        <select name="class_id" class="filter-select">
+                            <option value="">All Classes</option>
+                            {% for class in classes %}
+                            <option value="{{ class.id }}" {% if class_filter|add:0 == class.id %}selected{% endif %}>{{ class.name }} - {{ class.section }}</option>
+                            {% endfor %}
+                        </select>
+                    </div>
+
+                    <div class="filter-group">
+                        <label class="filter-label">
+                            <i class="fas fa-book"></i> Subject
+                        </label>
+                        <select name="subject_id" class="filter-select">
+                            <option value="">All Subjects</option>
+                            {% for subject in subjects %}
+                            <option value="{{ subject.id }}" {% if subject_filter|add:0 == subject.id %}selected{% endif %}>{{ subject.name }}</option>
+                            {% endfor %}
+                        </select>
+                    </div>
+
+                    <div class="filter-group">
+                        <label class="filter-label">
+                            <i class="fas fa-search"></i> Search
+                        </label>
+                        <input type="text" name="search" placeholder="Search exam name..." class="filter-input" value="{{ search_query|default:'' }}">
+                    </div>
+                </div>
+
+                <div class="filter-actions">
+                    <button type="submit" class="btn-filter-apply">
+                        <i class="fas fa-filter"></i> Apply Filters
+                    </button>
+                    <a href="{% url 'exam_list' %}" class="btn-filter-reset">
+                        <i class="fas fa-redo"></i> Reset
+                    </a>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    <!-- Premium Exams Grid View -->
+    <div class="exams-section">
+        <div class="section-header">
+            <h2 class="section-title">
+                <i class="fas fa-list-check"></i> Examination Records
+                <span class="exam-count">{{ page_obj.paginator.count|default:exams|length }} Exams</span>
+            </h2>
+        </div>
+
+        {% if exams %}
+        <div class="exams-grid">
+            {% for exam in exams %}
+            <div class="exam-card" data-exam-id="{{ exam.id }}">
+                <!-- Card Header with Type Badge -->
+                <div class="exam-card-header">
+                    <div class="exam-badge-type">
+                        {% if exam.exam_type == 'Final' %}
+                            <span class="badge-final">{{ exam.exam_type }}</span>
+                        {% elif exam.exam_type == 'Midterm' %}
+                            <span class="badge-midterm">{{ exam.exam_type }}</span>
+                        {% elif exam.exam_type == 'Unit Test' %}
+                            <span class="badge-unit">{{ exam.exam_type }}</span>
+                        {% else %}
+                            <span class="badge-other">{{ exam.exam_type }}</span>
+                        {% endif %}
+                    </div>
+                    <div class="exam-term-badge">{{ exam.get_term_display }}</div>
+                </div>
+
+                <!-- Card Content -->
+                <div class="exam-card-content">
+                    <h3 class="exam-name">{{ exam.name }}</h3>
+                    
+                    <!-- Subject and Class Info -->
+                    <div class="exam-info-pair">
+                        <div class="info-box">
+                            <span class="info-icon"><i class="fas fa-book"></i></span>
+                            <div>
+                                <span class="info-label">Subject</span>
+                                <span class="info-text">{{ exam.subject.name }}</span>
+                            </div>
+                        </div>
+                        <div class="info-box">
+                            <span class="info-icon"><i class="fas fa-users"></i></span>
+                            <div>
+                                <span class="info-label">Class</span>
+                                <span class="info-text">{{ exam.class_name.name }}</span>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Marks Information -->
+                    <div class="exam-marks-grid">
+                        <div class="marks-item">
+                            <span class="marks-label">Total Marks</span>
+                            <span class="marks-value total">{{ exam.total_marks }}</span>
+                        </div>
+                        <div class="marks-item">
+                            <span class="marks-label">Pass Marks</span>
+                            <span class="marks-value pass">{{ exam.pass_marks }}</span>
+                        </div>
+                        <div class="marks-item">
+                            <span class="marks-label">Date</span>
+                            <span class="marks-value">{{ exam.date_conducted|date:"M d" }}</span>
+                        </div>
+                    </div>
+
+                    <!-- Grading Progress -->
+                    <div class="grading-progress-section">
+                        <div class="progress-header">
+                            <span class="progress-label">Grading Progress</span>
+                            <span class="progress-ratio">{{ exam.students_graded }}/{{ exam.total_students }}</span>
+                        </div>
+                        <div class="progress-bar-container">
+                            <div class="progress-bar-fill" 
+                                 style="width: {% widthratio exam.students_graded exam.total_students 100 %}%">
+                            </div>
+                            <span class="progress-percent">
+                                {% widthratio exam.students_graded exam.total_students 100 %}%
+                            </span>
+                        </div>
+                    </div>
+
+                    <!-- Pass Percentage -->
+                    <div class="pass-percentage-box">
+                        <div class="pass-icon">
+                            {% if exam.pass_percentage >= 75 %}
+                                <i class="fas fa-thumbs-up"></i>
+                            {% elif exam.pass_percentage >= 50 %}
+                                <i class="fas fa-exclamation-circle"></i>
+                            {% else %}
+                                <i class="fas fa-arrow-trending-down"></i>
+                            {% endif %}
+                        </div>
+                        <div class="pass-info">
+                            <span class="pass-label">Pass Rate</span>
+                            <span class="pass-value {% if exam.pass_percentage >= 75 %}excellent{% elif exam.pass_percentage >= 50 %}moderate{% else %}low{% endif %}">
+                                {{ exam.pass_percentage|floatformat:1 }}%
+                            </span>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Card Footer with Actions -->
+                <div class="exam-card-actions">
+                    <a href="{% url 'exam_detail' exam.id %}" class="action-btn view-btn" title="View Details">
+                        <i class="fas fa-eye"></i>
+                        <span>View</span>
+                    </a>
+                    <a href="{% url 'grade_exam' exam.id %}" class="action-btn grade-btn" title="Enter Grades">
+                        <i class="fas fa-pencil-alt"></i>
+                        <span>Grade</span>
+                    </a>
+                    <a href="{% url 'exam_update' exam.id %}" class="action-btn edit-btn" title="Edit">
+                        <i class="fas fa-edit"></i>
+                        <span>Edit</span>
+                    </a>
+                    <a href="{% url 'exam_delete' exam.id %}" class="action-btn delete-btn" title="Delete" 
+                       onclick="return confirm('Are you sure? This cannot be undone.')">
+                        <i class="fas fa-trash-alt"></i>
+                        <span>Delete</span>
+                    </a>
+                </div>
+            </div>
+            {% endfor %}
+        </div>
+
+        <!-- Premium Pagination -->
+        {% if page_obj.has_other_pages %}
+        <div class="premium-pagination">
+            <div class="pagination-info">
+                Showing page <strong>{{ page_obj.number }}</strong> of <strong>{{ page_obj.paginator.num_pages }}</strong>
+            </div>
+            <div class="pagination-controls">
+                {% if page_obj.has_previous %}
+                <a href="?page=1&exam_type={{ exam_type_filter }}&term={{ term_filter }}&class_id={{ class_filter }}&subject_id={{ subject_filter }}&search={{ search_query }}" class="pag-btn">
+                    <i class="fas fa-chevron-double-left"></i>
+                </a>
+                <a href="?page={{ page_obj.previous_page_number }}&exam_type={{ exam_type_filter }}&term={{ term_filter }}&class_id={{ class_filter }}&subject_id={{ subject_filter }}&search={{ search_query }}" class="pag-btn">
+                    <i class="fas fa-chevron-left"></i> Previous
+                </a>
+                {% else %}
+                <span class="pag-btn disabled"><i class="fas fa-chevron-double-left"></i></span>
+                <span class="pag-btn disabled"><i class="fas fa-chevron-left"></i> Previous</span>
+                {% endif %}
+
+                {% if page_obj.has_next %}
+                <a href="?page={{ page_obj.next_page_number }}&exam_type={{ exam_type_filter }}&term={{ term_filter }}&class_id={{ class_filter }}&subject_id={{ subject_filter }}&search={{ search_query }}" class="pag-btn">
+                    Next <i class="fas fa-chevron-right"></i>
+                </a>
+                <a href="?page={{ page_obj.paginator.num_pages }}&exam_type={{ exam_type_filter }}&term={{ term_filter }}&class_id={{ class_filter }}&subject_id={{ subject_filter }}&search={{ search_query }}" class="pag-btn">
+                    <i class="fas fa-chevron-double-right"></i>
+                </a>
+                {% else %}
+                <span class="pag-btn disabled">Next <i class="fas fa-chevron-right"></i></span>
+                <span class="pag-btn disabled"><i class="fas fa-chevron-double-right"></i></span>
+                {% endif %}
+            </div>
+        </div>
+        {% endif %}
+
+        {% else %}
+        <!-- Empty State -->
+        <div class="empty-state">
+            <div class="empty-icon">
+                <i class="fas fa-inbox"></i>
+            </div>
+            <h3 class="empty-title">No Exams Found</h3>
+            <p class="empty-text">There are no exams matching your criteria. Create one to get started!</p>
+            <a href="{% url 'exam_create' %}" class="btn-empty-create">
+                <i class="fas fa-plus-circle"></i> Create New Exam
+            </a>
+        </div>
+        {% endif %}
+    </div>
+
+    <!-- Upcoming Exams Section -->
+    <div class="upcoming-section">
+        <div class="section-header">
+            <h2 class="section-title">
+                <i class="fas fa-calendar-alt"></i> Upcoming Examinations
+                <span class="upcoming-count">{% with count=upcoming_exams|length %}{{ count }}{% endwith %}</span>
+            </h2>
+        </div>
+
+        {% if upcoming_exams %}
+        <div class="upcoming-grid">
+            {% for exam in upcoming_exams %}
+            <div class="upcoming-card">
+                <div class="upcoming-date">
+                    <span class="date-day">{{ exam.date_conducted|date:"d" }}</span>
+                    <span class="date-month">{{ exam.date_conducted|date:"M" }}</span>
+                </div>
+
+                <div class="upcoming-content">
+                    <h4 class="upcoming-name">{{ exam.name }}</h4>
+                    <div class="upcoming-meta">
+                        <span class="meta-item">
+                            <i class="fas fa-book"></i> {{ exam.subject.name }}
+                        </span>
+                        <span class="meta-item">
+                            <i class="fas fa-users"></i> {{ exam.class_name.name }}
+                        </span>
+                    </div>
+                    <div class="upcoming-badges">
+                        <span class="badge-type-mini">{{ exam.exam_type }}</span>
+                        <span class="badge-marks-mini">{{ exam.total_marks }} marks</span>
+                    </div>
+                </div>
+
+                <a href="{% url 'exam_detail' exam.id %}" class="upcoming-link">
+                    <i class="fas fa-arrow-right"></i>
+                </a>
+            </div>
+            {% endfor %}
+        </div>
+        {% else %}
+        <div class="upcoming-empty">
+            <i class="fas fa-calendar-check"></i>
+            <p>No upcoming exams scheduled</p>
+        </div>
+        {% endif %}
+    </div>
+</div>
+{% endblock %}
+
+{% block extra_css %}
+<style>
+    /* ============= PREMIUM EXAM PORTAL STYLING ============= */
+    
+    :root {
+        --primary: #4e73df;
+        --secondary: #1cc88a;
+        --danger: #dc3545;
+        --warning: #f6c23e;
+        --dark: #2e3440;
+        --light: #f8f9fa;
+        --blue-gradient: linear-gradient(135deg, #4e73df 0%, #224abe 100%);
+        --teal-gradient: linear-gradient(135deg, #1cc88a 0%, #128a5f 100%);
+        --danger-gradient: linear-gradient(135deg, #dc3545 0%, #a71d2a 100%);
+    }
+
+    [data-bs-theme="dark"] {
+        --dark: #e0e0e0;
+        --light: #1a1d23;
+    }
+
+    /* Main Container */
+    .exam-portal-container {
+        position: relative;
+        min-height: 100vh;
+        padding: 0;
+        overflow: hidden;
+    }
+
+    .portal-animated-bg {
+        position: fixed;
+        top: 0;
+        left: 0;
+        width: 100%;
+        height: 100%;
+        background: linear-gradient(135deg, rgba(78, 115, 223, 0.03) 0%, rgba(28, 200, 138, 0.02) 100%);
+        z-index: -1;
+        animation: bgShift 8s ease-in-out infinite;
+    }
+
+    @keyframes bgShift {
+        0%, 100% { opacity: 1; }
+        50% { opacity: 0.85; }
+    }
+
+    /* Header Stats Section */
+    .header-stats-section {
+        padding: 40px 20px;
+        background: linear-gradient(135deg, #ffffff 0%, #f8f9fa 100%);
+    }
+
+    [data-bs-theme="dark"] .header-stats-section {
+        background: linear-gradient(135deg, #2d3142 0%, #1a1d23 100%);
+    }
+
+    .stats-grid {
+        display: grid;
+        grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
+        gap: 20px;
+        max-width: 1400px;
+        margin: 0 auto;
+    }
+
+    .stat-card {
+        position: relative;
+        padding: 24px;
+        border-radius: 16px;
+        display: flex;
+        align-items: center;
+        gap: 16px;
+        overflow: hidden;
+        transition: all 0.4s cubic-bezier(0.4, 0, 0.2, 1);
+        cursor: pointer;
+    }
+
+    .stat-card:hover {
+        transform: translateY(-4px);
+        box-shadow: 0 12px 32px rgba(78, 115, 223, 0.2);
+    }
+
+    .stat-card.pending-exams {
+        background: linear-gradient(135deg, #e7f0ff 0%, #f0f5ff 100%);
+        border: 2px solid #4e73df;
+    }
+
+    .stat-card.grading-progress {
+        background: linear-gradient(135deg, #fff4e7 0%, #fff8f0 100%);
+        border: 2px solid #f6c23e;
+    }
+
+    .stat-card.upcoming {
+        background: linear-gradient(135deg, #e7ffe9 0%, #f0fff2 100%);
+        border: 2px solid #1cc88a;
+    }
+
+    .stat-card.completion {
+        background: linear-gradient(135deg, #ffe7e7 0%, #fff0f0 100%);
+        border: 2px solid #dc3545;
+    }
+
+    [data-bs-theme="dark"] .stat-card {
+        background: linear-gradient(135deg, #3a3f52 0%, #2d3142 100%);
+    }
+
+    [data-bs-theme="dark"] .stat-card.pending-exams { border-color: #6c9bef; }
+    [data-bs-theme="dark"] .stat-card.grading-progress { border-color: #f6c23e; }
+    [data-bs-theme="dark"] .stat-card.upcoming { border-color: #1cc88a; }
+    [data-bs-theme="dark"] .stat-card.completion { border-color: #ff6b6b; }
+
+    .stat-icon {
+        font-size: 32px;
+        flex-shrink: 0;
+        color: #4e73df;
+    }
+
+    .stat-card.grading-progress .stat-icon { color: #f6c23e; }
+    .stat-card.upcoming .stat-icon { color: #1cc88a; }
+    .stat-card.completion .stat-icon { color: #dc3545; }
+
+    .stat-content {
+        flex: 1;
+        display: flex;
+        flex-direction: column;
+    }
+
+    .stat-label {
+        font-size: 11px;
+        font-weight: 700;
+        color: #6c757d;
+        text-transform: uppercase;
+        letter-spacing: 0.5px;
+        margin-bottom: 4px;
+    }
+
+    [data-bs-theme="dark"] .stat-label {
+        color: #b0b0b0;
+    }
+
+    .stat-value {
+        font-size: 28px;
+        font-weight: 800;
+        color: var(--dark);
+    }
+
+    [data-bs-theme="dark"] .stat-value {
+        color: #e0e0e0;
+    }
+
+    .stat-glow {
+        position: absolute;
+        top: -50%;
+        right: -20%;
+        width: 150px;
+        height: 150px;
+        border-radius: 50%;
+        opacity: 0.1;
+        filter: blur(30px);
+    }
+
+    /* Filter Section */
+    .premium-filter-section {
+        padding: 20px;
+        max-width: 1400px;
+        margin: 0 auto;
+    }
+
+    .filter-card {
+        background: linear-gradient(135deg, #ffffff 0%, #f8f9fa 100%);
+        border-radius: 16px;
+        overflow: hidden;
+        box-shadow: 0 4px 16px rgba(78, 115, 223, 0.08);
+        transition: all 0.3s ease;
+    }
+
+    [data-bs-theme="dark"] .filter-card {
+        background: linear-gradient(135deg, #2d3142 0%, #1a1d23 100%);
+        box-shadow: 0 4px 16px rgba(78, 115, 223, 0.15);
+    }
+
+    .filter-header {
+        padding: 20px;
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        cursor: pointer;
+        border-bottom: 2px solid #e9ecef;
+    }
+
+    [data-bs-theme="dark"] .filter-header {
+        border-bottom-color: #4a5568;
+    }
+
+    .filter-title {
+        margin: 0;
+        font-size: 16px;
+        font-weight: 800;
+        color: var(--dark);
+        display: flex;
+        align-items: center;
+        gap: 8px;
+    }
+
+    [data-bs-theme="dark"] .filter-title {
+        color: #e0e0e0;
+    }
+
+    .filter-toggle {
+        cursor: pointer;
+        font-size: 14px;
+        color: #6c757d;
+        transition: transform 0.3s ease;
+    }
+
+    .filter-form {
+        padding: 24px;
+    }
+
+    .filter-grid {
+        display: grid;
+        grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+        gap: 16px;
+        margin-bottom: 16px;
+    }
+
+    .filter-group {
+        display: flex;
+        flex-direction: column;
+    }
+
+    .filter-label {
+        font-size: 12px;
+        font-weight: 700;
+        color: #6c757d;
+        text-transform: uppercase;
+        margin-bottom: 8px;
+        display: flex;
+        align-items: center;
+        gap: 6px;
+        letter-spacing: 0.5px;
+    }
+
+    [data-bs-theme="dark"] .filter-label {
+        color: #b0b0b0;
+    }
+
+    .filter-select,
+    .filter-input {
+        padding: 10px 14px;
+        border: 2px solid #e9ecef;
+        border-radius: 8px;
+        background: white;
+        color: var(--dark);
+        font-size: 13px;
+        font-weight: 500;
+        transition: all 0.3s ease;
+    }
+
+    [data-bs-theme="dark"] .filter-select,
+    [data-bs-theme="dark"] .filter-input {
+        background: #3a3f52;
+        border-color: #4a5568;
+        color: #e0e0e0;
+    }
+
+    .filter-select:focus,
+    .filter-input:focus {
+        border-color: #4e73df;
+        box-shadow: 0 0 0 3px rgba(78, 115, 223, 0.1);
+        outline: none;
+    }
+
+    .filter-actions {
+        display: flex;
+        gap: 12px;
+        padding: 0 24px 24px;
+    }
+
+    .btn-filter-apply,
+    .btn-filter-reset {
+        flex: 1;
+        padding: 12px 16px;
+        border: none;
+        border-radius: 8px;
+        cursor: pointer;
+        font-weight: 700;
+        font-size: 13px;
+        transition: all 0.3s ease;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        gap: 6px;
+    }
+
+    .btn-filter-apply {
+        background: var(--blue-gradient);
+        color: white;
+    }
+
+    .btn-filter-apply:hover {
+        transform: translateY(-2px);
+        box-shadow: 0 8px 20px rgba(78, 115, 223, 0.3);
+    }
+
+    .btn-filter-reset {
+        background: #e9ecef;
+        color: var(--dark);
+    }
+
+    [data-bs-theme="dark"] .btn-filter-reset {
+        background: #3a3f52;
+        color: #e0e0e0;
+    }
+
+    .btn-filter-reset:hover {
+        background: #dee2e6;
+    }
+
+    [data-bs-theme="dark"] .btn-filter-reset:hover {
+        background: #4a5568;
+    }
+
+    /* Exams Section */
+    .exams-section {
+        padding: 40px 20px;
+        max-width: 1400px;
+        margin: 0 auto;
+    }
+
+    .section-header {
+        margin-bottom: 30px;
+    }
+
+    .section-title {
+        font-size: 24px;
+        font-weight: 800;
+        color: var(--dark);
+        margin: 0;
+        display: flex;
+        align-items: center;
+        gap: 10px;
+    }
+
+    [data-bs-theme="dark"] .section-title {
+        color: #e0e0e0;
+    }
+
+    .exam-count,
+    .upcoming-count {
+        font-size: 13px;
+        font-weight: 700;
+        background: #e7f0ff;
+        color: #4e73df;
+        padding: 6px 12px;
+        border-radius: 20px;
+        margin-left: auto;
+    }
+
+    [data-bs-theme="dark"] .exam-count,
+    [data-bs-theme="dark"] .upcoming-count {
+        background: #3a4a6b;
+        color: #a8c5ff;
+    }
+
+    /* Exams Grid */
+    .exams-grid {
+        display: grid;
+        grid-template-columns: repeat(auto-fill, minmax(340px, 1fr));
+        gap: 24px;
+        margin-bottom: 40px;
+    }
+
+    .exam-card {
+        background: linear-gradient(135deg, #ffffff 0%, #f8f9fa 100%);
+        border-radius: 16px;
+        overflow: hidden;
+        box-shadow: 0 8px 24px rgba(78, 115, 223, 0.1);
+        transition: all 0.4s cubic-bezier(0.4, 0, 0.2, 1);
+        display: flex;
+        flex-direction: column;
+    }
+
+    [data-bs-theme="dark"] .exam-card {
+        background: linear-gradient(135deg, #2d3142 0%, #1a1d23 100%);
+    }
+
+    .exam-card:hover {
+        transform: translateY(-8px);
+        box-shadow: 0 16px 48px rgba(78, 115, 223, 0.2);
+    }
+
+    .exam-card-header {
+        padding: 16px;
+        background: linear-gradient(135deg, rgba(78, 115, 223, 0.05) 0%, rgba(28, 200, 138, 0.05) 100%);
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        border-bottom: 2px solid #e9ecef;
+    }
+
+    [data-bs-theme="dark"] .exam-card-header {
+        border-bottom-color: #4a5568;
+    }
+
+    .exam-badge-type {
+        display: flex;
+        gap: 8px;
+    }
+
+    .badge-final {
+        background: linear-gradient(135deg, #dc3545 0%, #a71d2a 100%);
+        color: white;
+        padding: 6px 12px;
+        border-radius: 6px;
+        font-size: 11px;
+        font-weight: 800;
+        text-transform: uppercase;
+    }
+
+    .badge-midterm {
+        background: linear-gradient(135deg, #f6c23e 0%, #d4a017 100%);
+        color: white;
+        padding: 6px 12px;
+        border-radius: 6px;
+        font-size: 11px;
+        font-weight: 800;
+        text-transform: uppercase;
+    }
+
+    .badge-unit {
+        background: linear-gradient(135deg, #4e73df 0%, #224abe 100%);
+        color: white;
+        padding: 6px 12px;
+        border-radius: 6px;
+        font-size: 11px;
+        font-weight: 800;
+        text-transform: uppercase;
+    }
+
+    .badge-other {
+        background: #6c757d;
+        color: white;
+        padding: 6px 12px;
+        border-radius: 6px;
+        font-size: 11px;
+        font-weight: 800;
+        text-transform: uppercase;
+    }
+
+    .exam-term-badge {
+        font-size: 11px;
+        font-weight: 700;
+        color: #4e73df;
+        background: #e7f0ff;
+        padding: 6px 10px;
+        border-radius: 6px;
+        text-transform: uppercase;
+    }
+
+    [data-bs-theme="dark"] .exam-term-badge {
+        background: #3a4a6b;
+        color: #a8c5ff;
+    }
+
+    .exam-card-content {
+        padding: 20px;
+        flex: 1;
+    }
+
+    .exam-name {
+        font-size: 16px;
+        font-weight: 800;
+        color: var(--dark);
+        margin: 0 0 16px;
+    }
+
+    [data-bs-theme="dark"] .exam-name {
+        color: #e0e0e0;
+    }
+
+    .exam-info-pair {
+        display: grid;
+        grid-template-columns: 1fr 1fr;
+        gap: 12px;
+        margin-bottom: 16px;
+    }
+
+    .info-box {
+        display: flex;
+        align-items: center;
+        gap: 8px;
+        padding: 10px;
+        background: #f8f9fa;
+        border-radius: 8px;
+    }
+
+    [data-bs-theme="dark"] .info-box {
+        background: #3a3f52;
+    }
+
+    .info-icon {
+        font-size: 14px;
+        color: #4e73df;
+    }
+
+    .info-label {
+        display: block;
+        font-size: 10px;
+        font-weight: 700;
+        color: #6c757d;
+        text-transform: uppercase;
+        margin-bottom: 2px;
+    }
+
+    [data-bs-theme="dark"] .info-label {
+        color: #b0b0b0;
+    }
+
+    .info-text {
+        display: block;
+        font-size: 12px;
+        font-weight: 700;
+        color: var(--dark);
+    }
+
+    [data-bs-theme="dark"] .info-text {
+        color: #e0e0e0;
+    }
+
+    .exam-marks-grid {
+        display: grid;
+        grid-template-columns: repeat(3, 1fr);
+        gap: 8px;
+        margin-bottom: 16px;
+    }
+
+    .marks-item {
+        text-align: center;
+        padding: 10px;
+        background: #f8f9fa;
+        border-radius: 8px;
+        border: 1px solid #e9ecef;
+    }
+
+    [data-bs-theme="dark"] .marks-item {
+        background: #3a3f52;
+        border-color: #4a5568;
+    }
+
+    .marks-label {
+        display: block;
+        font-size: 10px;
+        font-weight: 700;
+        color: #6c757d;
+        text-transform: uppercase;
+        margin-bottom: 4px;
+    }
+
+    [data-bs-theme="dark"] .marks-label {
+        color: #b0b0b0;
+    }
+
+    .marks-value {
+        display: block;
+        font-size: 16px;
+        font-weight: 800;
+        color: var(--dark);
+    }
+
+    [data-bs-theme="dark"] .marks-value {
+        color: #e0e0e0;
+    }
+
+    .marks-value.total { color: #4e73df; }
+    .marks-value.pass { color: #1cc88a; }
+
+    .grading-progress-section {
+        margin-bottom: 16px;
+    }
+
+    .progress-header {
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        margin-bottom: 8px;
+    }
+
+    .progress-label {
+        font-size: 12px;
+        font-weight: 700;
+        color: var(--dark);
+    }
+
+    [data-bs-theme="dark"] .progress-label {
+        color: #e0e0e0;
+    }
+
+    .progress-ratio {
+        font-size: 11px;
+        font-weight: 700;
+        color: #6c757d;
+        background: #e9ecef;
+        padding: 4px 8px;
+        border-radius: 4px;
+    }
+
+    [data-bs-theme="dark"] .progress-ratio {
+        background: #4a5568;
+        color: #b0b0b0;
+    }
+
+    .progress-bar-container {
+        position: relative;
+        height: 8px;
+        background: #e9ecef;
+        border-radius: 4px;
+        overflow: hidden;
+    }
+
+    [data-bs-theme="dark"] .progress-bar-container {
+        background: #4a5568;
+    }
+
+    .progress-bar-fill {
+        height: 100%;
+        background: var(--teal-gradient);
+        border-radius: 4px;
+        transition: width 0.4s ease;
+    }
+
+    .progress-percent {
+        position: absolute;
+        right: 6px;
+        top: 50%;
+        transform: translateY(-50%);
+        font-size: 9px;
+        font-weight: 700;
+        color: white;
+        text-shadow: 0 1px 2px rgba(0,0,0,0.2);
+    }
+
+    .pass-percentage-box {
+        display: flex;
+        align-items: center;
+        gap: 12px;
+        padding: 12px;
+        background: linear-gradient(135deg, rgba(78, 115, 223, 0.05) 0%, rgba(78, 115, 223, 0.03) 100%);
+        border: 2px solid #e7f0ff;
+        border-radius: 8px;
+    }
+
+    [data-bs-theme="dark"] .pass-percentage-box {
+        background: linear-gradient(135deg, rgba(78, 115, 223, 0.1) 0%, rgba(78, 115, 223, 0.05) 100%);
+        border-color: #3a4a6b;
+    }
+
+    .pass-icon {
+        font-size: 20px;
+        color: #4e73df;
+    }
+
+    .pass-info {
+        flex: 1;
+    }
+
+    .pass-label {
+        display: block;
+        font-size: 10px;
+        font-weight: 700;
+        color: #6c757d;
+        text-transform: uppercase;
+    }
+
+    [data-bs-theme="dark"] .pass-label {
+        color: #b0b0b0;
+    }
+
+    .pass-value {
+        display: block;
+        font-size: 14px;
+        font-weight: 800;
+        color: #4e73df;
+    }
+
+    .pass-value.excellent { color: #1cc88a; }
+    .pass-value.moderate { color: #f6c23e; }
+    .pass-value.low { color: #dc3545; }
+
+    .exam-card-actions {
+        padding: 12px;
+        background: #f8f9fa;
+        border-top: 2px solid #e9ecef;
+        display: flex;
+        gap: 6px;
+    }
+
+    [data-bs-theme="dark"] .exam-card-actions {
+        background: #3a3f52;
+        border-top-color: #4a5568;
+    }
+
+    .action-btn {
+        flex: 1;
+        padding: 8px;
+        border: none;
+        border-radius: 6px;
+        cursor: pointer;
+        font-weight: 700;
+        font-size: 11px;
+        text-decoration: none;
+        transition: all 0.3s ease;
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+        justify-content: center;
+        gap: 4px;
+        color: white;
+    }
+
+    .view-btn {
+        background: #4e73df;
+    }
+
+    .view-btn:hover {
+        background: #224abe;
+        transform: translateY(-2px);
+    }
+
+    .grade-btn {
+        background: #1cc88a;
+    }
+
+    .grade-btn:hover {
+        background: #128a5f;
+        transform: translateY(-2px);
+    }
+
+    .edit-btn {
+        background: #f6c23e;
+        color: #2e3440;
+    }
+
+    [data-bs-theme="dark"] .edit-btn {
+        color: #1a1d23;
+    }
+
+    .edit-btn:hover {
+        background: #d4a017;
+        transform: translateY(-2px);
+    }
+
+    .delete-btn {
+        background: #dc3545;
+    }
+
+    .delete-btn:hover {
+        background: #a71d2a;
+        transform: translateY(-2px);
+    }
+
+    /* Empty State */
+    .empty-state {
+        text-align: center;
+        padding: 60px 20px;
+    }
+
+    .empty-icon {
+        font-size: 72px;
+        color: #c4c4c4;
+        margin-bottom: 20px;
+    }
+
+    [data-bs-theme="dark"] .empty-icon {
+        color: #5a5a5a;
+    }
+
+    .empty-title {
+        font-size: 20px;
+        font-weight: 800;
+        color: var(--dark);
+        margin-bottom: 10px;
+    }
+
+    [data-bs-theme="dark"] .empty-title {
+        color: #e0e0e0;
+    }
+
+    .empty-text {
+        font-size: 14px;
+        color: #6c757d;
+        margin-bottom: 24px;
+    }
+
+    [data-bs-theme="dark"] .empty-text {
+        color: #b0b0b0;
+    }
+
+    .btn-empty-create {
+        display: inline-flex;
+        align-items: center;
+        gap: 8px;
+        padding: 12px 24px;
+        background: var(--blue-gradient);
+        color: white;
+        border: none;
+        border-radius: 8px;
+        cursor: pointer;
+        font-weight: 700;
+        text-decoration: none;
+        transition: all 0.3s ease;
+    }
+
+    .btn-empty-create:hover {
+        transform: translateY(-2px);
+        box-shadow: 0 8px 20px rgba(78, 115, 223, 0.3);
+    }
+
+    /* Pagination */
+    .premium-pagination {
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        padding: 24px;
+        background: linear-gradient(135deg, #ffffff 0%, #f8f9fa 100%);
+        border-radius: 12px;
+        margin-bottom: 40px;
+    }
+
+    [data-bs-theme="dark"] .premium-pagination {
+        background: linear-gradient(135deg, #2d3142 0%, #1a1d23 100%);
+    }
+
+    .pagination-info {
+        font-size: 13px;
+        color: var(--dark);
+        font-weight: 700;
+    }
+
+    [data-bs-theme="dark"] .pagination-info {
+        color: #e0e0e0;
+    }
+
+    .pagination-controls {
+        display: flex;
+        gap: 8px;
+    }
+
+    .pag-btn {
+        padding: 8px 12px;
+        border: none;
+        border-radius: 6px;
+        background: #e9ecef;
+        color: var(--dark);
+        cursor: pointer;
+        font-weight: 700;
+        font-size: 12px;
+        transition: all 0.3s ease;
+        text-decoration: none;
+        display: flex;
+        align-items: center;
+        gap: 4px;
+    }
+
+    [data-bs-theme="dark"] .pag-btn {
+        background: #3a3f52;
+        color: #e0e0e0;
+    }
+
+    .pag-btn:hover:not(.disabled) {
+        background: #4e73df;
+        color: white;
+        transform: translateY(-2px);
+    }
+
+    .pag-btn.disabled {
+        opacity: 0.4;
+        cursor: not-allowed;
+    }
+
+    /* Upcoming Section */
+    .upcoming-section {
+        padding: 40px 20px;
+        max-width: 1400px;
+        margin: 0 auto;
+    }
+
+    .upcoming-grid {
+        display: grid;
+        grid-template-columns: repeat(auto-fill, minmax(300px, 1fr));
+        gap: 20px;
+    }
+
+    .upcoming-card {
+        background: linear-gradient(135deg, #ffffff 0%, #f8f9fa 100%);
+        border-radius: 12px;
+        padding: 20px;
+        display: flex;
+        gap: 16px;
+        align-items: start;
+        box-shadow: 0 4px 12px rgba(78, 115, 223, 0.08);
+        transition: all 0.3s ease;
+    }
+
+    [data-bs-theme="dark"] .upcoming-card {
+        background: linear-gradient(135deg, #2d3142 0%, #1a1d23 100%);
+    }
+
+    .upcoming-card:hover {
+        transform: translateY(-4px);
+        box-shadow: 0 8px 24px rgba(78, 115, 223, 0.15);
+    }
+
+    .upcoming-date {
+        flex-shrink: 0;
+        text-align: center;
+        background: var(--blue-gradient);
+        color: white;
+        padding: 12px 14px;
+        border-radius: 10px;
+        min-width: 60px;
+    }
+
+    .date-day {
+        display: block;
+        font-size: 16px;
+        font-weight: 800;
+    }
+
+    .date-month {
+        display: block;
+        font-size: 10px;
+        font-weight: 700;
+        text-transform: uppercase;
+        opacity: 0.9;
+    }
+
+    .upcoming-content {
+        flex: 1;
+    }
+
+    .upcoming-name {
+        font-size: 14px;
+        font-weight: 800;
+        color: var(--dark);
+        margin-bottom: 8px;
+    }
+
+    [data-bs-theme="dark"] .upcoming-name {
+        color: #e0e0e0;
+    }
+
+    .upcoming-meta {
+        display: flex;
+        gap: 12px;
+        margin-bottom: 10px;
+        flex-wrap: wrap;
+    }
+
+    .meta-item {
+        font-size: 12px;
+        color: #6c757d;
+        display: flex;
+        align-items: center;
+        gap: 4px;
+    }
+
+    [data-bs-theme="dark"] .meta-item {
+        color: #b0b0b0;
+    }
+
+    .upcoming-badges {
+        display: flex;
+        gap: 8px;
+    }
+
+    .badge-type-mini,
+    .badge-marks-mini {
+        font-size: 10px;
+        font-weight: 700;
+        padding: 4px 8px;
+        border-radius: 4px;
+        text-transform: uppercase;
+    }
+
+    .badge-type-mini {
+        background: #e7f0ff;
+        color: #4e73df;
+    }
+
+    [data-bs-theme="dark"] .badge-type-mini {
+        background: #3a4a6b;
+        color: #a8c5ff;
+    }
+
+    .badge-marks-mini {
+        background: #e7ffe9;
+        color: #1cc88a;
+    }
+
+    [data-bs-theme="dark"] .badge-marks-mini {
+        background: #2d5f42;
+        color: #5fd89f;
+    }
+
+    .upcoming-link {
+        flex-shrink: 0;
+        width: 40px;
+        height: 40px;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        background: #e9ecef;
+        border-radius: 8px;
+        color: #4e73df;
+        text-decoration: none;
+        transition: all 0.3s ease;
+    }
+
+    [data-bs-theme="dark"] .upcoming-link {
+        background: #3a3f52;
+        color: #a8c5ff;
+    }
+
+    .upcoming-link:hover {
+        background: #4e73df;
+        color: white;
+        transform: translateX(4px);
+    }
+
+    .upcoming-empty {
+        text-align: center;
+        padding: 40px;
+        background: linear-gradient(135deg, #ffffff 0%, #f8f9fa 100%);
+        border-radius: 12px;
+        color: #6c757d;
+    }
+
+    [data-bs-theme="dark"] .upcoming-empty {
+        background: linear-gradient(135deg, #2d3142 0%, #1a1d23 100%);
+        color: #b0b0b0;
+    }
+
+    .upcoming-empty i {
+        font-size: 32px;
+        margin-bottom: 12px;
+        display: block;
+    }
+
+    /* Create Button in Page Actions */
+    .btn-premium-create {
+        display: inline-flex;
+        align-items: center;
+        gap: 8px;
+        padding: 10px 18px;
+        background: var(--blue-gradient);
+        color: white;
+        border: none;
+        border-radius: 8px;
+        cursor: pointer;
+        font-weight: 700;
+        font-size: 13px;
+        text-decoration: none;
+        transition: all 0.3s ease;
+    }
+
+    .btn-premium-create:hover {
+        transform: translateY(-2px);
+        box-shadow: 0 8px 20px rgba(78, 115, 223, 0.3);
+    }
+
+    /* Responsive Design */
+    @media (max-width: 1024px) {
+        .stats-grid {
+            grid-template-columns: repeat(2, 1fr);
+        }
+
+        .exams-grid {
+            grid-template-columns: 1fr;
+        }
+
+        .exam-info-pair {
+            grid-template-columns: 1fr;
+        }
+
+        .premium-pagination {
+            flex-direction: column;
+            gap: 16px;
+        }
+
+        .pagination-controls {
+            width: 100%;
+            justify-content: center;
+        }
+    }
+
+    @media (max-width: 768px) {
+        .header-stats-section {
+            padding: 24px 16px;
+        }
+
+        .stats-grid {
+            grid-template-columns: 1fr;
+            gap: 12px;
+        }
+
+        .stat-card {
+            padding: 16px;
+        }
+
+        .stat-icon {
+            font-size: 24px;
+        }
+
+        .stat-value {
+            font-size: 22px;
+        }
+
+        .filter-grid {
+            grid-template-columns: 1fr;
+            gap: 12px;
+        }
+
+        .exams-section,
+        .upcoming-section {
+            padding: 24px 16px;
+        }
+
+        .section-title {
+            font-size: 18px;
+        }
+
+        .exam-count,
+        .upcoming-count {
+            margin-left: 0;
+            margin-top: 8px;
+        }
+
+        .exam-marks-grid {
+            grid-template-columns: repeat(3, 1fr);
+        }
+
+        .upcoming-grid {
+            grid-template-columns: 1fr;
+        }
+
+        .upcoming-card {
+            flex-direction: column;
+            align-items: start;
+        }
+
+        .upcoming-date {
+            align-self: start;
+        }
+
+        .upcoming-link {
+            align-self: end;
+        }
+    }
+
+    @media (max-width: 576px) {
+        .exam-card {
+            border-radius: 12px;
+        }
+
+        .exam-name {
+            font-size: 14px;
+        }
+
+        .exam-card-actions {
+            flex-wrap: wrap;
+        }
+
+        .action-btn {
+            min-width: 45%;
+        }
+
+        .filter-actions {
+            flex-direction: column;
+        }
+
+        .btn-filter-apply,
+        .btn-filter-reset {
+            width: 100%;
+        }
+    }
+</style>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+    // Filter toggle functionality
+    document.getElementById('filterToggle').addEventListener('click', function() {
+        const form = document.querySelector('.filter-form');
+        form.style.display = form.style.display === 'none' ? 'block' : 'none';
+    });
+
+    // Animate cards on page load
+    window.addEventListener('DOMContentLoaded', function() {
+        const cards = document.querySelectorAll('.exam-card, .stat-card, .upcoming-card');
+        cards.forEach((card, index) => {
+            card.style.animation = `slideInUp 0.6s ease-out ${index * 0.05}s both`;
+        });
+    });
+
+    // Add slide-in animation
+    const style = document.createElement('style');
+    style.textContent = `
+        @keyframes slideInUp {
+            from {
+                opacity: 0;
+                transform: translateY(30px);
+            }
+            to {
+                opacity: 1;
+                transform: translateY(0);
+            }
+        }
+    `;
+    document.head.appendChild(style);
+</script>
+{% endblock %}

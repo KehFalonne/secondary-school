@@ -1,0 +1,1156 @@
+{% extends 'base.html' %}
+
+{% block title %}Grade Portal{% endblock %}
+{% block page_title %}Performance Evaluation{% endblock %}
+
+{% block breadcrumb %}
+<li class="breadcrumb-item"><a href="{% url 'exam_list' %}"><i class="fas fa-book"></i> Assessment Hub</a></li>
+<li class="breadcrumb-item"><a href="{% url 'exam_detail' grade.exam.id %}">{{ grade.exam.name }}</a></li>
+<li class="breadcrumb-item active">Grade Input</li>
+{% endblock %}
+
+{% block page_actions %}
+<a href="{% url 'exam_detail' grade.exam.id %}" class="btn btn-outline-secondary btn-sm glass-btn">
+    <i class="fas fa-undo"></i> Back
+</a>
+{% endblock %}
+
+{% block content %}
+<div class="grade-form-container">
+    <!-- Animated Background -->
+    <div class="animated-bg"></div>
+    
+    <!-- Main Form Container -->
+    <div class="form-wrapper">
+        <!-- Header Section with Student Avatar -->
+        <div class="form-header-premium">
+            <div class="header-content">
+                <div class="student-avatar-large">
+                    {% if grade.student.user.profile_picture %}
+                        <img src="{{ grade.student.user.profile_picture.url }}" alt="{{ grade.student.user.get_full_name }}">
+                    {% else %}
+                        <div class="avatar-initials">
+                            {{ grade.student.user.first_name|first }}{{ grade.student.user.last_name|first }}
+                        </div>
+                    {% endif %}
+                </div>
+                <div class="header-text">
+                    <h2 class="student-name-title">{{ grade.student.user.get_full_name }}</h2>
+                    <p class="header-subtitle">Evaluating Performance in {{ grade.exam.subject.name }}</p>
+                </div>
+                <div class="header-badge">
+                    <span class="exam-badge">{{ grade.exam.name }}</span>
+                </div>
+            </div>
+        </div>
+
+        <!-- Information Cards Grid -->
+        <div class="info-cards-grid">
+            <!-- Student Card -->
+            <div class="info-card student-info-card">
+                <div class="card-icon">
+                    <i class="fas fa-user-graduate"></i>
+                </div>
+                <div class="card-content">
+                    <p class="card-label">Student ID</p>
+                    <p class="card-value">{{ grade.student.roll_number }}</p>
+                    <p class="card-subtext">Admission: {{ grade.student.admission_number }}</p>
+                </div>
+            </div>
+
+            <!-- Class Card -->
+            <div class="info-card class-info-card">
+                <div class="card-icon">
+                    <i class="fas fa-building"></i>
+                </div>
+                <div class="card-content">
+                    <p class="card-label">Class Section</p>
+                    <p class="card-value">{{ grade.student.class_enrolled.name }}</p>
+                    <p class="card-subtext">Current Enrollment</p>
+                </div>
+            </div>
+
+            <!-- Max Marks Card -->
+            <div class="info-card marks-info-card">
+                <div class="card-icon">
+                    <i class="fas fa-chart-line"></i>
+                </div>
+                <div class="card-content">
+                    <p class="card-label">Total Marks</p>
+                    <p class="card-value">{{ grade.exam.total_marks }}</p>
+                    <p class="card-subtext">Pass: {{ grade.exam.pass_marks }}</p>
+                </div>
+            </div>
+        </div>
+
+        <!-- Main Form -->
+        <form method="post" class="premium-grade-form">
+            {% csrf_token %}
+            
+            <!-- Marks Input Section -->
+            <div class="form-section">
+                <div class="section-header">
+                    <h3>
+                        <i class="fas fa-pen-fancy"></i> Enter Marks
+                    </h3>
+                    <p class="section-subtitle">Input the performance metrics</p>
+                </div>
+
+                <div class="marks-input-section">
+                    <div class="marks-input-wrapper">
+                        <div class="marks-circle-display">
+                            <svg class="progress-ring" width="140" height="140">
+                                <circle class="progress-ring-bg" stroke-width="8" fill="none" r="62" cx="70" cy="70" />
+                                <circle class="progress-ring-fill" stroke-width="8" fill="none" r="62" cx="70" cy="70" />
+                            </svg>
+                            <div class="marks-percentage-display">
+                                <span class="percentage-value">0%</span>
+                            </div>
+                        </div>
+
+                        <div class="marks-input-area">
+                            <label for="marks_obtained" class="marks-label">
+                                <i class="fas fa-star"></i> Marks Obtained
+                            </label>
+                            <div class="input-with-suffix">
+                                <input type="number" 
+                                       name="marks_obtained" 
+                                       class="marks-input-premium" 
+                                       id="marks_obtained"
+                                       value="{{ grade.marks_obtained }}" 
+                                       min="0" 
+                                       max="{{ grade.exam.total_marks }}" 
+                                       step="0.01" 
+                                       placeholder="Enter marks"
+                                       required>
+                                <span class="input-suffix">/ {{ grade.exam.total_marks }}</span>
+                            </div>
+                            <div class="input-feedback">
+                                <span class="feedback-text"></span>
+                                <span class="feedback-grade"></span>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Marks Status Indicator -->
+                    <div class="marks-status">
+                        <div class="status-item">
+                            <span class="status-label">Status</span>
+                            <span class="status-badge" id="statusBadge">—</span>
+                        </div>
+                        <div class="status-item">
+                            <span class="status-label">Grade</span>
+                            <span class="status-grade" id="gradeBadge">—</span>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Divider -->
+            <div class="form-divider"></div>
+
+            <!-- Absence Toggle Section -->
+            <div class="form-section">
+                <div class="section-header">
+                    <h3>
+                        <i class="fas fa-calendar-times"></i> Attendance Status
+                    </h3>
+                </div>
+
+                <div class="absence-toggle-wrapper">
+                    <label class="absence-toggle-label">
+                        <input type="checkbox" 
+                               name="is_absent" 
+                               id="is_absent"
+                               class="absence-checkbox"
+                               {% if grade.is_absent %}checked{% endif %}>
+                        <span class="toggle-switch">
+                            <span class="toggle-circle"></span>
+                        </span>
+                        <span class="toggle-text">
+                            <span class="toggle-main">Mark Student as Absent</span>
+                            <span class="toggle-desc">Student did not appear for examination</span>
+                        </span>
+                    </label>
+                </div>
+            </div>
+
+            <!-- Divider -->
+            <div class="form-divider"></div>
+
+            <!-- Remarks Section -->
+            <div class="form-section">
+                <div class="section-header">
+                    <h3>
+                        <i class="fas fa-sticky-note"></i> Evaluation Notes
+                    </h3>
+                    <p class="section-subtitle">Optional observations and feedback</p>
+                </div>
+
+                <div class="remarks-editor">
+                    <textarea name="remarks" 
+                              class="remarks-textarea" 
+                              id="remarks" 
+                              placeholder="Add any relevant remarks or observations..."
+                              maxlength="500">{{ grade.remarks }}</textarea>
+                    <div class="textarea-footer">
+                        <span class="char-count"><span id="charCount">0</span>/500</span>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Action Buttons -->
+            <div class="form-actions">
+                <a href="{% url 'exam_detail' grade.exam.id %}" class="btn-action btn-cancel">
+                    <i class="fas fa-times-circle"></i>
+                    <span>Cancel</span>
+                </a>
+                <button type="submit" class="btn-action btn-submit">
+                    <i class="fas fa-check-circle"></i>
+                    <span>Submit Evaluation</span>
+                </button>
+            </div>
+        </form>
+    </div>
+</div>
+
+
+{% block extra_css %}
+<style>
+    /* ============= FUTURISTIC GRADE FORM STYLING ============= */
+    
+    :root {
+        --primary: #4e73df;
+        --secondary: #1cc88a;
+        --danger: #dc3545;
+        --warning: #f6c23e;
+        --dark: #2e3440;
+        --light: #f8f9fa;
+        --accent: #00d4ff;
+    }
+
+    [data-bs-theme="dark"] {
+        --dark: #e0e0e0;
+        --light: #1a1d23;
+    }
+
+    /* Container & Background */
+    .grade-form-container {
+        position: relative;
+        min-height: calc(100vh - 300px);
+        padding: 40px 20px;
+        overflow: hidden;
+    }
+
+    .animated-bg {
+        position: fixed;
+        top: 0;
+        left: 0;
+        width: 100%;
+        height: 100%;
+        background: linear-gradient(135deg, rgba(78, 115, 223, 0.05) 0%, rgba(28, 200, 138, 0.05) 100%);
+        z-index: -1;
+        animation: bgShift 15s ease-in-out infinite;
+    }
+
+    [data-bs-theme="dark"] .animated-bg {
+        background: linear-gradient(135deg, rgba(78, 115, 223, 0.08) 0%, rgba(28, 200, 138, 0.08) 100%);
+    }
+
+    @keyframes bgShift {
+        0%, 100% { opacity: 1; }
+        50% { opacity: 0.7; }
+    }
+
+    /* Form Wrapper */
+    .form-wrapper {
+        max-width: 700px;
+        margin: 0 auto;
+        background: linear-gradient(135deg, #ffffff 0%, #f8f9fa 100%);
+        border-radius: 24px;
+        box-shadow: 0 25px 60px rgba(0, 0, 0, 0.12);
+        overflow: hidden;
+        animation: slideInUp 0.6s cubic-bezier(0.4, 0, 0.2, 1);
+    }
+
+    [data-bs-theme="dark"] .form-wrapper {
+        background: linear-gradient(135deg, #2d3142 0%, #1a1d23 100%);
+    }
+
+    @keyframes slideInUp {
+        from {
+            opacity: 0;
+            transform: translateY(40px);
+        }
+        to {
+            opacity: 1;
+            transform: translateY(0);
+        }
+    }
+
+    /* Header Section */
+    .form-header-premium {
+        background: linear-gradient(135deg, #4e73df 0%, #224abe 100%);
+        padding: 40px 30px;
+        position: relative;
+        overflow: hidden;
+    }
+
+    .form-header-premium::before {
+        content: '';
+        position: absolute;
+        top: -50%;
+        right: -10%;
+        width: 400px;
+        height: 400px;
+        background: rgba(255, 255, 255, 0.1);
+        border-radius: 50%;
+        animation: float 6s ease-in-out infinite;
+    }
+
+    .form-header-premium::after {
+        content: '';
+        position: absolute;
+        bottom: -20%;
+        left: 5%;
+        width: 300px;
+        height: 300px;
+        background: rgba(28, 200, 138, 0.2);
+        border-radius: 50%;
+        animation: float 8s ease-in-out infinite reverse;
+    }
+
+    @keyframes float {
+        0%, 100% { transform: translateY(0px); }
+        50% { transform: translateY(20px); }
+    }
+
+    .header-content {
+        display: flex;
+        align-items: center;
+        gap: 24px;
+        position: relative;
+        z-index: 1;
+    }
+
+    .student-avatar-large {
+        flex-shrink: 0;
+        width: 100px;
+        height: 100px;
+        border-radius: 16px;
+        overflow: hidden;
+        border: 4px solid rgba(255, 255, 255, 0.3);
+        box-shadow: 0 8px 32px rgba(0, 0, 0, 0.2);
+        animation: scaleIn 0.6s cubic-bezier(0.4, 0, 0.2, 1);
+    }
+
+    @keyframes scaleIn {
+        from {
+            opacity: 0;
+            transform: scale(0.8);
+        }
+        to {
+            opacity: 1;
+            transform: scale(1);
+        }
+    }
+
+    .student-avatar-large img {
+        width: 100%;
+        height: 100%;
+        object-fit: cover;
+    }
+
+    .avatar-initials {
+        width: 100%;
+        height: 100%;
+        background: rgba(28, 200, 138, 0.3);
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        color: white;
+        font-size: 32px;
+        font-weight: 800;
+    }
+
+    .header-text {
+        flex: 1;
+        color: white;
+    }
+
+    .student-name-title {
+        font-size: 24px;
+        font-weight: 800;
+        margin-bottom: 6px;
+        text-shadow: 0 2px 8px rgba(0, 0, 0, 0.2);
+    }
+
+    .header-subtitle {
+        font-size: 13px;
+        color: rgba(255, 255, 255, 0.85);
+        margin-bottom: 0;
+    }
+
+    .header-badge {
+        flex-shrink: 0;
+    }
+
+    .exam-badge {
+        display: inline-block;
+        background: rgba(255, 255, 255, 0.25);
+        color: white;
+        padding: 8px 16px;
+        border-radius: 20px;
+        font-size: 12px;
+        font-weight: 700;
+        text-transform: uppercase;
+        letter-spacing: 0.5px;
+        border: 2px solid rgba(255, 255, 255, 0.3);
+    }
+
+    /* Info Cards Grid */
+    .info-cards-grid {
+        display: grid;
+        grid-template-columns: repeat(auto-fit, minmax(150px, 1fr));
+        gap: 16px;
+        padding: 30px;
+        background: linear-gradient(135deg, #f8f9fa 0%, #ffffff 100%);
+        border-bottom: 2px solid #e9ecef;
+    }
+
+    [data-bs-theme="dark"] .info-cards-grid {
+        background: linear-gradient(135deg, #1a1d23 0%, #2d3142 100%);
+        border-bottom-color: #4a5568;
+    }
+
+    .info-card {
+        padding: 18px;
+        border-radius: 14px;
+        border: 2px solid #e9ecef;
+        transition: all 0.3s ease;
+        display: flex;
+        align-items: center;
+        gap: 12px;
+    }
+
+    [data-bs-theme="dark"] .info-card {
+        border-color: #4a5568;
+    }
+
+    .info-card:hover {
+        transform: translateY(-4px);
+        border-color: var(--primary);
+        background: rgba(78, 115, 223, 0.05);
+    }
+
+    .info-card.student-info-card {
+        border-left: 4px solid #4e73df;
+    }
+
+    .info-card.class-info-card {
+        border-left: 4px solid #1cc88a;
+    }
+
+    .info-card.marks-info-card {
+        border-left: 4px solid #f6c23e;
+    }
+
+    .card-icon {
+        font-size: 24px;
+        color: var(--primary);
+        min-width: 30px;
+    }
+
+    .info-card.class-info-card .card-icon {
+        color: #1cc88a;
+    }
+
+    .info-card.marks-info-card .card-icon {
+        color: #f6c23e;
+    }
+
+    .card-content {
+        flex: 1;
+    }
+
+    .card-label {
+        font-size: 10px;
+        font-weight: 700;
+        color: #6c757d;
+        text-transform: uppercase;
+        margin-bottom: 4px;
+        letter-spacing: 0.5px;
+    }
+
+    [data-bs-theme="dark"] .card-label {
+        color: #b0b0b0;
+    }
+
+    .card-value {
+        font-size: 16px;
+        font-weight: 800;
+        color: var(--dark);
+        margin-bottom: 2px;
+    }
+
+    .card-subtext {
+        font-size: 11px;
+        color: #6c757d;
+        margin-bottom: 0;
+    }
+
+    [data-bs-theme="dark"] .card-subtext {
+        color: #b0b0b0;
+    }
+
+    /* Form Sections */
+    .premium-grade-form {
+        padding: 30px;
+    }
+
+    .form-section {
+        margin-bottom: 28px;
+    }
+
+    .section-header {
+        margin-bottom: 20px;
+    }
+
+    .section-header h3 {
+        font-size: 18px;
+        font-weight: 800;
+        color: var(--dark);
+        margin-bottom: 6px;
+        display: flex;
+        align-items: center;
+        gap: 10px;
+    }
+
+    [data-bs-theme="dark"] .section-header h3 {
+        color: #e0e0e0;
+    }
+
+    .section-header h3 i {
+        color: var(--primary);
+        font-size: 20px;
+    }
+
+    .section-subtitle {
+        font-size: 12px;
+        color: #6c757d;
+        margin-bottom: 0;
+    }
+
+    [data-bs-theme="dark"] .section-subtitle {
+        color: #b0b0b0;
+    }
+
+    /* Marks Input Section */
+    .marks-input-section {
+        background: linear-gradient(135deg, rgba(78, 115, 223, 0.05) 0%, rgba(28, 200, 138, 0.05) 100%);
+        border: 2px solid rgba(78, 115, 223, 0.15);
+        border-radius: 14px;
+        padding: 24px;
+    }
+
+    [data-bs-theme="dark"] .marks-input-section {
+        background: linear-gradient(135deg, rgba(78, 115, 223, 0.08) 0%, rgba(28, 200, 138, 0.08) 100%);
+        border-color: rgba(78, 115, 223, 0.25);
+    }
+
+    .marks-input-wrapper {
+        display: flex;
+        align-items: center;
+        gap: 30px;
+        margin-bottom: 24px;
+    }
+
+    .marks-circle-display {
+        position: relative;
+        flex-shrink: 0;
+        width: 140px;
+        height: 140px;
+    }
+
+    .progress-ring {
+        transform: rotate(-90deg);
+    }
+
+    .progress-ring-bg {
+        stroke: #e9ecef;
+    }
+
+    [data-bs-theme="dark"] .progress-ring-bg {
+        stroke: #4a5568;
+    }
+
+    .progress-ring-fill {
+        stroke: url(#progressGradient);
+        stroke-linecap: round;
+        stroke-dasharray: 389 389;
+        stroke-dashoffset: 389;
+        transition: stroke-dashoffset 0.3s ease;
+    }
+
+    .marks-percentage-display {
+        position: absolute;
+        top: 50%;
+        left: 50%;
+        transform: translate(-50%, -50%);
+        text-align: center;
+    }
+
+    .percentage-value {
+        display: block;
+        font-size: 28px;
+        font-weight: 800;
+        color: var(--primary);
+    }
+
+    .marks-input-area {
+        flex: 1;
+    }
+
+    .marks-label {
+        display: block;
+        font-size: 13px;
+        font-weight: 700;
+        color: var(--dark);
+        margin-bottom: 10px;
+        display: flex;
+        align-items: center;
+        gap: 6px;
+    }
+
+    [data-bs-theme="dark"] .marks-label {
+        color: #e0e0e0;
+    }
+
+    .marks-label i {
+        color: var(--primary);
+    }
+
+    .input-with-suffix {
+        position: relative;
+        display: flex;
+        align-items: center;
+    }
+
+    .marks-input-premium {
+        width: 100%;
+        padding: 14px 16px;
+        border: 2px solid #e9ecef;
+        border-radius: 10px;
+        font-size: 18px;
+        font-weight: 700;
+        background: white;
+        color: var(--dark);
+        transition: all 0.3s ease;
+        padding-right: 60px;
+    }
+
+    [data-bs-theme="dark"] .marks-input-premium {
+        background: #1a1d23;
+        border-color: #4a5568;
+        color: #e0e0e0;
+    }
+
+    .marks-input-premium:focus {
+        outline: none;
+        border-color: var(--primary);
+        box-shadow: 0 0 0 4px rgba(78, 115, 223, 0.1);
+    }
+
+    .input-suffix {
+        position: absolute;
+        right: 14px;
+        font-size: 13px;
+        font-weight: 700;
+        color: #6c757d;
+    }
+
+    [data-bs-theme="dark"] .input-suffix {
+        color: #b0b0b0;
+    }
+
+    .input-feedback {
+        display: flex;
+        gap: 8px;
+        margin-top: 8px;
+        font-size: 12px;
+    }
+
+    .feedback-text {
+        color: #6c757d;
+    }
+
+    [data-bs-theme="dark"] .feedback-text {
+        color: #b0b0b0;
+    }
+
+    .feedback-grade {
+        font-weight: 700;
+        color: var(--primary);
+    }
+
+    /* Marks Status */
+    .marks-status {
+        display: grid;
+        grid-template-columns: 1fr 1fr;
+        gap: 12px;
+    }
+
+    .status-item {
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        padding: 12px;
+        background: white;
+        border: 2px solid #e9ecef;
+        border-radius: 10px;
+    }
+
+    [data-bs-theme="dark"] .status-item {
+        background: #3a3f52;
+        border-color: #4a5568;
+    }
+
+    .status-label {
+        font-size: 11px;
+        font-weight: 700;
+        text-transform: uppercase;
+        color: #6c757d;
+        letter-spacing: 0.5px;
+    }
+
+    [data-bs-theme="dark"] .status-label {
+        color: #b0b0b0;
+    }
+
+    .status-badge,
+    .status-grade {
+        font-size: 13px;
+        font-weight: 800;
+        color: var(--primary);
+    }
+
+    /* Form Divider */
+    .form-divider {
+        height: 2px;
+        background: linear-gradient(90deg, transparent 0%, #e9ecef 50%, transparent 100%);
+        margin: 24px 0;
+    }
+
+    [data-bs-theme="dark"] .form-divider {
+        background: linear-gradient(90deg, transparent 0%, #4a5568 50%, transparent 100%);
+    }
+
+    /* Absence Toggle */
+    .absence-toggle-wrapper {
+        background: linear-gradient(135deg, rgba(220, 53, 69, 0.05) 0%, rgba(220, 53, 69, 0.03) 100%);
+        border: 2px solid rgba(220, 53, 69, 0.15);
+        border-radius: 14px;
+        padding: 20px;
+    }
+
+    [data-bs-theme="dark"] .absence-toggle-wrapper {
+        background: linear-gradient(135deg, rgba(220, 53, 69, 0.08) 0%, rgba(220, 53, 69, 0.05) 100%);
+        border-color: rgba(220, 53, 69, 0.25);
+    }
+
+    .absence-toggle-label {
+        display: flex;
+        align-items: center;
+        gap: 14px;
+        cursor: pointer;
+        user-select: none;
+    }
+
+    .absence-checkbox {
+        display: none;
+    }
+
+    .toggle-switch {
+        position: relative;
+        width: 56px;
+        height: 32px;
+        background: #e9ecef;
+        border-radius: 16px;
+        transition: all 0.3s ease;
+        flex-shrink: 0;
+    }
+
+    [data-bs-theme="dark"] .toggle-switch {
+        background: #4a5568;
+    }
+
+    .toggle-circle {
+        position: absolute;
+        top: 3px;
+        left: 3px;
+        width: 26px;
+        height: 26px;
+        background: white;
+        border-radius: 50%;
+        transition: all 0.3s ease;
+        box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+    }
+
+    .absence-checkbox:checked + .toggle-switch {
+        background: #dc3545;
+    }
+
+    .absence-checkbox:checked + .toggle-switch .toggle-circle {
+        left: 27px;
+    }
+
+    .toggle-text {
+        flex: 1;
+    }
+
+    .toggle-main {
+        display: block;
+        font-weight: 700;
+        color: var(--dark);
+    }
+
+    [data-bs-theme="dark"] .toggle-main {
+        color: #e0e0e0;
+    }
+
+    .toggle-desc {
+        display: block;
+        font-size: 12px;
+        color: #6c757d;
+        margin-top: 2px;
+    }
+
+    [data-bs-theme="dark"] .toggle-desc {
+        color: #b0b0b0;
+    }
+
+    /* Remarks Editor */
+    .remarks-editor {
+        background: linear-gradient(135deg, rgba(78, 115, 223, 0.05) 0%, rgba(28, 200, 138, 0.05) 100%);
+        border: 2px solid rgba(78, 115, 223, 0.15);
+        border-radius: 14px;
+        padding: 0;
+        overflow: hidden;
+    }
+
+    [data-bs-theme="dark"] .remarks-editor {
+        background: linear-gradient(135deg, rgba(78, 115, 223, 0.08) 0%, rgba(28, 200, 138, 0.08) 100%);
+        border-color: rgba(78, 115, 223, 0.25);
+    }
+
+    .remarks-textarea {
+        width: 100%;
+        padding: 16px;
+        border: none;
+        background: white;
+        color: var(--dark);
+        font-size: 14px;
+        resize: vertical;
+        min-height: 120px;
+        font-family: inherit;
+        transition: all 0.3s ease;
+    }
+
+    [data-bs-theme="dark"] .remarks-textarea {
+        background: #1a1d23;
+        color: #e0e0e0;
+    }
+
+    .remarks-textarea:focus {
+        outline: none;
+        box-shadow: inset 0 0 0 3px rgba(78, 115, 223, 0.1);
+    }
+
+    .remarks-textarea::placeholder {
+        color: #6c757d;
+    }
+
+    [data-bs-theme="dark"] .remarks-textarea::placeholder {
+        color: #7fb3ff;
+    }
+
+    .textarea-footer {
+        padding: 10px 16px;
+        background: linear-gradient(135deg, rgba(78, 115, 223, 0.05) 0%, rgba(28, 200, 138, 0.05) 100%);
+        border-top: 2px solid rgba(78, 115, 223, 0.1);
+        text-align: right;
+    }
+
+    .char-count {
+        font-size: 11px;
+        font-weight: 700;
+        color: #6c757d;
+        text-transform: uppercase;
+        letter-spacing: 0.5px;
+    }
+
+    [data-bs-theme="dark"] .char-count {
+        color: #b0b0b0;
+    }
+
+    /* Action Buttons */
+    .form-actions {
+        display: flex;
+        gap: 12px;
+        margin-top: 32px;
+    }
+
+    .btn-action {
+        flex: 1;
+        padding: 14px 20px;
+        border: none;
+        border-radius: 10px;
+        font-size: 14px;
+        font-weight: 700;
+        cursor: pointer;
+        transition: all 0.3s ease;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        gap: 8px;
+        text-decoration: none;
+    }
+
+    .btn-cancel {
+        background: #e9ecef;
+        color: var(--dark);
+        border: 2px solid #e0e0e0;
+    }
+
+    [data-bs-theme="dark"] .btn-cancel {
+        background: #3a3f52;
+        color: #e0e0e0;
+        border-color: #4a5568;
+    }
+
+    .btn-cancel:hover {
+        background: #dee2e6;
+        transform: translateY(-2px);
+    }
+
+    .btn-submit {
+        background: linear-gradient(135deg, #4e73df 0%, #224abe 100%);
+        color: white;
+    }
+
+    .btn-submit:hover {
+        transform: translateY(-2px);
+        box-shadow: 0 8px 24px rgba(78, 115, 223, 0.35);
+    }
+
+    .btn-submit:active {
+        transform: translateY(0);
+    }
+
+    /* Glass Button */
+    .glass-btn {
+        background: rgba(255, 255, 255, 0.1);
+        border: 2px solid rgba(78, 115, 223, 0.3);
+        color: var(--dark);
+    }
+
+    [data-bs-theme="dark"] .glass-btn {
+        color: #e0e0e0;
+    }
+
+    .glass-btn:hover {
+        background: rgba(78, 115, 223, 0.15);
+        border-color: var(--primary);
+    }
+
+    /* Responsive */
+    @media (max-width: 576px) {
+        .grade-form-container {
+            padding: 20px;
+        }
+
+        .form-wrapper {
+            border-radius: 16px;
+        }
+
+        .form-header-premium {
+            padding: 24px 20px;
+        }
+
+        .header-content {
+            flex-direction: column;
+            text-align: center;
+            gap: 16px;
+        }
+
+        .student-avatar-large {
+            width: 80px;
+            height: 80px;
+        }
+
+        .avatar-initials {
+            font-size: 24px;
+        }
+
+        .student-name-title {
+            font-size: 18px;
+        }
+
+        .info-cards-grid {
+            grid-template-columns: 1fr;
+            padding: 20px;
+            gap: 12px;
+        }
+
+        .marks-input-wrapper {
+            flex-direction: column;
+            gap: 20px;
+        }
+
+        .marks-circle-display {
+            margin: 0 auto;
+        }
+
+        .marks-input-area {
+            width: 100%;
+        }
+
+        .premium-grade-form {
+            padding: 20px;
+        }
+
+        .form-actions {
+            flex-direction: column;
+        }
+
+        .btn-action {
+            width: 100%;
+        }
+    }
+</style>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+    const marksInput = document.getElementById('marks_obtained');
+    const totalMarks = {{ grade.exam.total_marks }};
+    const isAbsentCheckbox = document.getElementById('is_absent');
+    const remarksTextarea = document.getElementById('remarks');
+    const progressRing = document.querySelector('.progress-ring-fill');
+    const percentageValue = document.querySelector('.percentage-value');
+    const statusBadge = document.getElementById('statusBadge');
+    const gradeBadge = document.getElementById('gradeBadge');
+    const charCount = document.getElementById('charCount');
+    const feedbackText = document.querySelector('.feedback-text');
+    const feedbackGrade = document.querySelector('.feedback-grade');
+    
+    // Grade calculation function
+    function calculateGrade(marks) {
+        const percentage = (marks / totalMarks) * 100;
+        if (percentage >= 90) return { grade: 'A+', color: '#1cc88a' };
+        if (percentage >= 80) return { grade: 'A', color: '#1cc88a' };
+        if (percentage >= 70) return { grade: 'B+', color: '#f6c23e' };
+        if (percentage >= 60) return { grade: 'B', color: '#f6c23e' };
+        if (percentage >= 50) return { grade: 'C', color: '#ffc107' };
+        return { grade: 'F', color: '#dc3545' };
+    }
+
+    // Update marks display
+    function updateMarksDisplay() {
+        const marks = parseFloat(marksInput.value) || 0;
+        const percentage = (marks / totalMarks) * 100;
+        
+        // Update percentage circle
+        const circumference = 2 * Math.PI * 62;
+        const offset = circumference - (percentage / 100) * circumference;
+        progressRing.style.strokeDashoffset = offset;
+        percentageValue.textContent = Math.round(percentage) + '%';
+        
+        // Update grade
+        const gradeInfo = calculateGrade(marks);
+        gradeBadge.textContent = gradeInfo.grade;
+        gradeBadge.style.color = gradeInfo.color;
+        feedbackGrade.textContent = gradeInfo.grade;
+        
+        // Update status
+        const isPassing = marks >= {{ grade.exam.pass_marks }};
+        statusBadge.textContent = isPassing ? '✓ Pass' : '✗ Fail';
+        statusBadge.style.color = isPassing ? '#1cc88a' : '#dc3545';
+        
+        // Update feedback
+        feedbackText.textContent = isPassing ? 'Passing marks achieved' : 'Below passing marks';
+        feedbackText.style.color = isPassing ? '#1cc88a' : '#dc3545';
+    }
+
+    // Handle absent checkbox
+    isAbsentCheckbox.addEventListener('change', function() {
+        if (this.checked) {
+            marksInput.value = '0';
+            marksInput.disabled = true;
+            marksInput.style.opacity = '0.5';
+            statusBadge.textContent = 'Absent';
+            statusBadge.style.color = '#dc3545';
+            gradeBadge.textContent = 'AB';
+            gradeBadge.style.color = '#6c757d';
+            feedbackText.textContent = 'Student marked as absent';
+            feedbackText.style.color = '#6c757d';
+            feedbackGrade.textContent = '';
+        } else {
+            marksInput.disabled = false;
+            marksInput.style.opacity = '1';
+            updateMarksDisplay();
+        }
+    });
+
+    // Handle marks input
+    marksInput.addEventListener('input', function() {
+        const value = parseFloat(this.value);
+        if (value > totalMarks) {
+            this.value = totalMarks;
+        } else if (value < 0) {
+            this.value = 0;
+        }
+        updateMarksDisplay();
+    });
+
+    // Handle remarks character count
+    remarksTextarea.addEventListener('input', function() {
+        charCount.textContent = this.value.length;
+    });
+
+    // Initialize on load
+    window.addEventListener('DOMContentLoaded', function() {
+        updateMarksDisplay();
+        charCount.textContent = remarksTextarea.value.length;
+        
+        if (isAbsentCheckbox.checked) {
+            isAbsentCheckbox.dispatchEvent(new Event('change'));
+        }
+
+        // Create SVG gradient
+        if (!document.querySelector('#progressGradient')) {
+            const svg = document.querySelector('svg');
+            const defs = document.createElementNS('http://www.w3.org/2000/svg', 'defs');
+            const gradient = document.createElementNS('http://www.w3.org/2000/svg', 'linearGradient');
+            gradient.setAttribute('id', 'progressGradient');
+            gradient.setAttribute('x1', '0%');
+            gradient.setAttribute('y1', '0%');
+            gradient.setAttribute('x2', '100%');
+            gradient.setAttribute('y2', '100%');
+            
+            const stop1 = document.createElementNS('http://www.w3.org/2000/svg', 'stop');
+            stop1.setAttribute('offset', '0%');
+            stop1.setAttribute('stop-color', '#4e73df');
+            
+            const stop2 = document.createElementNS('http://www.w3.org/2000/svg', 'stop');
+            stop2.setAttribute('offset', '100%');
+            stop2.setAttribute('stop-color', '#224abe');
+            
+            gradient.appendChild(stop1);
+            gradient.appendChild(stop2);
+            defs.appendChild(gradient);
+            svg.insertBefore(defs, svg.firstChild);
+        }
+    });
+</script>
+{% endblock %}

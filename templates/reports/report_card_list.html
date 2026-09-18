@@ -1,0 +1,1599 @@
+{% extends 'base.html' %}
+{% load custom_filters %}
+{% block title %}Report Cards{% endblock %}
+{% block page_title %}Premium Report Card Analytics{% endblock %}
+
+{% block breadcrumb %}
+<li class="breadcrumb-item"><a href="#"><i class="fas fa-file-contract me-1"></i>Reports</a></li>
+<li class="breadcrumb-item active"><i class="fas fa-chart-line me-1"></i>Report Cards</li>
+{% endblock %}
+
+{% block page_actions %}
+<div class="action-buttons-header">
+    <button class="premium-action-btn primary-btn" data-bs-toggle="modal" data-bs-target="#generateModal">
+        <i class="fas fa-wand-magic-sparkles"></i>
+        <span>Generate Cards</span>
+    </button>
+    <button type="button" class="premium-action-btn secondary-btn" data-bs-toggle="dropdown">
+        <i class="fas fa-ellipsis-v"></i>
+    </button>
+    <ul class="dropdown-menu dropdown-menu-end premium-dropdown">
+        <li><a class="dropdown-item" href="javascript:void(0);" data-bs-toggle="modal" data-bs-target="#generateModal"><i class="fas fa-layer-group me-2"></i>Bulk Generate</a></li>
+        <li><a class="dropdown-item" href="#"><i class="fas fa-download me-2"></i>Export All</a></li>
+    </ul>
+</div>
+{% endblock %}
+
+{% block content %}
+<div class="premium-report-container">
+    <!-- Animated Background -->
+    <div class="report-bg-animation"></div>
+
+    <!-- Statistics Dashboard -->
+    <div class="stats-dashboard-premium">
+        <div class="stat-card-dashboard">
+            <div class="stat-icon total">
+                <i class="fas fa-file-contract"></i>
+            </div>
+            <div class="stat-info">
+                <span class="stat-label">Total Reports</span>
+                <span class="stat-value">{{ report_cards.count }}</span>
+            </div>
+            <div class="stat-gradient"></div>
+        </div>
+
+        <div class="stat-card-dashboard">
+            <div class="stat-icon published">
+                <i class="fas fa-check-circle"></i>
+            </div>
+            <div class="stat-info">
+                <span class="stat-label">Published</span>
+                <span class="stat-value" id="publishedCount">0</span>
+            </div>
+            <div class="stat-gradient"></div>
+        </div>
+
+        <div class="stat-card-dashboard">
+            <div class="stat-icon draft">
+                <i class="fas fa-file-alt"></i>
+            </div>
+            <div class="stat-info">
+                <span class="stat-label">Drafts</span>
+                <span class="stat-value" id="draftCount">0</span>
+            </div>
+            <div class="stat-gradient"></div>
+        </div>
+
+        <div class="stat-card-dashboard">
+            <div class="stat-icon average">
+                <i class="fas fa-star"></i>
+            </div>
+            <div class="stat-info">
+                <span class="stat-label">Avg Grade</span>
+                <span class="stat-value" id="avgGrade">0.00</span>
+            </div>
+            <div class="stat-gradient"></div>
+        </div>
+    </div>
+
+    <!-- Premium Filter Card -->
+    <div class="premium-filter-card">
+        <div class="filter-header">
+            <h2 class="filter-title">
+                <i class="fas fa-sliders-h"></i> Advanced Filters
+            </h2>
+        </div>
+        <div class="filter-body">
+            <form method="get" class="filter-form">
+                <div class="filter-grid">
+                    <div class="filter-group">
+                        <label class="filter-label">Academic Year</label>
+                        <select name="year" class="filter-select">
+                            <option value="">All Years</option>
+                            {% for year in "2020-2021,2021-2022,2022-2023,2023-2024,2024-2025"|split:"," %}
+                            <option value="{{ year }}" {% if year_filter == year %}selected{% endif %}>{{ year }}</option>
+                            {% endfor %}
+                        </select>
+                    </div>
+                    <div class="filter-group">
+                        <label class="filter-label">Term</label>
+                        <select name="term" class="filter-select">
+                            <option value="">All Terms</option>
+                            <option value="1" {% if term_filter == '1' %}selected{% endif %}>First Term</option>
+                            <option value="2" {% if term_filter == '2' %}selected{% endif %}>Second Term</option>
+                            <option value="3" {% if term_filter == '3' %}selected{% endif %}>Third Term</option>
+                            <option value="Annual" {% if term_filter == 'Annual' %}selected{% endif %}>Annual</option>
+                        </select>
+                    </div>
+                    <div class="filter-group">
+                        <label class="filter-label">Class</label>
+                        <select name="class" class="filter-select">
+                            <option value="">All Classes</option>
+                            {% for class in classes %}
+                            <option value="{{ class.id }}" {% if class_filter == class.id|stringformat:"i" %}selected{% endif %}>
+                                {{ class.name }} - {{ class.section }}
+                            </option>
+                            {% endfor %}
+                        </select>
+                    </div>
+                    <div class="filter-group">
+                        <label class="filter-label">Status</label>
+                        <select name="status" class="filter-select">
+                            <option value="">All Status</option>
+                            <option value="published">Published</option>
+                            <option value="draft">Draft</option>
+                        </select>
+                    </div>
+                </div>
+                <div class="filter-actions">
+                    <button type="submit" class="filter-btn apply-btn">
+                        <i class="fas fa-check"></i> Apply Filters
+                    </button>
+                    <a href="{% url 'report_card_list' %}" class="filter-btn reset-btn">
+                        <i class="fas fa-redo"></i> Reset
+                    </a>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    <!-- Premium Table Card -->
+    <div class="premium-table-card">
+        <div class="table-header-premium">
+            <div class="table-title-section">
+                <h2 class="table-title">
+                    <i class="fas fa-file-pdf"></i> Report Cards
+                </h2>
+                <span class="total-count">{{ report_cards.count }} records</span>
+            </div>
+            <div class="entries-control">
+                <label>Show</label>
+                <select class="entries-select" onchange="updatePageSize(this.value)">
+                    <option value="10">10</option>
+                    <option value="25" selected>25</option>
+                    <option value="50">50</option>
+                    <option value="100">100</option>
+                </select>
+                <label>entries</label>
+            </div>
+        </div>
+
+        <div class="table-wrapper-premium">
+            <table class="premium-report-table">
+                <thead>
+                    <tr class="table-header-row">
+                        <th class="col-student">Student</th>
+                        <th class="col-class">Class</th>
+                        <th class="col-year">Year</th>
+                        <th class="col-term">Term</th>
+                        <th class="col-percentage">Percentage</th>
+                        <th class="col-grade">Grade</th>
+                        <th class="col-gpa">GPA</th>
+                        <th class="col-rank">Rank</th>
+                        <th class="col-status">Status</th>
+                        <th class="col-actions">Actions</th>
+                    </tr>
+                </thead>
+                <tbody class="table-body">
+                    {% for report in report_cards %}
+                    <tr class="table-row" data-status="{% if report.is_published %}published{% else %}draft{% endif %}">
+                        <td class="col-student">
+                            <div class="student-cell">
+                                {% if report.student.user.profile_picture %}
+                                <img src="{{ report.student.user.profile_picture.url }}" alt="Avatar" class="student-avatar">
+                                {% else %}
+                                <div class="student-avatar-placeholder">
+                                    {{ report.student.user.get_full_name|first }}
+                                </div>
+                                {% endif %}
+                                <div class="student-details">
+                                    <strong>{{ report.student.user.get_full_name }}</strong>
+                                    <small>{{ report.student.admission_number }}</small>
+                                </div>
+                            </div>
+                        </td>
+                        <td class="col-class">
+                            <span class="class-badge">{{ report.class_name.name }}</span>
+                        </td>
+                        <td class="col-year">{{ report.academic_year }}</td>
+                        <td class="col-term">
+                            <span class="term-badge {% if report.term == '1' %}term-first
+                                                    {% elif report.term == '2' %}term-second
+                                                    {% elif report.term == '3' %}term-third
+                                                    {% else %}term-annual{% endif %}">
+                                {{ report.get_term_display }}
+                            </span>
+                        </td>
+                        <td class="col-percentage">
+                            <div class="percentage-cell">
+                                <span class="percentage-value">{{ report.percentage|floatformat:1 }}%</span>
+                                <div class="percentage-bar">
+                                    <div class="percentage-fill" style="width: {{ report.percentage }}%" 
+                                         data-percentage="{% if report.percentage >= 75 %}excellent
+                                                        {% elif report.percentage >= 40 %}fair
+                                                        {% else %}poor{% endif %}"></div>
+                                </div>
+                            </div>
+                        </td>
+                        <td class="col-grade">
+                            <span class="grade-badge {% if report.overall_grade in 'A+,A' %}grade-a
+                                                     {% elif report.overall_grade in 'B+,B' %}grade-b
+                                                     {% elif report.overall_grade in 'C+,C' %}grade-c
+                                                     {% else %}grade-d{% endif %}">
+                                {{ report.overall_grade }}
+                            </span>
+                        </td>
+                        <td class="col-gpa">
+                            <span class="gpa-display">{{ report.grade_point_average|floatformat:2 }}</span>
+                        </td>
+                        <td class="col-rank">
+                            {% if report.rank %}
+                            <span class="rank-badge {% if report.rank == 1 %}rank-1
+                                                    {% elif report.rank <= 3 %}rank-top3
+                                                    {% elif report.rank <= 5 %}rank-top5
+                                                    {% else %}rank-other{% endif %}">
+                                {% if report.rank == 1 %}<i class="fas fa-crown"></i>{% endif %}
+                                {{ report.rank }}
+                            </span>
+                            {% else %}
+                            <span class="rank-badge rank-na">N/A</span>
+                            {% endif %}
+                        </td>
+                        <td class="col-status">
+                            {% if report.is_published %}
+                            <div class="status-cell">
+                                <span class="status-badge published-badge">
+                                    <i class="fas fa-check-circle"></i> Published
+                                </span>
+                                <small class="status-date">{{ report.published_date|date:"d M Y" }}</small>
+                            </div>
+                            {% else %}
+                            <span class="status-badge draft-badge">
+                                <i class="fas fa-file-alt"></i> Draft
+                            </span>
+                            {% endif %}
+                        </td>
+                        <td class="col-actions">
+                            <div class="action-buttons">
+                                <a href="{% url 'generate_report_card' report.id %}" class="action-btn download-btn" title="Download PDF">
+                                    <i class="fas fa-download"></i>
+                                </a>
+                                <button class="action-btn preview-btn" title="Preview" onclick="previewReport({{ report.id }})">
+                                    <i class="fas fa-eye"></i>
+                                </button>
+                                <button class="action-btn edit-btn" title="Edit" onclick="editReport({{ report.id }})">
+                                    <i class="fas fa-edit"></i>
+                                </button>
+                                <button class="action-btn delete-btn" title="Delete" onclick="deleteReport({{ report.id }})">
+                                    <i class="fas fa-trash"></i>
+                                </button>
+                            </div>
+                        </td>
+                    </tr>
+                    {% empty %}
+                    <tr class="empty-row">
+                        <td colspan="10" class="empty-cell">
+                            <div class="empty-state-section">
+                                <div class="empty-icon">
+                                    <i class="fas fa-file-pdf"></i>
+                                </div>
+                                <h3 class="empty-title">No Report Cards Found</h3>
+                                <p class="empty-message">Start by generating report cards for your students</p>
+                                <button class="empty-action-btn" data-bs-toggle="modal" data-bs-target="#generateModal">
+                                    <i class="fas fa-wand-magic-sparkles"></i>
+                                    <span>Generate Report Cards</span>
+                                </button>
+                            </div>
+                        </td>
+                    </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        </div>
+    </div>
+</div>
+
+<!-- Premium Generate Modal -->
+<div class="modal fade" id="generateModal" tabindex="-1" aria-hidden="true">
+    <div class="modal-dialog modal-lg modal-dialog-centered premium-modal">
+        <div class="modal-content premium-modal-content">
+            <div class="modal-header-premium">
+                <div class="modal-title-section">
+                    <h5 class="modal-title">
+                        <i class="fas fa-wand-magic-sparkles"></i> Generate Report Cards
+                    </h5>
+                    <p class="modal-subtitle">Create bulk reports for an entire class</p>
+                </div>
+                <button type="button" class="modal-close-btn" data-bs-dismiss="modal" aria-label="Close">
+                    <i class="fas fa-times"></i>
+                </button>
+            </div>
+            <div class="modal-body-premium">
+                <form method="post" action="{% url 'generate_bulk_report_cards' %}" id="generateForm" class="premium-modal-form">
+                    {% csrf_token %}
+                    
+                    <div class="modal-section">
+                        <h6 class="section-title">Academic Details</h6>
+                        <div class="modal-grid">
+                            <div class="form-group-modal">
+                                <label class="modal-label">Academic Year <span class="required">*</span></label>
+                                <select name="academic_year" class="modal-select" required>
+                                    <option value="{{ current_year }}" selected>{{ current_year }}</option>
+                                    {% for year in "2020-2021,2021-2022,2022-2023,2023-2024,2024-2025"|split:"," %}
+                                    <option value="{{ year }}">{{ year }}</option>
+                                    {% endfor %}
+                                </select>
+                            </div>
+
+                            <div class="form-group-modal">
+                                <label class="modal-label">Term <span class="required">*</span></label>
+                                <select name="term" class="modal-select" required>
+                                    <option value="1">First Term</option>
+                                    <option value="2" selected>Second Term</option>
+                                    <option value="3">Third Term</option>
+                                    <option value="Annual">Annual</option>
+                                </select>
+                            </div>
+
+                            <div class="form-group-modal">
+                                <label class="modal-label">Class <span class="required">*</span></label>
+                                <select name="class_id" class="modal-select" required>
+                                    {% for class in classes %}
+                                    <option value="{{ class.id }}">{{ class.name }} - {{ class.section }}</option>
+                                    {% endfor %}
+                                </select>
+                            </div>
+
+                            <div class="form-group-modal">
+                                <label class="modal-label">Generate For</label>
+                                <select name="generate_for" class="modal-select">
+                                    <option value="all">All Students</option>
+                                    <option value="published">Not Published</option>
+                                    <option value="update">Update Existing</option>
+                                </select>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="modal-section">
+                        <h6 class="section-title">Options</h6>
+                        <div class="options-list">
+                            <label class="option-item">
+                                <input type="checkbox" name="calculate_ranks" checked>
+                                <div class="option-content">
+                                    <span class="option-title">Calculate Class Ranks</span>
+                                    <small>Automatically rank students by performance</small>
+                                </div>
+                            </label>
+                            <label class="option-item">
+                                <input type="checkbox" name="send_to_parents">
+                                <div class="option-content">
+                                    <span class="option-title">Send Email to Parents</span>
+                                    <small>Notify parents via email when published</small>
+                                </div>
+                            </label>
+                        </div>
+                    </div>
+                </form>
+            </div>
+            <div class="modal-footer-premium">
+                <button type="button" class="modal-btn cancel-modal-btn" data-bs-dismiss="modal">
+                    <i class="fas fa-times"></i> Cancel
+                </button>
+                <button type="submit" form="generateForm" class="modal-btn generate-modal-btn">
+                    <i class="fas fa-cogs"></i> Generate Now
+                </button>
+            </div>
+        </div>
+    </div>
+</div>
+
+{% endblock %}
+
+{% block extra_css %}
+<style>
+    /* ============= PREMIUM REPORT CARD MANAGEMENT ============= */
+
+    .premium-report-container {
+        position: relative;
+        min-height: 100vh;
+        padding: 40px 20px;
+        background: linear-gradient(135deg, #f5f7fa 0%, #e9ecef 100%);
+        overflow: hidden;
+    }
+
+    [data-bs-theme="dark"] .premium-report-container {
+        background: linear-gradient(135deg, #1a1d23 0%, #2d3142 100%);
+    }
+
+    .report-bg-animation {
+        position: fixed;
+        top: 0;
+        left: 0;
+        width: 100%;
+        height: 100%;
+        background: linear-gradient(135deg, rgba(78, 115, 223, 0.05) 0%, rgba(28, 200, 138, 0.02) 100%);
+        z-index: -1;
+        animation: reportBgFlow 20s ease-in-out infinite;
+    }
+
+    @keyframes reportBgFlow {
+        0%, 100% { opacity: 1; transform: scale(1); }
+        50% { opacity: 0.95; transform: scale(1.02); }
+    }
+
+    /* Action Buttons Header */
+    .action-buttons-header {
+        display: flex;
+        gap: 12px;
+        align-items: center;
+        position: relative;
+    }
+
+    .premium-action-btn {
+        padding: 12px 20px;
+        border: none;
+        border-radius: 10px;
+        font-weight: 700;
+        font-size: 14px;
+        cursor: pointer;
+        transition: all 0.3s ease;
+        display: flex;
+        align-items: center;
+        gap: 8px;
+    }
+
+    .primary-btn {
+        background: linear-gradient(135deg, #4e73df 0%, #224abe 100%);
+        color: white;
+        box-shadow: 0 4px 15px rgba(78, 115, 223, 0.3);
+    }
+
+    .primary-btn:hover {
+        transform: translateY(-3px);
+        box-shadow: 0 6px 20px rgba(78, 115, 223, 0.4);
+    }
+
+    .secondary-btn {
+        background: white;
+        color: #2e3440;
+        border: 2px solid #e9ecef;
+    }
+
+    [data-bs-theme="dark"] .secondary-btn {
+        background: #3a3f52;
+        color: #e0e0e0;
+        border-color: #4a5568;
+    }
+
+    .secondary-btn:hover {
+        background: #f8f9fa;
+    }
+
+    [data-bs-theme="dark"] .secondary-btn:hover {
+        background: #4a5568;
+    }
+
+    .premium-dropdown {
+        border-radius: 12px;
+        box-shadow: 0 10px 30px rgba(0, 0, 0, 0.1);
+        border: none;
+    }
+
+    .premium-dropdown .dropdown-item {
+        padding: 12px 16px;
+        font-size: 13px;
+        transition: all 0.3s ease;
+    }
+
+    .premium-dropdown .dropdown-item:hover {
+        background: linear-gradient(135deg, rgba(78, 115, 223, 0.1) 0%, rgba(28, 200, 138, 0.05) 100%);
+        color: #4e73df;
+        font-weight: 700;
+    }
+
+    /* Stats Dashboard */
+    .stats-dashboard-premium {
+        display: grid;
+        grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+        gap: 20px;
+        margin-bottom: 30px;
+    }
+
+    .stat-card-dashboard {
+        position: relative;
+        padding: 24px;
+        background: white;
+        border-radius: 16px;
+        box-shadow: 0 10px 40px rgba(78, 115, 223, 0.08);
+        overflow: hidden;
+        transition: all 0.4s ease;
+    }
+
+    [data-bs-theme="dark"] .stat-card-dashboard {
+        background: linear-gradient(135deg, #2d3142 0%, #1a1d23 100%);
+        box-shadow: 0 10px 40px rgba(78, 115, 223, 0.15);
+    }
+
+    .stat-card-dashboard:hover {
+        transform: translateY(-8px);
+        box-shadow: 0 20px 60px rgba(78, 115, 223, 0.15);
+    }
+
+    .stat-gradient {
+        position: absolute;
+        top: -50%;
+        right: -30%;
+        width: 300px;
+        height: 300px;
+        border-radius: 50%;
+        opacity: 0.1;
+        pointer-events: none;
+    }
+
+    .stat-card-dashboard .stat-icon {
+        width: 56px;
+        height: 56px;
+        border-radius: 12px;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        font-size: 28px;
+        color: white;
+        margin-bottom: 12px;
+        position: relative;
+        z-index: 1;
+    }
+
+    .stat-icon.total { background: linear-gradient(135deg, #4e73df 0%, #224abe 100%); }
+    .stat-icon.total ~ .stat-gradient { background: #4e73df; }
+
+    .stat-icon.published { background: linear-gradient(135deg, #1cc88a 0%, #128a5f 100%); }
+    .stat-icon.published ~ .stat-gradient { background: #1cc88a; }
+
+    .stat-icon.draft { background: linear-gradient(135deg, #f6c23e 0%, #d4a017 100%); }
+    .stat-icon.draft ~ .stat-gradient { background: #f6c23e; }
+
+    .stat-icon.average { background: linear-gradient(135deg, #e74c3c 0%, #c0392b 100%); }
+    .stat-icon.average ~ .stat-gradient { background: #e74c3c; }
+
+    .stat-info {
+        position: relative;
+        z-index: 1;
+        display: flex;
+        flex-direction: column;
+    }
+
+    .stat-label {
+        font-size: 12px;
+        font-weight: 700;
+        color: #6c757d;
+        text-transform: uppercase;
+        letter-spacing: 0.5px;
+        margin-bottom: 6px;
+    }
+
+    [data-bs-theme="dark"] .stat-label {
+        color: #b0b0b0;
+    }
+
+    .stat-value {
+        font-size: 28px;
+        font-weight: 800;
+        color: #2e3440;
+    }
+
+    [data-bs-theme="dark"] .stat-value {
+        color: #e0e0e0;
+    }
+
+    /* Premium Filter Card */
+    .premium-filter-card {
+        background: white;
+        border-radius: 24px;
+        box-shadow: 0 10px 40px rgba(78, 115, 223, 0.08);
+        margin-bottom: 30px;
+        overflow: hidden;
+        animation: cardSlideUp 0.8s ease-out;
+    }
+
+    [data-bs-theme="dark"] .premium-filter-card {
+        background: linear-gradient(135deg, #2d3142 0%, #1a1d23 100%);
+    }
+
+    @keyframes cardSlideUp {
+        from {
+            opacity: 0;
+            transform: translateY(30px);
+        }
+        to {
+            opacity: 1;
+            transform: translateY(0);
+        }
+    }
+
+    .filter-header {
+        padding: 24px 28px;
+        background: linear-gradient(135deg, rgba(78, 115, 223, 0.08) 0%, rgba(28, 200, 138, 0.04) 100%);
+        border-bottom: 2px solid rgba(78, 115, 223, 0.1);
+    }
+
+    [data-bs-theme="dark"] .filter-header {
+        border-bottom-color: rgba(78, 115, 223, 0.2);
+    }
+
+    .filter-title {
+        margin: 0;
+        font-size: 18px;
+        font-weight: 800;
+        color: #2e3440;
+        display: flex;
+        align-items: center;
+        gap: 10px;
+    }
+
+    [data-bs-theme="dark"] .filter-title {
+        color: #e0e0e0;
+    }
+
+    .filter-body {
+        padding: 24px 28px;
+    }
+
+    .filter-form {
+        display: flex;
+        flex-direction: column;
+        gap: 20px;
+    }
+
+    .filter-grid {
+        display: grid;
+        grid-template-columns: repeat(auto-fit, minmax(180px, 1fr));
+        gap: 16px;
+    }
+
+    .filter-group {
+        display: flex;
+        flex-direction: column;
+    }
+
+    .filter-label {
+        font-size: 12px;
+        font-weight: 700;
+        color: #2e3440;
+        margin-bottom: 8px;
+        text-transform: uppercase;
+    }
+
+    [data-bs-theme="dark"] .filter-label {
+        color: #e0e0e0;
+    }
+
+    .filter-select {
+        padding: 10px 12px;
+        border: 2px solid #e9ecef;
+        border-radius: 8px;
+        background: white;
+        color: #2e3440;
+        font-size: 13px;
+        font-weight: 600;
+        cursor: pointer;
+        transition: all 0.3s ease;
+    }
+
+    [data-bs-theme="dark"] .filter-select {
+        background: #3a3f52;
+        border-color: #4a5568;
+        color: #e0e0e0;
+    }
+
+    .filter-select:focus {
+        border-color: #4e73df;
+        box-shadow: 0 0 0 3px rgba(78, 115, 223, 0.1);
+        outline: none;
+    }
+
+    .filter-actions {
+        display: flex;
+        gap: 12px;
+        justify-content: flex-end;
+    }
+
+    .filter-btn {
+        padding: 10px 20px;
+        border: none;
+        border-radius: 8px;
+        font-weight: 700;
+        font-size: 13px;
+        cursor: pointer;
+        transition: all 0.3s ease;
+        display: inline-flex;
+        align-items: center;
+        gap: 6px;
+        text-decoration: none;
+    }
+
+    .apply-btn {
+        background: linear-gradient(135deg, #4e73df 0%, #224abe 100%);
+        color: white;
+    }
+
+    .apply-btn:hover {
+        transform: translateY(-2px);
+        box-shadow: 0 4px 12px rgba(78, 115, 223, 0.3);
+    }
+
+    .reset-btn {
+        background: #e9ecef;
+        color: #2e3440;
+    }
+
+    [data-bs-theme="dark"] .reset-btn {
+        background: #4a5568;
+        color: #e0e0e0;
+    }
+
+    .reset-btn:hover {
+        background: #dee2e6;
+    }
+
+    [data-bs-theme="dark"] .reset-btn:hover {
+        background: #5a6778;
+    }
+
+    /* Premium Table Card */
+    .premium-table-card {
+        background: white;
+        border-radius: 24px;
+        box-shadow: 0 20px 60px rgba(78, 115, 223, 0.1);
+        overflow: hidden;
+        animation: cardSlideUp 0.8s ease-out 0.1s both;
+    }
+
+    [data-bs-theme="dark"] .premium-table-card {
+        background: linear-gradient(135deg, #2d3142 0%, #1a1d23 100%);
+    }
+
+    .table-header-premium {
+        padding: 24px 28px;
+        background: linear-gradient(135deg, rgba(78, 115, 223, 0.08) 0%, rgba(28, 200, 138, 0.04) 100%);
+        border-bottom: 2px solid rgba(78, 115, 223, 0.1);
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+    }
+
+    [data-bs-theme="dark"] .table-header-premium {
+        border-bottom-color: rgba(78, 115, 223, 0.2);
+    }
+
+    .table-title-section {
+        flex: 1;
+    }
+
+    .table-title {
+        margin: 0 0 6px;
+        font-size: 20px;
+        font-weight: 800;
+        color: #2e3440;
+        display: flex;
+        align-items: center;
+        gap: 10px;
+    }
+
+    [data-bs-theme="dark"] .table-title {
+        color: #e0e0e0;
+    }
+
+    .total-count {
+        font-size: 12px;
+        color: #6c757d;
+        font-weight: 600;
+    }
+
+    [data-bs-theme="dark"] .total-count {
+        color: #b0b0b0;
+    }
+
+    .entries-control {
+        display: flex;
+        align-items: center;
+        gap: 8px;
+        font-size: 13px;
+        color: #2e3440;
+    }
+
+    [data-bs-theme="dark"] .entries-control {
+        color: #e0e0e0;
+    }
+
+    .entries-select {
+        padding: 6px 10px;
+        border: 2px solid #e9ecef;
+        border-radius: 6px;
+        background: white;
+        color: #2e3440;
+        font-size: 13px;
+        font-weight: 600;
+        cursor: pointer;
+    }
+
+    [data-bs-theme="dark"] .entries-select {
+        background: #3a3f52;
+        border-color: #4a5568;
+        color: #e0e0e0;
+    }
+
+    .table-wrapper-premium {
+        overflow-x: auto;
+        max-height: 700px;
+    }
+
+    .premium-report-table {
+        width: 100%;
+        border-collapse: collapse;
+        font-size: 13px;
+    }
+
+    .table-header-row {
+        background: linear-gradient(135deg, rgba(78, 115, 223, 0.1) 0%, rgba(28, 200, 138, 0.05) 100%);
+        position: sticky;
+        top: 0;
+        z-index: 20;
+    }
+
+    .table-header-row th {
+        padding: 16px 12px;
+        text-align: left;
+        font-weight: 700;
+        color: #2e3440;
+        border-bottom: 2px solid rgba(78, 115, 223, 0.2);
+    }
+
+    [data-bs-theme="dark"] .table-header-row th {
+        color: #e0e0e0;
+        border-bottom-color: rgba(78, 115, 223, 0.3);
+    }
+
+    .table-row {
+        border-bottom: 1px solid rgba(78, 115, 223, 0.1);
+        transition: all 0.3s ease;
+    }
+
+    [data-bs-theme="dark"] .table-row {
+        border-bottom-color: rgba(78, 115, 223, 0.2);
+    }
+
+    .table-row:hover {
+        background: rgba(78, 115, 223, 0.05);
+    }
+
+    [data-bs-theme="dark"] .table-row:hover {
+        background: rgba(78, 115, 223, 0.1);
+    }
+
+    .premium-report-table td {
+        padding: 14px 12px;
+        color: #2e3440;
+    }
+
+    [data-bs-theme="dark"] .premium-report-table td {
+        color: #e0e0e0;
+    }
+
+    /* Column Widths */
+    .col-student { width: 200px; }
+    .col-class { width: 100px; }
+    .col-year { width: 100px; }
+    .col-term { width: 100px; }
+    .col-percentage { width: 130px; }
+    .col-grade { width: 80px; }
+    .col-gpa { width: 70px; }
+    .col-rank { width: 70px; }
+    .col-status { width: 120px; }
+    .col-actions { width: 100px; }
+
+    /* Student Cell */
+    .student-cell {
+        display: flex;
+        align-items: center;
+        gap: 10px;
+    }
+
+    .student-avatar {
+        width: 40px;
+        height: 40px;
+        border-radius: 10px;
+        object-fit: cover;
+        border: 2px solid rgba(78, 115, 223, 0.2);
+    }
+
+    .student-avatar-placeholder {
+        width: 40px;
+        height: 40px;
+        border-radius: 10px;
+        background: linear-gradient(135deg, #4e73df 0%, #224abe 100%);
+        color: white;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        font-weight: 700;
+        font-size: 14px;
+    }
+
+    .student-details {
+        display: flex;
+        flex-direction: column;
+    }
+
+    .student-details strong {
+        font-size: 12px;
+        color: #2e3440;
+    }
+
+    [data-bs-theme="dark"] .student-details strong {
+        color: #e0e0e0;
+    }
+
+    .student-details small {
+        font-size: 11px;
+        color: #6c757d;
+    }
+
+    [data-bs-theme="dark"] .student-details small {
+        color: #b0b0b0;
+    }
+
+    /* Class Badge */
+    .class-badge {
+        display: inline-block;
+        padding: 6px 12px;
+        background: rgba(78, 115, 223, 0.1);
+        border-radius: 8px;
+        color: #4e73df;
+        font-weight: 700;
+        font-size: 11px;
+    }
+
+    [data-bs-theme="dark"] .class-badge {
+        background: rgba(78, 115, 223, 0.2);
+        color: #7fa3f6;
+    }
+
+    /* Term Badges */
+    .term-badge {
+        display: inline-block;
+        padding: 6px 10px;
+        border-radius: 6px;
+        font-weight: 700;
+        font-size: 11px;
+        color: white;
+    }
+
+    .term-first { background: linear-gradient(135deg, #4e73df 0%, #224abe 100%); }
+    .term-second { background: linear-gradient(135deg, #3498db 0%, #2980b9 100%); }
+    .term-third { background: linear-gradient(135deg, #f6c23e 0%, #d4a017 100%); }
+    .term-annual { background: linear-gradient(135deg, #1cc88a 0%, #128a5f 100%); }
+
+    /* Percentage Cell */
+    .percentage-cell {
+        display: flex;
+        flex-direction: column;
+        gap: 6px;
+    }
+
+    .percentage-value {
+        font-weight: 700;
+        color: #4e73df;
+        font-size: 12px;
+    }
+
+    .percentage-bar {
+        height: 6px;
+        background: #e9ecef;
+        border-radius: 3px;
+        overflow: hidden;
+    }
+
+    [data-bs-theme="dark"] .percentage-bar {
+        background: #4a5568;
+    }
+
+    .percentage-fill {
+        height: 100%;
+        border-radius: 3px;
+        transition: width 0.6s ease;
+    }
+
+    .percentage-fill[data-percentage="excellent"] { background: linear-gradient(90deg, #1cc88a 0%, #128a5f 100%); }
+    .percentage-fill[data-percentage="fair"] { background: linear-gradient(90deg, #f6c23e 0%, #d4a017 100%); }
+    .percentage-fill[data-percentage="poor"] { background: linear-gradient(90deg, #e74c3c 0%, #c0392b 100%); }
+
+    /* Grade Badges */
+    .grade-badge {
+        display: inline-block;
+        padding: 6px 12px;
+        border-radius: 8px;
+        font-weight: 700;
+        font-size: 12px;
+        color: white;
+    }
+
+    .grade-a { background: linear-gradient(135deg, #1cc88a 0%, #128a5f 100%); }
+    .grade-b { background: linear-gradient(135deg, #f6c23e 0%, #d4a017 100%); }
+    .grade-c { background: linear-gradient(135deg, #3498db 0%, #2980b9 100%); }
+    .grade-d { background: linear-gradient(135deg, #e74c3c 0%, #c0392b 100%); }
+
+    /* GPA Display */
+    .gpa-display {
+        font-weight: 700;
+        color: #2e3440;
+    }
+
+    [data-bs-theme="dark"] .gpa-display {
+        color: #e0e0e0;
+    }
+
+    /* Rank Badges */
+    .rank-badge {
+        display: inline-flex;
+        align-items: center;
+        gap: 4px;
+        padding: 6px 10px;
+        border-radius: 8px;
+        font-weight: 700;
+        font-size: 11px;
+        color: white;
+    }
+
+    .rank-1 { background: linear-gradient(135deg, #FFD700 0%, #FFA500 100%); }
+    .rank-top3 { background: linear-gradient(135deg, #C0C0C0 0%, #A9A9A9 100%); }
+    .rank-top5 { background: linear-gradient(135deg, #CD7F32 0%, #8B4513 100%); }
+    .rank-other { background: linear-gradient(135deg, #95a5a6 0%, #7f8c8d 100%); }
+    .rank-na { background: linear-gradient(135deg, #6c757d 0%, #5a6268 100%); }
+
+    /* Status Cell */
+    .status-cell {
+        display: flex;
+        flex-direction: column;
+        gap: 4px;
+    }
+
+    .status-badge {
+        display: inline-flex;
+        align-items: center;
+        gap: 6px;
+        padding: 6px 10px;
+        border-radius: 8px;
+        font-size: 11px;
+        font-weight: 700;
+        color: white;
+    }
+
+    .published-badge { background: linear-gradient(135deg, #1cc88a 0%, #128a5f 100%); }
+    .draft-badge { background: linear-gradient(135deg, #f6c23e 0%, #d4a017 100%); }
+
+    .status-date {
+        font-size: 10px;
+        color: #6c757d;
+    }
+
+    [data-bs-theme="dark"] .status-date {
+        color: #b0b0b0;
+    }
+
+    /* Action Buttons */
+    .action-buttons {
+        display: flex;
+        gap: 6px;
+        justify-content: center;
+    }
+
+    .action-btn {
+        width: 32px;
+        height: 32px;
+        border-radius: 8px;
+        border: none;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        cursor: pointer;
+        font-size: 13px;
+        transition: all 0.3s ease;
+        text-decoration: none;
+        color: white;
+    }
+
+    .download-btn {
+        background: linear-gradient(135deg, #4e73df 0%, #224abe 100%);
+    }
+
+    .download-btn:hover {
+        transform: translateY(-3px);
+        box-shadow: 0 4px 12px rgba(78, 115, 223, 0.3);
+    }
+
+    .preview-btn {
+        background: linear-gradient(135deg, #3498db 0%, #2980b9 100%);
+    }
+
+    .preview-btn:hover {
+        transform: translateY(-3px);
+        box-shadow: 0 4px 12px rgba(52, 152, 219, 0.3);
+    }
+
+    .edit-btn {
+        background: linear-gradient(135deg, #f6c23e 0%, #d4a017 100%);
+    }
+
+    .edit-btn:hover {
+        transform: translateY(-3px);
+        box-shadow: 0 4px 12px rgba(246, 194, 62, 0.3);
+    }
+
+    .delete-btn {
+        background: linear-gradient(135deg, #e74c3c 0%, #c0392b 100%);
+    }
+
+    .delete-btn:hover {
+        transform: translateY(-3px);
+        box-shadow: 0 4px 12px rgba(231, 76, 60, 0.3);
+    }
+
+    /* Empty State */
+    .empty-row {
+        height: 300px;
+    }
+
+    .empty-cell {
+        padding: 0 !important;
+    }
+
+    .empty-state-section {
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+        justify-content: center;
+        height: 100%;
+        text-align: center;
+        padding: 40px 20px;
+    }
+
+    .empty-icon {
+        font-size: 64px;
+        color: rgba(78, 115, 223, 0.2);
+        margin-bottom: 16px;
+    }
+
+    .empty-title {
+        font-size: 20px;
+        font-weight: 800;
+        color: #2e3440;
+        margin: 0 0 8px;
+    }
+
+    [data-bs-theme="dark"] .empty-title {
+        color: #e0e0e0;
+    }
+
+    .empty-message {
+        font-size: 13px;
+        color: #6c757d;
+        margin: 0 0 20px;
+    }
+
+    [data-bs-theme="dark"] .empty-message {
+        color: #b0b0b0;
+    }
+
+    .empty-action-btn {
+        display: inline-flex;
+        align-items: center;
+        gap: 8px;
+        padding: 12px 24px;
+        background: linear-gradient(135deg, #4e73df 0%, #224abe 100%);
+        color: white;
+        border: none;
+        border-radius: 10px;
+        font-weight: 700;
+        font-size: 14px;
+        cursor: pointer;
+        transition: all 0.3s ease;
+    }
+
+    .empty-action-btn:hover {
+        transform: translateY(-3px);
+        box-shadow: 0 6px 20px rgba(78, 115, 223, 0.3);
+    }
+
+    /* Premium Modal */
+    .premium-modal {
+        --bs-modal-border-radius: 20px;
+    }
+
+    .premium-modal-content {
+        background: white;
+        border: none;
+        box-shadow: 0 20px 60px rgba(78, 115, 223, 0.2);
+    }
+
+    [data-bs-theme="dark"] .premium-modal-content {
+        background: linear-gradient(135deg, #2d3142 0%, #1a1d23 100%);
+    }
+
+    .modal-header-premium {
+        padding: 28px;
+        background: linear-gradient(135deg, rgba(78, 115, 223, 0.1) 0%, rgba(28, 200, 138, 0.05) 100%);
+        border-bottom: 2px solid rgba(78, 115, 223, 0.1);
+        border-radius: 20px 20px 0 0;
+    }
+
+    [data-bs-theme="dark"] .modal-header-premium {
+        border-bottom-color: rgba(78, 115, 223, 0.2);
+    }
+
+    .modal-title-section {
+        flex: 1;
+    }
+
+    .modal-title {
+        margin: 0 0 6px;
+        font-size: 20px;
+        font-weight: 800;
+        color: #2e3440;
+        display: flex;
+        align-items: center;
+        gap: 10px;
+    }
+
+    [data-bs-theme="dark"] .modal-title {
+        color: #e0e0e0;
+    }
+
+    .modal-subtitle {
+        margin: 0;
+        font-size: 12px;
+        color: #6c757d;
+    }
+
+    [data-bs-theme="dark"] .modal-subtitle {
+        color: #b0b0b0;
+    }
+
+    .modal-close-btn {
+        width: 36px;
+        height: 36px;
+        border: none;
+        background: white;
+        border-radius: 10px;
+        color: #2e3440;
+        cursor: pointer;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        transition: all 0.3s ease;
+    }
+
+    [data-bs-theme="dark"] .modal-close-btn {
+        background: #3a3f52;
+        color: #e0e0e0;
+    }
+
+    .modal-close-btn:hover {
+        transform: rotate(90deg);
+    }
+
+    .modal-body-premium {
+        padding: 28px;
+    }
+
+    .premium-modal-form {
+        display: flex;
+        flex-direction: column;
+        gap: 24px;
+    }
+
+    .modal-section {
+        padding: 20px;
+        background: linear-gradient(135deg, rgba(78, 115, 223, 0.04) 0%, transparent 100%);
+        border-radius: 12px;
+        border: 1px solid rgba(78, 115, 223, 0.1);
+    }
+
+    [data-bs-theme="dark"] .modal-section {
+        border-color: rgba(78, 115, 223, 0.2);
+    }
+
+    .section-title {
+        margin: 0 0 16px;
+        font-size: 14px;
+        font-weight: 800;
+        color: #2e3440;
+    }
+
+    [data-bs-theme="dark"] .section-title {
+        color: #e0e0e0;
+    }
+
+    .modal-grid {
+        display: grid;
+        grid-template-columns: repeat(2, 1fr);
+        gap: 16px;
+    }
+
+    .form-group-modal {
+        display: flex;
+        flex-direction: column;
+    }
+
+    .modal-label {
+        font-size: 12px;
+        font-weight: 700;
+        color: #2e3440;
+        margin-bottom: 8px;
+    }
+
+    [data-bs-theme="dark"] .modal-label {
+        color: #e0e0e0;
+    }
+
+    .required {
+        color: #e74c3c;
+    }
+
+    .modal-select {
+        padding: 10px 12px;
+        border: 2px solid #e9ecef;
+        border-radius: 8px;
+        background: white;
+        color: #2e3440;
+        font-size: 13px;
+        font-weight: 600;
+        cursor: pointer;
+        transition: all 0.3s ease;
+    }
+
+    [data-bs-theme="dark"] .modal-select {
+        background: #3a3f52;
+        border-color: #4a5568;
+        color: #e0e0e0;
+    }
+
+    .modal-select:focus {
+        border-color: #4e73df;
+        box-shadow: 0 0 0 3px rgba(78, 115, 223, 0.1);
+        outline: none;
+    }
+
+    /* Options List */
+    .options-list {
+        display: flex;
+        flex-direction: column;
+        gap: 12px;
+    }
+
+    .option-item {
+        padding: 14px;
+        border: 2px solid #e9ecef;
+        border-radius: 10px;
+        cursor: pointer;
+        transition: all 0.3s ease;
+        display: flex;
+        align-items: flex-start;
+        gap: 12px;
+    }
+
+    [data-bs-theme="dark"] .option-item {
+        border-color: #4a5568;
+    }
+
+    .option-item:hover {
+        border-color: #4e73df;
+        background: rgba(78, 115, 223, 0.02);
+    }
+
+    [data-bs-theme="dark"] .option-item:hover {
+        background: rgba(78, 115, 223, 0.1);
+    }
+
+    .option-item input[type="checkbox"] {
+        width: 18px;
+        height: 18px;
+        margin-top: 2px;
+        cursor: pointer;
+    }
+
+    .option-content {
+        display: flex;
+        flex-direction: column;
+        flex: 1;
+    }
+
+    .option-title {
+        font-size: 13px;
+        font-weight: 700;
+        color: #2e3440;
+    }
+
+    [data-bs-theme="dark"] .option-title {
+        color: #e0e0e0;
+    }
+
+    .option-item small {
+        font-size: 11px;
+        color: #6c757d;
+        margin-top: 2px;
+    }
+
+    [data-bs-theme="dark"] .option-item small {
+        color: #b0b0b0;
+    }
+
+    /* Modal Footer */
+    .modal-footer-premium {
+        padding: 20px 28px;
+        background: linear-gradient(135deg, rgba(78, 115, 223, 0.04) 0%, transparent 100%);
+        border-top: 2px solid rgba(78, 115, 223, 0.1);
+        border-radius: 0 0 20px 20px;
+        display: flex;
+        gap: 12px;
+        justify-content: flex-end;
+    }
+
+    [data-bs-theme="dark"] .modal-footer-premium {
+        border-top-color: rgba(78, 115, 223, 0.2);
+    }
+
+    .modal-btn {
+        padding: 12px 24px;
+        border: none;
+        border-radius: 10px;
+        font-weight: 700;
+        font-size: 14px;
+        cursor: pointer;
+        transition: all 0.3s ease;
+        display: inline-flex;
+        align-items: center;
+        gap: 8px;
+    }
+
+    .cancel-modal-btn {
+        background: #e9ecef;
+        color: #2e3440;
+    }
+
+    [data-bs-theme="dark"] .cancel-modal-btn {
+        background: #4a5568;
+        color: #e0e0e0;
+    }
+
+    .cancel-modal-btn:hover {
+        background: #dee2e6;
+    }
+
+    [data-bs-theme="dark"] .cancel-modal-btn:hover {
+        background: #5a6778;
+    }
+
+    .generate-modal-btn {
+        background: linear-gradient(135deg, #4e73df 0%, #224abe 100%);
+        color: white;
+        box-shadow: 0 4px 15px rgba(78, 115, 223, 0.3);
+    }
+
+    .generate-modal-btn:hover {
+        transform: translateY(-3px);
+        box-shadow: 0 6px 20px rgba(78, 115, 223, 0.4);
+    }
+
+    /* Responsive Design */
+    @media (max-width: 1200px) {
+        .modal-grid {
+            grid-template-columns: 1fr;
+        }
+
+        .col-student { width: 150px; }
+    }
+
+    @media (max-width: 768px) {
+        .stats-dashboard-premium {
+            grid-template-columns: repeat(2, 1fr);
+        }
+
+        .filter-grid {
+            grid-template-columns: repeat(2, 1fr);
+        }
+
+        .filter-actions {
+            flex-direction: column;
+        }
+
+        .filter-btn {
+            width: 100%;
+            justify-content: center;
+        }
+
+        .table-header-premium {
+            flex-direction: column;
+            gap: 16px;
+            align-items: flex-start;
+        }
+
+        .entries-control {
+            flex-wrap: wrap;
+        }
+
+        .col-student { width: 120px; }
+        .col-remarks { display: none; }
+
+        .modal-grid {
+            grid-template-columns: 1fr;
+        }
+
+        .action-buttons {
+            flex-direction: column;
+        }
+
+        .action-btn {
+            width: 100%;
+        }
+    }
+</style>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+    function updatePageSize(value) {
+        const url = new URL(window.location);
+        url.searchParams.set('page_size', value);
+        window.location.href = url.toString();
+    }
+
+    function previewReport(reportId) {
+        console.log('Preview report:', reportId);
+        // Implement preview functionality
+    }
+
+    function editReport(reportId) {
+        console.log('Edit report:', reportId);
+        // Implement edit functionality
+    }
+
+    function deleteReport(reportId) {
+        if (confirm('Are you sure you want to delete this report card? This action cannot be undone.')) {
+            console.log('Delete report:', reportId);
+            // Implement delete functionality
+        }
+    }
+
+    // Calculate statistics
+    document.addEventListener('DOMContentLoaded', function() {
+        const rows = document.querySelectorAll('.table-row');
+        let publishedCount = 0;
+        let draftCount = 0;
+        let totalGPA = 0;
+        let gpaCount = 0;
+
+        rows.forEach(row => {
+            if (row.dataset.status === 'published') {
+                publishedCount++;
+            } else {
+                draftCount++;
+            }
+
+            const gpaCell = row.querySelector('.gpa-display');
+            if (gpaCell) {
+                const gpa = parseFloat(gpaCell.textContent);
+                totalGPA += gpa;
+                gpaCount++;
+            }
+        });
+
+        document.getElementById('publishedCount').textContent = publishedCount;
+        document.getElementById('draftCount').textContent = draftCount;
+        if (gpaCount > 0) {
+            document.getElementById('avgGrade').textContent = (totalGPA / gpaCount).toFixed(2);
+        }
+    });
+</script>
+{% endblock %}

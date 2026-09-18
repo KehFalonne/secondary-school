@@ -1,0 +1,249 @@
+{% extends 'base.html' %}
+{% load static %}
+{% block title %}Teacher Dashboard{% endblock %}
+{% block page_title %}Teacher Dashboard{% endblock %}
+
+{% block content %}
+<div class="row mb-4">
+    <div class="col-12">
+        <div class="welcome-banner glass-panel p-4 p-md-5 position-relative overflow-hidden">
+            <div class="position-relative z-1">
+                <h2 class="fw-bold mb-1 display-6 text-gradient">Teacher Portal</h2>
+                <p class="mb-0 text-muted-light lead">Academic Management & Classroom Overview</p>
+            </div>
+            <div class="decoration-circle"></div>
+        </div>
+    </div>
+</div>
+
+<div class="row g-4 mb-4">
+    <!-- Teacher Info Card -->
+    <div class="col-lg-4">
+        <div class="card glass-card border-0 mb-4">
+            <div class="card-header bg-transparent border-0 pt-4 px-4">
+                <h5 class="mb-0 fw-bold">My Profile</h5>
+            </div>
+            <div class="card-body text-center position-relative">
+                <div class="mb-4 position-relative d-inline-block">
+                {% if teacher.user.profile_picture %}
+                <img src="{{ teacher.user.profile_picture.url }}" alt="Profile" class="rounded-circle border border-2 border-light shadow-sm" style="width: 120px; height: 120px; object-fit: cover;">
+                {% else %}
+                <div class="rounded-circle bg-gradient-primary text-white d-flex align-items-center justify-content-center mx-auto shadow-sm" style="width: 120px; height: 120px;">
+                    <i class="fas fa-user fa-4x"></i>
+                </div>
+                {% endif %}
+                <div class="position-absolute bottom-0 end-0 bg-success border border-2 border-white rounded-circle p-2"></div>
+                </div>
+                
+                <h4 class="fw-bold mb-1">{{ teacher.user.get_full_name }}</h4>
+                <p class="opacity-75 mb-3">{{ teacher.employee_id }}</p>
+                
+                <div class="mb-4">
+                    <span class="badge glass-badge px-3 py-2 rounded-pill">
+                        {{ teacher.designation }}
+                    </span>
+                </div>
+                
+                <div class="d-grid gap-2">
+                    <a href="{% url 'profile' %}" class="btn btn-glass">
+                        <i class="fas fa-edit me-2"></i>Edit Profile
+                    </a>
+                </div>
+            </div>
+        </div>
+        
+        <!-- My Classes -->
+        <div class="card glass-card border-0">
+            <div class="card-header bg-transparent border-0 pt-4 px-4">
+                <h5 class="mb-0 fw-bold">My Classes</h5>
+            </div>
+            <div class="card-body p-0">
+                <div class="list-group list-group-flush bg-transparent">
+                    {% for class in classes %}
+                    <a href="{% url 'class_detail' class.id %}" class="list-group-item list-group-item-action bg-transparent border-0 px-4 py-3">
+                        <div class="d-flex w-100 justify-content-between align-items-center mb-1">
+                            <h6 class="mb-0 fw-bold">{{ class.name }} <span class="opacity-75 small">- Sec {{ class.section }}</span></h6>
+                            <span class="badge glass-badge rounded-pill">{{ class.total_students }} students</span>
+                        </div>
+                        <div class="d-flex justify-content-between align-items-center">
+                            <small class="opacity-75">
+                                <i class="fas fa-door-open me-1"></i>Room: {{ class.room_number|default:"N/A" }}
+                            </small>
+                            {% if class.class_teacher == teacher %}
+                            <span class="text-gradient-success small fw-bold"><i class="fas fa-star me-1"></i>Class Teacher</span>
+                            {% endif %}
+                        </div>
+                    </a>
+                    {% empty %}
+                    <div class="text-center py-4 opacity-75">
+                        <i class="fas fa-school fa-2x mb-2"></i>
+                        <p class="mb-0">No classes assigned</p>
+                    </div>
+                    {% endfor %}
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Main Content -->
+    <div class="col-lg-8">
+        <!-- Quick Stats -->
+        <div class="row g-4 mb-4">
+            <div class="col-md-6">
+                <div class="card stat-card h-100 border-0">
+                    <div class="card-body">
+                        <div class="d-flex align-items-center justify-content-between">
+                            <div>
+                                <div class="text-uppercase tracking-wider text-xs mb-1 opacity-75">Total Students</div>
+                                <div class="h2 mb-0 fw-bold text-gradient-primary">{{ total_students_taught }}</div>
+                                <div class="mt-2 mb-0 text-xs opacity-75">Across all classes</div>
+                            </div>
+                            <div class="icon-box glow-primary">
+                                <i class="fas fa-user-graduate fa-lg"></i>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <div class="col-md-6">
+                <div class="card stat-card h-100 border-0">
+                    <div class="card-body">
+                        <div class="d-flex align-items-center justify-content-between">
+                            <div>
+                                <div class="text-uppercase tracking-wider text-xs mb-1 opacity-75">Today's Classes</div>
+                                <div class="h2 mb-0 fw-bold text-gradient-success">{{ today_classes }}</div>
+                                <div class="mt-2 mb-0 text-xs opacity-75">Based on timetable</div>
+                            </div>
+                            <div class="icon-box glow-success">
+                                <i class="fas fa-calendar-day fa-lg"></i>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Upcoming Exams -->
+        <div class="card glass-card border-0 mb-4">
+            <div class="card-header bg-transparent border-0 pt-4 px-4 d-flex justify-content-between align-items-center">
+                <h5 class="mb-0 fw-bold">Upcoming Exams</h5>
+                <a href="{% url 'exam_list' %}" class="btn btn-sm btn-glass">View All</a>
+            </div>
+            <div class="card-body p-0">
+                <div class="list-group list-group-flush bg-transparent">
+                    {% for exam in upcoming_exams %}
+                    <div class="list-group-item bg-transparent border-0 px-4 py-3">
+                        <div class="d-flex align-items-center">
+                            <div class="calendar-icon me-3 text-center rounded-3 p-2 glass-badge" style="min-width: 60px;">
+                                <small class="d-block text-uppercase fw-bold text-gradient-warning" style="font-size: 0.7rem;">{{ exam.date_conducted|date:"M" }}</small>
+                                <h5 class="mb-0 fw-bold">{{ exam.date_conducted|date:"d" }}</h5>
+                            </div>
+                            <div class="flex-grow-1">
+                                <h6 class="mb-1 fw-bold">{{ exam.name }}</h6>
+                                <div class="small opacity-75">
+                                    <span class="badge glass-badge me-2">{{ exam.subject.name }}</span>
+                                    <span><i class="fas fa-users me-1"></i>{{ exam.class_name.name }}</span>
+                                </div>
+                            </div>
+                            <div class="text-end d-none d-sm-block">
+                                <small class="d-block opacity-75">{{ exam.date_conducted|timeuntil }}</small>
+                            </div>
+                        </div>
+                    </div>
+                    {% empty %}
+                    <div class="text-center py-5 opacity-75">
+                        <i class="fas fa-calendar-times fa-3x mb-3"></i>
+                        <p class="mb-0">No upcoming exams</p>
+                    </div>
+                    {% endfor %}
+                </div>
+            </div>
+        </div>
+
+        <!-- My Subjects -->
+        <div class="card glass-card border-0 mb-4">
+            <div class="card-header bg-transparent border-0 pt-4 px-4 d-flex justify-content-between align-items-center">
+                <h5 class="mb-0 fw-bold">My Subjects ({{ subjects.count }})</h5>
+            </div>
+            <div class="card-body p-4">
+                <div class="row g-3">
+                    {% for subject in subjects %}
+                    <div class="col-md-6 col-xl-4">
+                        <div class="card glass-card h-100 border-0 position-relative overflow-hidden subject-card">
+                            <div class="card-body">
+                                <h6 class="fw-bold mb-2">{{ subject.name }}</h6>
+                                <div class="d-flex justify-content-between align-items-center mb-2">
+                                    <small class="opacity-75"><i class="fas fa-hashtag me-1"></i>{{ subject.code }}</small>
+                                    {% if subject.is_elective %}
+                                    <span class="badge glass-badge text-warning">Elective</span>
+                                    {% endif %}
+                                </div>
+                                <small class="d-block opacity-75 mb-3"><i class="fas fa-clock me-1"></i>{{ subject.credit_hours }} Credits</small>
+                                <a href="{% url 'subject_detail' subject.id %}" class="btn btn-sm btn-glass w-100 stretched-link">Details</a>
+                            </div>
+                        </div>
+                    </div>
+                    {% empty %}
+                    <div class="col-12 text-center py-4 opacity-75">
+                        <i class="fas fa-book-open fa-3x mb-3"></i>
+                        <p class="mb-0">No subjects assigned</p>
+                    </div>
+                    {% endfor %}
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Quick Actions -->
+<div class="row">
+    <div class="col-12">
+        <div class="card glass-card border-0">
+            <div class="card-header bg-transparent border-0 pt-4 px-4">
+                <h5 class="mb-0 fw-bold">Quick Actions</h5>
+            </div>
+            <div class="card-body p-4">
+                <div class="row g-3">
+                    <div class="col-md-3 col-sm-6">
+                        <a href="{% url 'take_attendance' %}" class="btn btn-glass w-100 h-100 p-4 text-start d-flex flex-column justify-content-between quick-action-btn">
+                            <div class="mb-3 text-gradient-primary"><i class="fas fa-clipboard-check fa-2x"></i></div>
+                            <div>
+                                <h6 class="fw-bold mb-1">Take Attendance</h6>
+                                <small class="opacity-75">Mark today's attendance</small>
+                            </div>
+                        </a>
+                    </div>
+                    <div class="col-md-3 col-sm-6">
+                        <a href="{% url 'exam_list' %}" class="btn btn-glass w-100 h-100 p-4 text-start d-flex flex-column justify-content-between quick-action-btn">
+                            <div class="mb-3 text-gradient-success"><i class="fas fa-file-alt fa-2x"></i></div>
+                            <div>
+                                <h6 class="fw-bold mb-1">Enter Grades</h6>
+                                <small class="opacity-75">Grade assignments/exams</small>
+                            </div>
+                        </a>
+                    </div>
+                    <div class="col-md-3 col-sm-6">
+                        <a href="#" class="btn btn-glass w-100 h-100 p-4 text-start d-flex flex-column justify-content-between quick-action-btn">
+                            <div class="mb-3 text-gradient-warning"><i class="fas fa-calendar-alt fa-2x"></i></div>
+                            <div>
+                                <h6 class="fw-bold mb-1">View Timetable</h6>
+                                <small class="opacity-75">Check your schedule</small>
+                            </div>
+                        </a>
+                    </div>
+                    <div class="col-md-3 col-sm-6">
+                        <a href="#" class="btn btn-glass w-100 h-100 p-4 text-start d-flex flex-column justify-content-between quick-action-btn">
+                            <div class="mb-3 text-gradient-info"><i class="fas fa-users fa-2x"></i></div>
+                            <div>
+                                <h6 class="fw-bold mb-1">My Students</h6>
+                                <small class="opacity-75">View student lists</small>
+                            </div>
+                        </a>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}

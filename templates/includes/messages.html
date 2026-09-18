@@ -1,0 +1,129 @@
+<!-- =================== Profile Update Toasts =================== -->
+{% if messages %}
+<div class="position-fixed top-0 end-0 p-3" style="z-index: 1200; max-width: 360px;">
+    {% for message in messages %}
+        <div class="toast align-items-start border-0 mb-3 glass-toast
+            {% if message.tags == 'success' %}toast-success
+            {% elif message.tags == 'error' %}toast-error
+            {% elif message.tags == 'warning' %}toast-warning
+            {% else %}toast-info{% endif %}"
+            role="alert" aria-live="assertive" aria-atomic="true">
+            
+            <div class="d-flex w-100">
+                <div class="toast-body d-flex align-items-center w-100">
+                    <div class="toast-icon-wrapper me-3">
+                        <i class="fas
+                            {% if message.tags == 'success' %}fa-check-circle
+                            {% elif message.tags == 'error' %}fa-exclamation-circle
+                            {% elif message.tags == 'warning' %}fa-exclamation-triangle
+                            {% else %}fa-info-circle{% endif %} fa-lg"></i>
+                    </div>
+                    <div class="flex-grow-1">
+                        <h6 class="mb-0 fw-bold toast-title">
+                            {% if message.tags == 'success' %}Success
+                            {% elif message.tags == 'error' %}Error
+                            {% elif message.tags == 'warning' %}Warning
+                            {% else %}Info{% endif %}
+                        </h6>
+                        <p class="mb-0 small opacity-75">{{ message }}</p>
+                    </div>
+                    <button type="button" class="btn-close btn-close-white ms-2" data-bs-dismiss="toast" aria-label="Close"></button>
+                </div>
+            </div>
+            <div class="toast-progress"></div>
+        </div>
+    {% endfor %}
+</div>
+{% endif %}
+
+<script>
+document.addEventListener('DOMContentLoaded', function () {
+    document.querySelectorAll('.toast').forEach(el => {
+        const toast = new bootstrap.Toast(el, { delay: 5000, autohide: true });
+        toast.show();
+
+        // Pause on hover
+        el.addEventListener('mouseenter', () => toast._config.autohide = false);
+        el.addEventListener('mouseleave', () => { toast._config.autohide = true; toast.hide(); });
+    });
+});
+</script>
+
+<style>
+/* --- UNIMAGINABLE TOASTS --- */
+.glass-toast {
+    background: rgba(20, 20, 30, 0.85);
+    backdrop-filter: blur(15px);
+    -webkit-backdrop-filter: blur(15px);
+    border: 1px solid rgba(255, 255, 255, 0.1);
+    box-shadow: 0 10px 30px rgba(0, 0, 0, 0.5);
+    border-radius: 16px;
+    overflow: hidden;
+    color: #fff;
+    transform: translateX(120%);
+    animation: slideIn 0.5s cubic-bezier(0.68, -0.55, 0.265, 1.55) forwards;
+    position: relative;
+}
+
+.toast-success { border-left: 4px solid #42e695; }
+.toast-error { border-left: 4px solid #f87171; }
+.toast-warning { border-left: 4px solid #f6c23e; }
+.toast-info { border-left: 4px solid #38bdf8; }
+
+.toast-success .toast-icon-wrapper { color: #42e695; text-shadow: 0 0 10px rgba(66, 230, 149, 0.4); }
+.toast-error .toast-icon-wrapper { color: #f87171; text-shadow: 0 0 10px rgba(248, 113, 113, 0.4); }
+.toast-warning .toast-icon-wrapper { color: #f6c23e; text-shadow: 0 0 10px rgba(246, 194, 62, 0.4); }
+.toast-info .toast-icon-wrapper { color: #38bdf8; text-shadow: 0 0 10px rgba(56, 189, 248, 0.4); }
+
+.toast-title {
+    letter-spacing: 0.5px;
+    text-transform: uppercase;
+    font-size: 0.75rem;
+}
+
+.toast-progress {
+    position: absolute;
+    bottom: 0;
+    left: 0;
+    height: 3px;
+    width: 100%;
+    background: rgba(255,255,255,0.1);
+}
+
+.toast-progress::after {
+    content: '';
+    position: absolute;
+    left: 0;
+    top: 0;
+    height: 100%;
+    width: 100%;
+    background: rgba(255,255,255,0.3);
+    animation: progress 5s linear forwards;
+}
+
+@keyframes slideIn {
+    from { transform: translateX(120%) scale(0.8); opacity: 0; }
+    to { transform: translateX(0) scale(1); opacity: 1; }
+}
+
+@keyframes progress {
+    from { width: 100%; }
+    to { width: 0%; }
+}
+
+/* =================== Profile Photo Modal =================== */
+/* Overrides to ensure modal matches the glass theme if not already handled */
+#changePhotoModal .modal-content {
+    background: rgba(30, 30, 40, 0.8) !important;
+    backdrop-filter: blur(20px) !important;
+    -webkit-backdrop-filter: blur(20px) !important;
+    border: 1px solid rgba(255, 255, 255, 0.1) !important;
+    box-shadow: 0 25px 50px rgba(0,0,0,0.5) !important;
+    color: #fff;
+}
+
+#previewImage {
+    border: 2px solid rgba(255,255,255,0.2) !important;
+    box-shadow: 0 0 20px rgba(0,0,0,0.3) !important;
+}
+</style>

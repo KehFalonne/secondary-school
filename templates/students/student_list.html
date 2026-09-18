@@ -1,0 +1,808 @@
+{% extends 'base.html' %}
+
+{% block title %}Students List{% endblock %}
+{% block page_title %}Students Management{% endblock %}
+
+{% block breadcrumb %}
+<li class="breadcrumb-item active">Students</li>
+{% endblock %}
+
+{% block page_actions %}
+<div class="btn-group">
+    <a href="{% url 'student_create' %}" class="btn btn-primary btn-action-glow rounded-pill">
+        <i class="fas fa-plus me-2"></i>Add New Student
+    </a>
+    <button type="button" class="btn btn-primary dropdown-toggle dropdown-toggle-split btn-action-glow rounded-pill" data-bs-toggle="dropdown">
+        <span class="visually-hidden">Toggle Dropdown</span>
+    </button>
+    <ul class="dropdown-menu">
+        <li><a class="dropdown-item" href="#"><i class="fas fa-file-import me-2"></i>Import Students</a></li>
+        <li><a class="dropdown-item" href="#"><i class="fas fa-file-export me-2"></i>Export Students</a></li>
+        <li><hr class="dropdown-divider"></li>
+        <li><a class="dropdown-item" href="#"><i class="fas fa-print me-2"></i>Print List</a></li>
+    </ul>
+</div>
+{% endblock %}
+
+{% block content %}
+<style>
+    /* Filter Card Styles */
+    .filter-card {
+        background: linear-gradient(135deg, rgba(255, 255, 255, 0.08) 0%, rgba(255, 255, 255, 0.03) 100%);
+        border: 1px solid rgba(78, 115, 223, 0.15);
+        border-radius: 20px;
+        backdrop-filter: blur(10px);
+        padding: 2rem;
+        margin-bottom: 2.5rem;
+        box-shadow: 0 8px 32px rgba(0, 0, 0, 0.08);
+        animation: slideDown 0.6s ease;
+    }
+
+    @keyframes slideDown {
+        from { opacity: 0; transform: translateY(-20px); }
+        to { opacity: 1; transform: translateY(0); }
+    }
+
+    .filter-title {
+        color: #4e73df;
+        font-weight: 700;
+        text-transform: uppercase;
+        letter-spacing: 0.05em;
+        font-size: 0.95rem;
+        margin-bottom: 1.5rem;
+        display: flex;
+        align-items: center;
+        gap: 0.7rem;
+    }
+
+    .filter-title i {
+        color: #1cc88a;
+        font-size: 1.1rem;
+    }
+
+    .form-control, .form-select {
+        background: rgba(255, 255, 255, 0.05);
+        border: 1px solid rgba(78, 115, 223, 0.2);
+        color: inherit;
+        border-radius: 12px;
+        padding: 0.75rem 1rem;
+        transition: all 0.3s ease;
+    }
+
+    .form-control::placeholder {
+        color: rgba(0, 0, 0, 0.4);
+    }
+
+    [data-bs-theme="dark"] .form-control::placeholder {
+        color: rgba(255, 255, 255, 0.4);
+    }
+
+    .form-control:focus, .form-select:focus {
+        background: rgba(255, 255, 255, 0.08);
+        border-color: #4e73df;
+        box-shadow: 0 0 20px rgba(78, 115, 223, 0.3);
+        color: inherit;
+    }
+
+    .form-label {
+        color: rgba(0, 0, 0, 0.7);
+        font-weight: 600;
+        font-size: 0.9rem;
+        margin-bottom: 0.6rem;
+        text-transform: uppercase;
+        letter-spacing: 0.03em;
+    }
+
+    [data-bs-theme="dark"] .form-label {
+        color: rgba(255, 255, 255, 0.8);
+    }
+
+    .btn-action-glow {
+        border-radius: 12px;
+        padding: 0.75rem 1.5rem;
+        font-weight: 600;
+        font-size: 0.9rem;
+        transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+        position: relative;
+        overflow: hidden;
+    }
+
+    .btn-action-glow:hover {
+        transform: translateY(-3px);
+        box-shadow: 0 15px 35px rgba(78, 115, 223, 0.3);
+    }
+
+    /* Student Cards */
+    .student-card {
+        background: linear-gradient(135deg, rgba(255, 255, 255, 0.06) 0%, rgba(255, 255, 255, 0.02) 100%);
+        border: 1px solid rgba(78, 115, 223, 0.12);
+        border-radius: 16px;
+        backdrop-filter: blur(10px);
+        transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+        overflow: hidden;
+        animation: popIn 0.5s cubic-bezier(0.34, 1.56, 0.64, 1) forwards;
+        opacity: 0;
+    }
+
+    @keyframes popIn {
+        0% { opacity: 0; transform: scale(0.95); }
+        100% { opacity: 1; transform: scale(1); }
+    }
+
+    .student-card:nth-child(1) { animation-delay: 0.1s; }
+    .student-card:nth-child(2) { animation-delay: 0.15s; }
+    .student-card:nth-child(3) { animation-delay: 0.2s; }
+    .student-card:nth-child(4) { animation-delay: 0.25s; }
+    .student-card:nth-child(5) { animation-delay: 0.3s; }
+    .student-card:nth-child(n+6) { animation-delay: 0.35s; }
+
+    .student-card:hover {
+        transform: translateY(-12px);
+        border-color: rgba(78, 115, 223, 0.3);
+        box-shadow: 0 25px 50px rgba(78, 115, 223, 0.2), inset 0 1px 0 rgba(255, 255, 255, 0.1);
+    }
+
+    .student-avatar {
+        width: 56px;
+        height: 56px;
+        border-radius: 14px;
+        border: 2px solid #4e73df;
+        object-fit: cover;
+        box-shadow: 0 4px 15px rgba(78, 115, 223, 0.3);
+    }
+
+    .student-avatar-placeholder {
+        width: 56px;
+        height: 56px;
+        border-radius: 14px;
+        background: linear-gradient(135deg, #4e73df, #1cc88a);
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        color: white;
+        font-size: 1.5rem;
+        border: 2px solid #4e73df;
+        box-shadow: 0 4px 15px rgba(78, 115, 223, 0.3);
+    }
+
+    .student-name {
+        font-weight: 700;
+        font-size: 1.05rem;
+        color: #000;
+        margin-bottom: 0.25rem;
+    }
+
+    [data-bs-theme="dark"] .student-name {
+        color: #fff;
+    }
+
+    .student-admission {
+        font-size: 0.85rem;
+        color: rgba(0, 0, 0, 0.5);
+        font-weight: 500;
+    }
+
+    [data-bs-theme="dark"] .student-admission {
+        color: rgba(255, 255, 255, 0.6);
+    }
+
+    .status-badge-active {
+        background: linear-gradient(135deg, #1cc88a, #0da860);
+        color: white;
+        padding: 0.4rem 0.9rem;
+        border-radius: 50px;
+        font-size: 0.75rem;
+        font-weight: 700;
+        text-transform: uppercase;
+        box-shadow: 0 4px 12px rgba(28, 200, 138, 0.3);
+    }
+
+    .status-badge-inactive {
+        background: linear-gradient(135deg, #f87171, #dc2626);
+        color: white;
+        padding: 0.4rem 0.9rem;
+        border-radius: 50px;
+        font-size: 0.75rem;
+        font-weight: 700;
+        text-transform: uppercase;
+        box-shadow: 0 4px 12px rgba(248, 113, 113, 0.3);
+    }
+
+    .info-row {
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        padding: 0.75rem 0;
+        border-bottom: 1px solid rgba(78, 115, 223, 0.08);
+        font-size: 0.9rem;
+    }
+
+    .info-row:last-child {
+        border-bottom: none;
+    }
+
+    .info-label {
+        color: rgba(0, 0, 0, 0.5);
+        font-weight: 600;
+        text-transform: uppercase;
+        font-size: 0.75rem;
+        letter-spacing: 0.03em;
+    }
+
+    [data-bs-theme="dark"] .info-label {
+        color: rgba(255, 255, 255, 0.5);
+    }
+
+    .info-value {
+        color: #4e73df;
+        font-weight: 700;
+    }
+
+    .badge-class {
+        background: linear-gradient(135deg, rgba(78, 115, 223, 0.2), rgba(28, 200, 138, 0.1));
+        color: #4e73df;
+        padding: 0.35rem 0.8rem;
+        border-radius: 8px;
+        border: 1px solid rgba(78, 115, 223, 0.2);
+        font-weight: 600;
+        font-size: 0.8rem;
+    }
+
+    .badge-gender {
+        padding: 0.35rem 0.8rem;
+        border-radius: 8px;
+        font-weight: 600;
+        font-size: 0.8rem;
+        text-transform: uppercase;
+    }
+
+    .badge-gender.male {
+        background: rgba(59, 130, 246, 0.2);
+        color: #3b82f6;
+        border: 1px solid rgba(59, 130, 246, 0.3);
+    }
+
+    .badge-gender.female {
+        background: rgba(236, 72, 153, 0.2);
+        color: #ec4899;
+        border: 1px solid rgba(236, 72, 153, 0.3);
+    }
+
+    .badge-gender.other {
+        background: rgba(168, 85, 247, 0.2);
+        color: #a855f7;
+        border: 1px solid rgba(168, 85, 247, 0.3);
+    }
+
+    .action-buttons {
+        display: flex;
+        gap: 0.5rem;
+        margin-top: 1.25rem;
+        padding-top: 1rem;
+        border-top: 1px solid rgba(78, 115, 223, 0.08);
+    }
+
+    .btn-icon-sm {
+        width: 36px;
+        height: 36px;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        border-radius: 10px;
+        font-size: 0.85rem;
+        transition: all 0.3s ease;
+        border: 1px solid rgba(78, 115, 223, 0.2);
+        background: rgba(78, 115, 223, 0.08);
+        color: #4e73df;
+    }
+
+    .btn-icon-sm:hover {
+        background: rgba(78, 115, 223, 0.15);
+        transform: translateY(-2px);
+        box-shadow: 0 6px 20px rgba(78, 115, 223, 0.2);
+    }
+
+    .btn-icon-sm.danger {
+        color: #dc2626;
+        border-color: rgba(220, 38, 38, 0.2);
+        background: rgba(220, 38, 38, 0.08);
+    }
+
+    .btn-icon-sm.danger:hover {
+        background: rgba(220, 38, 38, 0.15);
+        box-shadow: 0 6px 20px rgba(220, 38, 38, 0.2);
+    }
+
+    /* Table Styles */
+    .students-table {
+        background: linear-gradient(135deg, rgba(255, 255, 255, 0.06) 0%, rgba(255, 255, 255, 0.02) 100%);
+        border: 1px solid rgba(78, 115, 223, 0.12);
+        border-radius: 16px;
+        overflow: hidden;
+        backdrop-filter: blur(10px);
+        box-shadow: 0 8px 32px rgba(0, 0, 0, 0.08);
+        margin-bottom: 2rem;
+    }
+
+    .table-container {
+        padding: 2rem;
+    }
+
+    .table-header {
+        color: #4e73df;
+        font-weight: 700;
+        text-transform: uppercase;
+        letter-spacing: 0.05em;
+        font-size: 0.8rem;
+        padding: 1rem;
+        border-bottom: 2px solid rgba(78, 115, 223, 0.2);
+    }
+
+    .table-row {
+        border-bottom: 1px solid rgba(78, 115, 223, 0.08);
+        transition: all 0.3s ease;
+        padding: 1rem;
+    }
+
+    .table-row:hover {
+        background: rgba(78, 115, 223, 0.05);
+    }
+
+    .table-cell {
+        padding: 1rem;
+        vertical-align: middle;
+        color: #000;
+    }
+
+    [data-bs-theme="dark"] .table-cell {
+        color: #fff;
+    }
+
+    /* Stats Section */
+    .stats-container {
+        display: grid;
+        grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
+        gap: 1.5rem;
+        margin-bottom: 3rem;
+    }
+
+    .stat-card {
+        background: linear-gradient(135deg, rgba(78, 115, 223, 0.08) 0%, rgba(28, 200, 138, 0.04) 100%);
+        border: 1px solid rgba(78, 115, 223, 0.15);
+        border-radius: 16px;
+        padding: 2rem;
+        text-align: center;
+        backdrop-filter: blur(10px);
+        transition: all 0.3s ease;
+        position: relative;
+        overflow: hidden;
+        animation: slideUp 0.6s ease forwards;
+        opacity: 0;
+    }
+
+    @keyframes slideUp {
+        from { opacity: 0; transform: translateY(20px); }
+        to { opacity: 1; transform: translateY(0); }
+    }
+
+    .stat-card:nth-child(1) { animation-delay: 0.2s; }
+    .stat-card:nth-child(2) { animation-delay: 0.3s; }
+    .stat-card:nth-child(3) { animation-delay: 0.4s; }
+
+    .stat-card:hover {
+        transform: translateY(-10px);
+        border-color: rgba(78, 115, 223, 0.3);
+        box-shadow: 0 20px 50px rgba(78, 115, 223, 0.2);
+    }
+
+    .stat-icon {
+        font-size: 2.5rem;
+        margin-bottom: 1rem;
+        color: #4e73df;
+    }
+
+    .stat-value {
+        font-size: 2.5rem;
+        font-weight: 800;
+        background: linear-gradient(135deg, #4e73df, #1cc88a);
+        -webkit-background-clip: text;
+        -webkit-text-fill-color: transparent;
+        background-clip: text;
+        margin-bottom: 0.5rem;
+    }
+
+    .stat-label {
+        font-size: 0.9rem;
+        text-transform: uppercase;
+        color: rgba(0, 0, 0, 0.6);
+        font-weight: 600;
+        letter-spacing: 0.05em;
+    }
+
+    [data-bs-theme="dark"] .stat-label {
+        color: rgba(255, 255, 255, 0.6);
+    }
+
+    /* Pagination */
+    .pagination-custom {
+        display: flex;
+        justify-content: center;
+        gap: 0.5rem;
+        margin-top: 2rem;
+    }
+
+    .page-link-custom {
+        padding: 0.6rem 0.9rem;
+        border: 1px solid rgba(78, 115, 223, 0.2);
+        background: rgba(78, 115, 223, 0.08);
+        color: #4e73df;
+        border-radius: 10px;
+        font-weight: 600;
+        transition: all 0.3s ease;
+        cursor: pointer;
+        text-decoration: none;
+    }
+
+    .page-link-custom:hover {
+        background: rgba(78, 115, 223, 0.15);
+        transform: translateY(-2px);
+        box-shadow: 0 6px 20px rgba(78, 115, 223, 0.2);
+    }
+
+    .page-link-custom.active {
+        background: linear-gradient(135deg, #4e73df, #1cc88a);
+        border-color: #4e73df;
+        color: white;
+    }
+
+    /* Empty State */
+    .empty-state {
+        text-align: center;
+        padding: 4rem 2rem;
+    }
+
+    .empty-icon {
+        font-size: 4rem;
+        color: rgba(78, 115, 223, 0.3);
+        margin-bottom: 1.5rem;
+    }
+
+    .empty-title {
+        font-size: 1.5rem;
+        font-weight: 700;
+        color: #000;
+        margin-bottom: 0.5rem;
+    }
+
+    [data-bs-theme="dark"] .empty-title {
+        color: #fff;
+    }
+
+    .empty-subtitle {
+        color: rgba(0, 0, 0, 0.5);
+        margin-bottom: 2rem;
+    }
+
+    [data-bs-theme="dark"] .empty-subtitle {
+        color: rgba(255, 255, 255, 0.5);
+    }
+
+    /* Mobile Responsive */
+    @media (max-width: 768px) {
+        .filter-card {
+            padding: 1.5rem;
+        }
+
+        .student-card {
+            margin-bottom: 1rem;
+        }
+
+        .stats-container {
+            grid-template-columns: 1fr;
+        }
+    }
+</style>
+
+<!-- Filter Section -->
+<div class="filter-card">
+    <h6 class="filter-title">
+        <i class="fas fa-filter"></i> Advanced Filters
+    </h6>
+    <form method="get" class="row g-3">
+        <div class="col-md-4">
+            <label class="form-label">Search Student</label>
+            <input type="text" name="search" class="form-control" placeholder="Name, Admission No, Roll No..." 
+                   value="{{ search_query }}">
+        </div>
+        <div class="col-md-3">
+            <label class="form-label">Class</label>
+            <select name="class" class="form-select">
+                <option value="">All Classes</option>
+                {% for class in classes %}
+                <option value="{{ class.id }}" {% if class_filter == class.id|stringformat:"i" %}selected{% endif %}>
+                    {{ class.name }} - {{ class.section }}
+                </option>
+                {% endfor %}
+            </select>
+        </div>
+        <div class="col-md-3">
+            <label class="form-label">Gender</label>
+            <select name="gender" class="form-select">
+                <option value="">All</option>
+                <option value="Male" {% if gender_filter == 'Male' %}selected{% endif %}>Male</option>
+                <option value="Female" {% if gender_filter == 'Female' %}selected{% endif %}>Female</option>
+                <option value="Other" {% if gender_filter == 'Other' %}selected{% endif %}>Other</option>
+            </select>
+        </div>
+        <div class="col-md-2 d-flex align-items-end">
+            <button type="submit" class="btn btn-primary btn-action-glow w-100">
+                <i class="fas fa-search me-2"></i>Filter
+            </button>
+        </div>
+    </form>
+</div>
+
+<!-- Desktop Table View -->
+<div class="d-none d-lg-block">
+    {% if students %}
+    <div class="students-table">
+        <div class="d-flex justify-content-between align-items-center p-3" style="background: rgba(78, 115, 223, 0.08); border-bottom: 1px solid rgba(78, 115, 223, 0.15);">
+            <h6 class="mb-0 filter-title">
+                <i class="fas fa-list"></i> Students List
+            </h6>
+            <span style="color: #4e73df; font-weight: 700;">{{ students.paginator.count }} Students</span>
+        </div>
+        <div class="table-container">
+            <div style="overflow-x: auto;">
+                <table style="width: 100%; border-collapse: separate; border-spacing: 0;">
+                    <thead>
+                        <tr style="background: rgba(78, 115, 223, 0.08);">
+                            <th class="table-header" style="border-radius: 10px 0 0 0;">Admission</th>
+                            <th class="table-header">Student Name</th>
+                            <th class="table-header">Class</th>
+                            <th class="table-header">Roll</th>
+                            <th class="table-header">Gender</th>
+                            <th class="table-header">Contact</th>
+                            <th class="table-header">Date</th>
+                            <th class="table-header">Status</th>
+                            <th class="table-header" style="border-radius: 0 10px 0 0;">Actions</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        {% for student in students %}
+                        <tr class="table-row">
+                            <td class="table-cell">
+                                <a href="{% url 'student_detail' student.admission_number %}" style="color: #4e73df; text-decoration: none; font-weight: 700;">
+                                    {{ student.admission_number }}
+                                </a>
+                            </td>
+                            <td class="table-cell">
+                                <div style="display: flex; align-items: center; gap: 0.75rem;">
+                                    {% if student.user.profile_picture %}
+                                    <img src="{{ student.user.profile_picture.url }}" alt="" class="student-avatar">
+                                    {% else %}
+                                    <div class="student-avatar-placeholder">
+                                        <i class="fas fa-user"></i>
+                                    </div>
+                                    {% endif %}
+                                    <div>
+                                        <strong style="color: #000; display: block;">{{ student.user.get_full_name }}</strong>
+                                        <small style="color: rgba(0, 0, 0, 0.5);">{{ student.user.email|default:"No email" }}</small>
+                                    </div>
+                                </div>
+                            </td>
+                            <td class="table-cell">
+                                {% if student.class_enrolled %}
+                                <span class="badge-class">{{ student.class_enrolled.name }}</span><br>
+                                <small style="color: rgba(0, 0, 0, 0.5);">Sec: {{ student.section|default:"-" }}</small>
+                                {% else %}
+                                <span style="color: #f59e0b; font-weight: 700;">Not Assigned</span>
+                                {% endif %}
+                            </td>
+                            <td class="table-cell"><strong>{{ student.roll_number }}</strong></td>
+                            <td class="table-cell">
+                                <span class="badge-gender {% if student.user.gender == 'Male' %}male{% elif student.user.gender == 'Female' %}female{% else %}other{% endif %}">
+                                    {{ student.user.gender|default:"-" }}
+                                </span>
+                            </td>
+                            <td class="table-cell">
+                                <small>
+                                    <div><i class="fas fa-phone me-1" style="color: #4e73df;"></i>{{ student.user.phone|default:"-" }}</div>
+                                    <div style="margin-top: 0.25rem;"><i class="fas fa-envelope me-1" style="color: #4e73df;"></i>{{ student.user.email|default:"-" }}</div>
+                                </small>
+                            </td>
+                            <td class="table-cell">{{ student.admission_date|date:"d M Y" }}</td>
+                            <td class="table-cell">
+                                {% if student.is_active %}
+                                <span class="status-badge-active">Active</span>
+                                {% else %}
+                                <span class="status-badge-inactive">Inactive</span>
+                                {% endif %}
+                            </td>
+                            <td class="table-cell">
+                                <div style="display: flex; gap: 0.4rem;">
+                                    <a href="{% url 'student_detail' student.admission_number %}" class="btn-icon-sm" title="View">
+                                        <i class="fas fa-eye"></i>
+                                    </a>
+                                    <a href="{% url 'student_update' student.admission_number %}" class="btn-icon-sm" title="Edit">
+                                        <i class="fas fa-edit"></i>
+                                    </a>
+                                    {% if student.is_active %}
+                                    <a href="{% url 'student_delete' student.admission_number %}" class="btn-icon-sm danger" title="Delete"
+                                       onclick="return confirm('Deactivate this student?')">
+                                        <i class="fas fa-trash"></i>
+                                    </a>
+                                    {% endif %}
+                                </div>
+                            </td>
+                        </tr>
+                        {% endfor %}
+                    </tbody>
+                </table>
+            </div>
+        </div>
+        <!-- Desktop Pagination -->
+        {% if students.paginator.num_pages > 1 %}
+        <div class="pagination-custom">
+            {% if students.has_previous %}
+            <a href="?page=1{% if search_query %}&search={{ search_query }}{% endif %}" class="page-link-custom">
+                <i class="fas fa-angle-double-left"></i>
+            </a>
+            <a href="?page={{ students.previous_page_number }}{% if search_query %}&search={{ search_query }}{% endif %}" class="page-link-custom">
+                <i class="fas fa-angle-left"></i>
+            </a>
+            {% endif %}
+            {% for num in students.paginator.page_range %}
+                {% if students.number == num %}
+                <span class="page-link-custom active">{{ num }}</span>
+                {% elif num > students.number|add:'-3' and num < students.number|add:'3' %}
+                <a href="?page={{ num }}{% if search_query %}&search={{ search_query }}{% endif %}" class="page-link-custom">{{ num }}</a>
+                {% endif %}
+            {% endfor %}
+            {% if students.has_next %}
+            <a href="?page={{ students.next_page_number }}{% if search_query %}&search={{ search_query }}{% endif %}" class="page-link-custom">
+                <i class="fas fa-angle-right"></i>
+            </a>
+            <a href="?page={{ students.paginator.num_pages }}{% if search_query %}&search={{ search_query }}{% endif %}" class="page-link-custom">
+                <i class="fas fa-angle-double-right"></i>
+            </a>
+            {% endif %}
+        </div>
+        {% endif %}
+    </div>
+    {% else %}
+    <div class="students-table">
+        <div class="empty-state">
+            <div class="empty-icon"><i class="fas fa-user-graduate"></i></div>
+            <h5 class="empty-title">No students found</h5>
+            <p class="empty-subtitle">Try adjusting your search filters or add a new student</p>
+            <a href="{% url 'student_create' %}" class="btn btn-primary btn-action-glow">
+                <i class="fas fa-plus me-2"></i>Add First Student
+            </a>
+        </div>
+    </div>
+    {% endif %}
+</div>
+
+<!-- Mobile Card View -->
+<div class="d-lg-none">
+    {% if students %}
+    <div style="display: grid; grid-template-columns: 1fr; gap: 1.25rem;">
+        {% for student in students %}
+        <div class="student-card p-4">
+            <div style="display: flex; justify-content: space-between; align-items: flex-start; margin-bottom: 1.25rem;">
+                <div style="display: flex; align-items: center; gap: 0.75rem; flex: 1;">
+                    {% if student.user.profile_picture %}
+                    <img src="{{ student.user.profile_picture.url }}" alt="" class="student-avatar">
+                    {% else %}
+                    <div class="student-avatar-placeholder">
+                        <i class="fas fa-user"></i>
+                    </div>
+                    {% endif %}
+                    <div>
+                        <div class="student-name">{{ student.user.get_full_name }}</div>
+                        <div class="student-admission">{{ student.admission_number }}</div>
+                    </div>
+                </div>
+                {% if student.is_active %}
+                <span class="status-badge-active">Active</span>
+                {% else %}
+                <span class="status-badge-inactive">Inactive</span>
+                {% endif %}
+            </div>
+
+            <div style="margin-bottom: 1rem;">
+                <div class="info-row">
+                    <span class="info-label">Class</span>
+                    <span class="badge-class">
+                        {% if student.class_enrolled %}{{ student.class_enrolled.name }}{% else %}Not Assigned{% endif %}
+                    </span>
+                </div>
+                <div class="info-row">
+                    <span class="info-label">Roll No</span>
+                    <span class="info-value">{{ student.roll_number }}</span>
+                </div>
+                <div class="info-row">
+                    <span class="info-label">Gender</span>
+                    <span class="badge-gender {% if student.user.gender == 'Male' %}male{% elif student.user.gender == 'Female' %}female{% else %}other{% endif %}">
+                        {{ student.user.gender|default:"-" }}
+                    </span>
+                </div>
+                <div class="info-row">
+                    <span class="info-label">Date</span>
+                    <span style="color: #4e73df; font-weight: 600;">{{ student.admission_date|date:"d M Y" }}</span>
+                </div>
+            </div>
+
+            <div class="action-buttons">
+                <a href="tel:{{ student.user.phone }}" class="btn-icon-sm" title="Call">
+                    <i class="fas fa-phone"></i>
+                </a>
+                <a href="mailto:{{ student.user.email }}" class="btn-icon-sm" title="Email">
+                    <i class="fas fa-envelope"></i>
+                </a>
+                <a href="{% url 'student_detail' student.admission_number %}" class="btn-icon-sm" title="View">
+                    <i class="fas fa-eye"></i>
+                </a>
+                <a href="{% url 'student_update' student.admission_number %}" class="btn-icon-sm" title="Edit">
+                    <i class="fas fa-edit"></i>
+                </a>
+                {% if student.is_active %}
+                <a href="{% url 'student_delete' student.admission_number %}" class="btn-icon-sm danger" 
+                   onclick="return confirm('Deactivate this student?')" title="Delete">
+                    <i class="fas fa-trash"></i>
+                </a>
+                {% endif %}
+            </div>
+        </div>
+        {% endfor %}
+    </div>
+
+    <!-- Mobile Pagination -->
+    {% if students.paginator.num_pages > 1 %}
+    <div class="pagination-custom" style="margin-top: 2rem;">
+        {% if students.has_previous %}
+        <a href="?page={{ students.previous_page_number }}" class="page-link-custom">
+            <i class="fas fa-angle-left"></i>
+        </a>
+        {% endif %}
+        <span class="page-link-custom active">{{ students.number }} / {{ students.paginator.num_pages }}</span>
+        {% if students.has_next %}
+        <a href="?page={{ students.next_page_number }}" class="page-link-custom">
+            <i class="fas fa-angle-right"></i>
+        </a>
+        {% endif %}
+    </div>
+    {% endif %}
+    {% else %}
+    <div class="empty-state">
+        <div class="empty-icon"><i class="fas fa-user-graduate"></i></div>
+        <h5 class="empty-title">No students found</h5>
+        <p class="empty-subtitle">Add a new student to get started</p>
+        <a href="{% url 'student_create' %}" class="btn btn-primary btn-action-glow">
+            <i class="fas fa-plus me-2"></i>Add First Student
+        </a>
+    </div>
+    {% endif %}
+</div>
+
+<!-- Statistics Section -->
+<div class="stats-container">
+    <div class="stat-card">
+        <div class="stat-icon"><i class="fas fa-users"></i></div>
+        <div class="stat-value">{{ students.paginator.count|default:"0" }}</div>
+        <div class="stat-label">Total Students</div>
+    </div>
+    <div class="stat-card">
+        <div class="stat-icon"><i class="fas fa-check-circle"></i></div>
+        <div class="stat-value" style="background: linear-gradient(135deg, #1cc88a, #0da860); -webkit-background-clip: text; -webkit-text-fill-color: transparent; background-clip: text;">{{ active_students_count|default:"0" }}</div>
+        <div class="stat-label">Active Students</div>
+    </div>
+    <div class="stat-card">
+        <div class="stat-icon"><i class="fas fa-ban"></i></div>
+        <div class="stat-value" style="background: linear-gradient(135deg, #dc2626, #991b1b); -webkit-background-clip: text; -webkit-text-fill-color: transparent; background-clip: text;">{{ inactive_students_count|default:"0" }}</div>
+        <div class="stat-label">Inactive Students</div>
+    </div>
+</div>
+
+{% endblock %}

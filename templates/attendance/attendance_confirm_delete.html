@@ -1,0 +1,730 @@
+{% extends 'base.html' %}
+
+{% block title %}Delete Attendance Record{% endblock %}
+{% block page_title %}Delete Attendance Record{% endblock %}
+
+{% block breadcrumb %}
+<li class="breadcrumb-item"><a href="{% url 'attendance_list' %}">Attendance</a></li>
+<li class="breadcrumb-item active">Delete Record</li>
+{% endblock %}
+
+{% block page_actions %}
+{% endblock %}
+
+{% block content %}
+<div class="delete-container">
+    <!-- Background Animation -->
+    <div class="delete-bg-overlay"></div>
+
+    <!-- Hero Section -->
+    <div class="delete-hero">
+        <div class="delete-danger-badge">CAUTION</div>
+        <h1 class="delete-title">Confirm Deletion</h1>
+        <p class="delete-subtitle">This action will permanently remove the attendance record</p>
+    </div>
+
+    <!-- Confirmation Card -->
+    <div class="confirmation-card">
+        <!-- Icon Section -->
+        <div class="danger-icon-container">
+            <div class="danger-icon-circle">
+                <i class="fas fa-trash-alt"></i>
+            </div>
+        </div>
+
+        <!-- Message Section -->
+        <div class="confirmation-message">
+            <h2 class="confirmation-title">Delete This Record?</h2>
+            <p class="confirmation-text">
+                You're about to permanently delete the attendance record for
+                <span class="highlight-student">{{ attendance.student.user.get_full_name }}</span>
+                on <span class="highlight-date">{{ attendance.date|date:"d M Y" }}</span>.
+            </p>
+        </div>
+
+        <!-- Record Details Section -->
+        <div class="details-section">
+            <div class="details-header">
+                <i class="fas fa-info-circle"></i> Record Details
+            </div>
+            <div class="details-grid">
+                <div class="detail-item">
+                    <span class="detail-label">Student</span>
+                    <span class="detail-value">{{ attendance.student.user.get_full_name }}</span>
+                </div>
+                <div class="detail-item">
+                    <span class="detail-label">Admission No.</span>
+                    <span class="detail-value">{{ attendance.student.admission_number }}</span>
+                </div>
+                <div class="detail-item">
+                    <span class="detail-label">Date</span>
+                    <span class="detail-value">{{ attendance.date|date:"d M Y" }}</span>
+                </div>
+                <div class="detail-item">
+                    <span class="detail-label">Day</span>
+                    <span class="detail-value">{{ attendance.date|date:"l" }}</span>
+                </div>
+                <div class="detail-item">
+                    <span class="detail-label">Status</span>
+                    <span class="detail-value">
+                        {% if attendance.status == 'Present' %}
+                        <span class="detail-badge present">Present</span>
+                        {% elif attendance.status == 'Absent' %}
+                        <span class="detail-badge absent">Absent</span>
+                        {% elif attendance.status == 'Late' %}
+                        <span class="detail-badge late">Late</span>
+                        {% elif attendance.status == 'Half Day' %}
+                        <span class="detail-badge halfday">Half Day</span>
+                        {% elif attendance.status == 'Excused' %}
+                        <span class="detail-badge excused">Excused</span>
+                        {% elif attendance.status == 'Sick' %}
+                        <span class="detail-badge sick">Sick</span>
+                        {% endif %}
+                    </span>
+                </div>
+                <div class="detail-item">
+                    <span class="detail-label">Subject</span>
+                    <span class="detail-value">{{ attendance.subject.name|default:"All Day" }}</span>
+                </div>
+                {% if attendance.remarks %}
+                <div class="detail-item full-width">
+                    <span class="detail-label">Remarks</span>
+                    <span class="detail-value remarks-content">{{ attendance.remarks }}</span>
+                </div>
+                {% endif %}
+            </div>
+        </div>
+
+        <!-- Warning Section -->
+        <div class="warning-section">
+            <div class="warning-icon">
+                <i class="fas fa-exclamation-circle"></i>
+            </div>
+            <div class="warning-content">
+                <h4 class="warning-title">Warning: This action cannot be undone</h4>
+                <p class="warning-text">
+                    Deleting this record will permanently remove it from the system. 
+                    The attendance history for this student on this date will be lost.
+                </p>
+            </div>
+        </div>
+
+        <!-- Action Section -->
+        <form method="post" class="confirmation-form">
+            {% csrf_token %}
+            <div class="action-buttons">
+                <a href="{% url 'attendance_list' %}" class="action-btn cancel-btn">
+                    <i class="fas fa-arrow-left"></i>
+                    <span>Cancel & Go Back</span>
+                </a>
+                <button type="submit" class="action-btn delete-btn" onclick="return confirm('Are you absolutely sure? This cannot be undone.')">
+                    <i class="fas fa-trash-alt"></i>
+                    <span>Yes, Delete Record</span>
+                </button>
+            </div>
+        </form>
+    </div>
+</div>
+
+<style>
+    /* ============= Delete Container ============= */
+    .delete-container {
+        min-height: 100vh;
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+        justify-content: center;
+        padding: 20px;
+        background: linear-gradient(135deg, #f5f7fa 0%, #e9ecef 100%);
+        position: relative;
+        overflow: hidden;
+    }
+
+    [data-bs-theme="dark"] .delete-container {
+        background: linear-gradient(135deg, #1a1d23 0%, #2d3142 100%);
+    }
+
+    .delete-bg-overlay {
+        position: absolute;
+        top: 0;
+        left: 0;
+        right: 0;
+        bottom: 0;
+        background: radial-gradient(circle at 20% 50%, rgba(78, 115, 223, 0.05) 0%, transparent 50%),
+                    radial-gradient(circle at 80% 50%, rgba(220, 53, 69, 0.05) 0%, transparent 50%);
+        pointer-events: none;
+    }
+
+    /* ============= Hero Section ============= */
+    .delete-hero {
+        text-align: center;
+        margin-bottom: 30px;
+        animation: slideInDown 0.6s ease-out;
+        position: relative;
+        z-index: 1;
+    }
+
+    .delete-danger-badge {
+        display: inline-block;
+        padding: 8px 20px;
+        background: linear-gradient(135deg, #dc3545 0%, #c82333 100%);
+        color: white;
+        border-radius: 50px;
+        font-size: 11px;
+        font-weight: 700;
+        letter-spacing: 2px;
+        margin-bottom: 15px;
+        box-shadow: 0 8px 24px rgba(220, 53, 69, 0.3);
+    }
+
+    .delete-title {
+        font-size: 42px;
+        font-weight: 800;
+        color: #2e3440;
+        margin-bottom: 12px;
+        line-height: 1.2;
+    }
+
+    [data-bs-theme="dark"] .delete-title {
+        color: #e0e0e0;
+    }
+
+    .delete-subtitle {
+        font-size: 16px;
+        color: #6c757d;
+        margin: 0;
+    }
+
+    [data-bs-theme="dark"] .delete-subtitle {
+        color: #b0b0b0;
+    }
+
+    /* ============= Confirmation Card ============= */
+    .confirmation-card {
+        background: white;
+        border-radius: 24px;
+        padding: 40px;
+        box-shadow: 0 20px 60px rgba(0, 0, 0, 0.15);
+        max-width: 550px;
+        width: 100%;
+        animation: slideInUp 0.6s ease-out;
+        position: relative;
+        z-index: 1;
+    }
+
+    [data-bs-theme="dark"] .confirmation-card {
+        background: #2d3142;
+    }
+
+    /* ============= Icon Section ============= */
+    .danger-icon-container {
+        text-align: center;
+        margin-bottom: 30px;
+        animation: slideInDown 0.7s ease-out;
+    }
+
+    .danger-icon-circle {
+        width: 80px;
+        height: 80px;
+        margin: 0 auto;
+        border-radius: 50%;
+        background: linear-gradient(135deg, rgba(220, 53, 69, 0.15) 0%, rgba(220, 53, 69, 0.05) 100%);
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        font-size: 40px;
+        color: #dc3545;
+        position: relative;
+    }
+
+    .danger-icon-circle::before {
+        content: '';
+        position: absolute;
+        top: 0;
+        left: 0;
+        right: 0;
+        bottom: 0;
+        border-radius: 50%;
+        border: 3px solid rgba(220, 53, 69, 0.2);
+        animation: pulse-danger 2s infinite;
+    }
+
+    @keyframes pulse-danger {
+        0% {
+            transform: scale(1);
+            opacity: 1;
+        }
+        100% {
+            transform: scale(1.2);
+            opacity: 0;
+        }
+    }
+
+    /* ============= Confirmation Message ============= */
+    .confirmation-message {
+        text-align: center;
+        margin-bottom: 30px;
+        animation: slideInUp 0.7s ease-out;
+    }
+
+    .confirmation-title {
+        font-size: 24px;
+        font-weight: 800;
+        color: #2e3440;
+        margin-bottom: 12px;
+    }
+
+    [data-bs-theme="dark"] .confirmation-title {
+        color: #e0e0e0;
+    }
+
+    .confirmation-text {
+        font-size: 15px;
+        color: #6c757d;
+        line-height: 1.6;
+        margin: 0;
+    }
+
+    [data-bs-theme="dark"] .confirmation-text {
+        color: #b0b0b0;
+    }
+
+    .highlight-student {
+        color: #2e3440;
+        font-weight: 700;
+        background: rgba(78, 115, 223, 0.1);
+        padding: 2px 8px;
+        border-radius: 4px;
+    }
+
+    [data-bs-theme="dark"] .highlight-student {
+        color: #e0e0e0;
+    }
+
+    .highlight-date {
+        color: #dc3545;
+        font-weight: 700;
+        background: rgba(220, 53, 69, 0.1);
+        padding: 2px 8px;
+        border-radius: 4px;
+    }
+
+    /* ============= Details Section ============= */
+    .details-section {
+        margin-bottom: 30px;
+        animation: slideInUp 0.8s ease-out;
+    }
+
+    .details-header {
+        font-size: 14px;
+        font-weight: 700;
+        color: #2e3440;
+        text-transform: uppercase;
+        letter-spacing: 0.5px;
+        margin-bottom: 16px;
+        display: flex;
+        align-items: center;
+        gap: 8px;
+        padding-bottom: 12px;
+        border-bottom: 2px solid #f0f0f0;
+    }
+
+    [data-bs-theme="dark"] .details-header {
+        color: #e0e0e0;
+        border-bottom-color: #4a5568;
+    }
+
+    .details-header i {
+        color: #4e73df;
+    }
+
+    .details-grid {
+        display: grid;
+        grid-template-columns: repeat(auto-fit, minmax(150px, 1fr));
+        gap: 16px;
+    }
+
+    .detail-item {
+        display: flex;
+        flex-direction: column;
+        padding: 12px;
+        background: #f8f9fa;
+        border-radius: 10px;
+        border-left: 3px solid #4e73df;
+    }
+
+    [data-bs-theme="dark"] .detail-item {
+        background: #3a3f52;
+        border-left-color: #7fb3ff;
+    }
+
+    .detail-item.full-width {
+        grid-column: 1 / -1;
+    }
+
+    .detail-label {
+        font-size: 12px;
+        font-weight: 700;
+        color: #6c757d;
+        text-transform: uppercase;
+        letter-spacing: 0.5px;
+        margin-bottom: 6px;
+    }
+
+    [data-bs-theme="dark"] .detail-label {
+        color: #b0b0b0;
+    }
+
+    .detail-value {
+        font-size: 14px;
+        font-weight: 600;
+        color: #2e3440;
+        word-break: break-word;
+    }
+
+    [data-bs-theme="dark"] .detail-value {
+        color: #e0e0e0;
+    }
+
+    .remarks-content {
+        font-size: 13px;
+        color: #6c757d;
+        font-weight: normal;
+        font-style: italic;
+    }
+
+    [data-bs-theme="dark"] .remarks-content {
+        color: #b0b0b0;
+    }
+
+    .detail-badge {
+        display: inline-block;
+        padding: 4px 10px;
+        border-radius: 6px;
+        font-size: 11px;
+        font-weight: 700;
+    }
+
+    .detail-badge.present {
+        background: rgba(28, 200, 138, 0.2);
+        color: #1cc88a;
+    }
+
+    .detail-badge.absent {
+        background: rgba(231, 76, 60, 0.2);
+        color: #e74c3c;
+    }
+
+    .detail-badge.late {
+        background: rgba(246, 194, 62, 0.2);
+        color: #f6c23e;
+    }
+
+    .detail-badge.halfday {
+        background: rgba(127, 179, 255, 0.2);
+        color: #7fb3ff;
+    }
+
+    .detail-badge.excused {
+        background: rgba(108, 117, 125, 0.2);
+        color: #6c757d;
+    }
+
+    .detail-badge.sick {
+        background: rgba(220, 53, 69, 0.2);
+        color: #dc3545;
+    }
+
+    /* ============= Warning Section ============= */
+    .warning-section {
+        display: flex;
+        gap: 15px;
+        padding: 16px;
+        background: linear-gradient(135deg, rgba(220, 53, 69, 0.08) 0%, rgba(220, 53, 69, 0.04) 100%);
+        border-radius: 12px;
+        border-left: 4px solid #dc3545;
+        margin-bottom: 30px;
+        animation: slideInUp 0.9s ease-out;
+    }
+
+    [data-bs-theme="dark"] .warning-section {
+        background: linear-gradient(135deg, rgba(220, 53, 69, 0.15) 0%, rgba(220, 53, 69, 0.05) 100%);
+        border-left-color: #ff6b7a;
+    }
+
+    .warning-icon {
+        width: 40px;
+        height: 40px;
+        border-radius: 50%;
+        background: rgba(220, 53, 69, 0.15);
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        color: #dc3545;
+        font-size: 18px;
+        flex-shrink: 0;
+    }
+
+    .warning-content {
+        flex: 1;
+    }
+
+    .warning-title {
+        font-size: 14px;
+        font-weight: 700;
+        color: #dc3545;
+        margin-bottom: 6px;
+    }
+
+    [data-bs-theme="dark"] .warning-title {
+        color: #ff6b7a;
+    }
+
+    .warning-text {
+        font-size: 13px;
+        color: #6c757d;
+        margin: 0;
+        line-height: 1.5;
+    }
+
+    [data-bs-theme="dark"] .warning-text {
+        color: #b0b0b0;
+    }
+
+    /* ============= Action Buttons ============= */
+    .confirmation-form {
+        animation: slideInUp 1s ease-out;
+    }
+
+    .action-buttons {
+        display: flex;
+        gap: 12px;
+        flex-direction: column-reverse;
+    }
+
+    .action-btn {
+        padding: 14px 24px;
+        border: none;
+        border-radius: 12px;
+        font-weight: 700;
+        cursor: pointer;
+        transition: all 0.3s ease;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        gap: 8px;
+        font-size: 15px;
+        text-decoration: none;
+    }
+
+    .action-btn.cancel-btn {
+        background: #f0f0f0;
+        color: #2e3440;
+        border: 2px solid #e0e0e0;
+    }
+
+    [data-bs-theme="dark"] .action-btn.cancel-btn {
+        background: #3a3f52;
+        color: #e0e0e0;
+        border-color: #4a5568;
+    }
+
+    .action-btn.cancel-btn:hover {
+        background: #e0e0e0;
+        transform: translateY(-2px);
+    }
+
+    [data-bs-theme="dark"] .action-btn.cancel-btn:hover {
+        background: #4a5568;
+    }
+
+    .action-btn.delete-btn {
+        background: linear-gradient(135deg, #dc3545 0%, #bb2d3b 100%);
+        color: white;
+        box-shadow: 0 8px 24px rgba(220, 53, 69, 0.3);
+    }
+
+    .action-btn.delete-btn:hover {
+        transform: translateY(-2px);
+        box-shadow: 0 12px 32px rgba(220, 53, 69, 0.4);
+    }
+
+    /* ============= Animations ============= */
+    @keyframes slideInDown {
+        from {
+            opacity: 0;
+            transform: translateY(-30px);
+        }
+        to {
+            opacity: 1;
+            transform: translateY(0);
+        }
+    }
+
+    @keyframes slideInUp {
+        from {
+            opacity: 0;
+            transform: translateY(30px);
+        }
+        to {
+            opacity: 1;
+            transform: translateY(0);
+        }
+    }
+
+    /* ============= Responsive Design ============= */
+    @media (max-width: 768px) {
+        .delete-container {
+            padding: 15px;
+        }
+
+        .delete-hero {
+            margin-bottom: 25px;
+        }
+
+        .delete-title {
+            font-size: 32px;
+            margin-bottom: 8px;
+        }
+
+        .delete-subtitle {
+            font-size: 14px;
+        }
+
+        .confirmation-card {
+            padding: 30px 20px;
+            border-radius: 20px;
+        }
+
+        .danger-icon-circle {
+            width: 70px;
+            height: 70px;
+            font-size: 36px;
+        }
+
+        .confirmation-title {
+            font-size: 20px;
+        }
+
+        .confirmation-text {
+            font-size: 14px;
+        }
+
+        .details-grid {
+            grid-template-columns: 1fr;
+            gap: 12px;
+        }
+
+        .action-buttons {
+            gap: 10px;
+        }
+
+        .action-btn {
+            padding: 12px 20px;
+            font-size: 14px;
+        }
+    }
+
+    @media (max-width: 480px) {
+        .delete-hero {
+            margin-bottom: 20px;
+        }
+
+        .delete-title {
+            font-size: 24px;
+        }
+
+        .delete-subtitle {
+            font-size: 13px;
+        }
+
+        .confirmation-card {
+            padding: 20px 16px;
+            border-radius: 16px;
+        }
+
+        .danger-icon-circle {
+            width: 60px;
+            height: 60px;
+            font-size: 32px;
+        }
+
+        .confirmation-title {
+            font-size: 18px;
+            margin-bottom: 10px;
+        }
+
+        .confirmation-text {
+            font-size: 13px;
+        }
+
+        .details-header {
+            font-size: 12px;
+            margin-bottom: 12px;
+        }
+
+        .detail-item {
+            padding: 10px;
+        }
+
+        .detail-label {
+            font-size: 11px;
+        }
+
+        .detail-value {
+            font-size: 13px;
+        }
+
+        .warning-section {
+            padding: 12px;
+            gap: 10px;
+        }
+
+        .warning-icon {
+            width: 36px;
+            height: 36px;
+            font-size: 16px;
+        }
+
+        .warning-title {
+            font-size: 13px;
+        }
+
+        .warning-text {
+            font-size: 12px;
+        }
+
+        .action-btn {
+            padding: 11px 16px;
+            font-size: 13px;
+            gap: 6px;
+        }
+
+        .action-btn i {
+            font-size: 13px;
+        }
+    }
+
+    /* ============= Print Optimization ============= */
+    @media print {
+        .delete-container {
+            background: white;
+        }
+
+        .delete-bg-overlay {
+            display: none;
+        }
+
+        .confirmation-card {
+            box-shadow: none;
+            border: 1px solid #ddd;
+        }
+
+        body {
+            background: white;
+            color: black;
+        }
+    }
+</style>
+
+{% endblock %}

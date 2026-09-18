@@ -1,0 +1,1022 @@
+{% extends 'base.html' %}
+
+{% block title %}{{ title }}{% endblock %}
+{% block page_title %}Examination Creator{% endblock %}
+
+{% block breadcrumb %}
+<li class="breadcrumb-item"><a href="{% url 'exam_list' %}"><i class="fas fa-list-check me-1"></i>Exams Portal</a></li>
+<li class="breadcrumb-item active">{% if exam %}Configure Existing{% else %}Create New{% endif %}</li>
+{% endblock %}
+
+{% block page_actions %}
+<a href="{% url 'exam_list' %}" class="btn-premium-back">
+    <i class="fas fa-arrow-left"></i>
+    <span>Back</span>
+</a>
+{% endblock %}
+
+{% block content %}
+<div class="exam-form-container">
+    <!-- Animated Background -->
+    <div class="form-animated-bg"></div>
+
+    <div class="form-wrapper">
+        <!-- Header Section -->
+        <div class="form-header">
+            <div class="header-content">
+                <div class="header-icon">
+                    {% if exam %}
+                        <i class="fas fa-pen-fancy"></i>
+                    {% else %}
+                        <i class="fas fa-sparkles"></i>
+                    {% endif %}
+                </div>
+                <div>
+                    <h1 class="form-title">
+                        {% if exam %}Configure Examination{% else %}Create New Exam{% endif %}
+                    </h1>
+                    <p class="form-subtitle">
+                        {% if exam %}
+                            Update the details and schedule for this examination
+                        {% else %}
+                            Design a new examination with comprehensive settings
+                        {% endif %}
+                    </p>
+                </div>
+            </div>
+
+            <!-- Progress Indicator -->
+            <div class="form-progress">
+                <div class="progress-steps">
+                    <div class="progress-step active" data-step="1">
+                        <span class="step-number">1</span>
+                        <span class="step-label">Basic Info</span>
+                    </div>
+                    <div class="progress-step" data-step="2">
+                        <span class="step-number">2</span>
+                        <span class="step-label">Details</span>
+                    </div>
+                    <div class="progress-step" data-step="3">
+                        <span class="step-number">3</span>
+                        <span class="step-label">Settings</span>
+                    </div>
+                </div>
+                <div class="progress-bar-container">
+                    <div class="progress-bar-fill" style="width: 33%"></div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Form Content -->
+        <form method="post" novalidate class="premium-exam-form">
+            {% csrf_token %}
+
+            <!-- Section 1: Basic Information -->
+            <div class="form-section active" id="section-1">
+                <div class="section-header-premium">
+                    <h2><i class="fas fa-info-circle"></i> Basic Information</h2>
+                    <p>Define the name and type of examination</p>
+                </div>
+
+                <div class="form-grid">
+                    <div class="form-group-premium">
+                        <label class="form-label-premium">
+                            <span class="label-text">Exam Name</span>
+                            <span class="required-badge">Required</span>
+                        </label>
+                        <input type="text" class="form-input-premium" id="name" name="name" 
+                               value="{{ exam.name }}" required 
+                               placeholder="e.g. First Term Final Examination">
+                        <div class="input-help">The official name of this examination</div>
+                    </div>
+
+                    <div class="form-group-premium">
+                        <label class="form-label-premium">
+                            <span class="label-text">Exam Type</span>
+                            <span class="required-badge">Required</span>
+                        </label>
+                        <select class="form-select-premium" id="exam_type" name="exam_type" required>
+                            <option value="" disabled selected>Select examination type...</option>
+                            {% for type_code, type_label in exam_types %}
+                                <option value="{{ type_code }}" {% if exam.exam_type == type_code %}selected{% endif %}>{{ type_label }}</option>
+                            {% endfor %}
+                        </select>
+                        <div class="input-help">Categorize this exam (Final, Midterm, Quiz, etc.)</div>
+                    </div>
+
+                    <div class="form-group-premium">
+                        <label class="form-label-premium">
+                            <span class="label-text">Academic Term</span>
+                            <span class="optional-badge">Optional</span>
+                        </label>
+                        <select class="form-select-premium" id="term" name="term">
+                            <option value="">No specific term</option>
+                            {% for term_code, term_label in terms %}
+                                <option value="{{ term_code }}" {% if exam.term == term_code %}selected{% endif %}>{{ term_label }}</option>
+                            {% endfor %}
+                        </select>
+                        <div class="input-help">Select the academic term for this exam</div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Section 2: Exam Details -->
+            <div class="form-section" id="section-2">
+                <div class="section-header-premium">
+                    <h2><i class="fas fa-calendar-alt"></i> Examination Details</h2>
+                    <p>Set the subject, class, date, and time</p>
+                </div>
+
+                <div class="form-grid">
+                    <div class="form-group-premium">
+                        <label class="form-label-premium">
+                            <span class="label-text">Subject</span>
+                            <span class="required-badge">Required</span>
+                        </label>
+                        <select class="form-select-premium" id="subject_id" name="subject_id" required>
+                            <option value="" disabled selected>Select subject...</option>
+                            {% for subject in subjects %}
+                                <option value="{{ subject.id }}" {% if exam.subject_id == subject.id %}selected{% endif %}>{{ subject.name }}</option>
+                            {% endfor %}
+                        </select>
+                        <div class="input-help">Choose the subject being examined</div>
+                    </div>
+
+                    <div class="form-group-premium">
+                        <label class="form-label-premium">
+                            <span class="label-text">Class/Section</span>
+                            <span class="required-badge">Required</span>
+                        </label>
+                        <select class="form-select-premium" id="class_id" name="class_id" required>
+                            <option value="" disabled selected>Select class...</option>
+                            {% for class in classes %}
+                                <option value="{{ class.id }}" {% if exam.class_name_id == class.id %}selected{% endif %}>{{ class.name }}</option>
+                            {% endfor %}
+                        </select>
+                        <div class="input-help">Select which class takes this exam</div>
+                    </div>
+
+                    <div class="form-group-premium">
+                        <label class="form-label-premium">
+                            <span class="label-text">Exam Date</span>
+                            <span class="required-badge">Required</span>
+                        </label>
+                        <input type="date" class="form-input-premium" id="date_conducted" name="date_conducted" 
+                               value="{{ exam.date_conducted|date:'Y-m-d' }}" required>
+                        <div class="input-help">When will this examination be conducted?</div>
+                    </div>
+
+                    <div class="form-group-premium">
+                        <label class="form-label-premium">
+                            <span class="label-text">Exam Time</span>
+                            <span class="required-badge">Required</span>
+                        </label>
+                        <input type="time" class="form-input-premium" id="exam_time" name="exam_time" 
+                               value="{{ exam.exam_time|time:'H:m' }}" required>
+                        <div class="input-help">Start time of the examination</div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Section 3: Marking & Settings -->
+            <div class="form-section" id="section-3">
+                <div class="section-header-premium">
+                    <h2><i class="fas fa-cog"></i> Marking & Advanced Settings</h2>
+                    <p>Configure marks, weightage, and automatic grading</p>
+                </div>
+
+                <div class="form-grid">
+                    <div class="form-group-premium">
+                        <label class="form-label-premium">
+                            <span class="label-text">Total Marks</span>
+                            <span class="optional-badge">Default: 100</span>
+                        </label>
+                        <div class="input-with-unit">
+                            <input type="number" class="form-input-premium" id="total_marks" name="total_marks" 
+                                   value="{{ exam.total_marks|default:100 }}" min="0" step="0.01" required>
+                            <span class="unit-badge">marks</span>
+                        </div>
+                        <div class="input-help">Maximum marks for this examination</div>
+                    </div>
+
+                    <div class="form-group-premium">
+                        <label class="form-label-premium">
+                            <span class="label-text">Pass Marks</span>
+                            <span class="optional-badge">Default: 40</span>
+                        </label>
+                        <div class="input-with-unit">
+                            <input type="number" class="form-input-premium" id="pass_marks" name="pass_marks" 
+                                   value="{{ exam.pass_marks|default:40 }}" min="0" step="0.01" required>
+                            <span class="unit-badge">marks</span>
+                        </div>
+                        <div class="input-help">Minimum marks required to pass</div>
+                    </div>
+
+                    <div class="form-group-premium">
+                        <label class="form-label-premium">
+                            <span class="label-text">Weightage Factor</span>
+                            <span class="optional-badge">Default: 1.0</span>
+                        </label>
+                        <div class="input-with-unit">
+                            <input type="number" class="form-input-premium" id="weightage" name="weightage" 
+                                   value="{{ exam.weightage|default:1.0 }}" min="0" max="1" step="0.01" required>
+                            <span class="unit-badge info-unit" title="1.0 = 100%"><i class="fas fa-info-circle"></i></span>
+                        </div>
+                        <div class="input-help">Multiplier for marks in final report (1.0 = 100%, 0.5 = 50%)</div>
+                    </div>
+                </div>
+
+                <!-- Auto-Generate Section -->
+                <div class="premium-setting-box">
+                    <div class="setting-checkbox">
+                        <input type="checkbox" class="premium-checkbox" id="auto_generate_grades" name="auto_generate_grades">
+                        <label for="auto_generate_grades" class="setting-label">
+                            <span class="checkbox-icon"><i class="fas fa-magic"></i></span>
+                            <div class="setting-text">
+                                <span class="setting-title">Auto-Generate Grade Entries</span>
+                                <span class="setting-description">
+                                    Automatically create blank grade records for all students in this class
+                                </span>
+                            </div>
+                        </label>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Form Actions -->
+            <div class="form-actions-section">
+                <div class="actions-container">
+                    <a href="{% url 'exam_list' %}" class="btn-action cancel-action">
+                        <i class="fas fa-times"></i>
+                        <span>Cancel</span>
+                    </a>
+
+                    <div class="action-spacer"></div>
+
+                    <button type="button" class="btn-action secondary-action" id="prevBtn" style="display: none;">
+                        <i class="fas fa-chevron-left"></i>
+                        <span>Previous</span>
+                    </button>
+
+                    <button type="button" class="btn-action primary-action" id="nextBtn">
+                        <i class="fas fa-chevron-right"></i>
+                        <span>Next</span>
+                    </button>
+
+                    <button type="submit" class="btn-action submit-action" id="submitBtn" style="display: none;">
+                        <i class="fas fa-check-circle"></i>
+                        <span>{% if exam %}Update Exam{% else %}Create Exam{% endif %}</span>
+                    </button>
+                </div>
+            </div>
+        </form>
+    </div>
+</div>
+{% endblock %}
+
+{% block extra_css %}
+<style>
+    /* ============= PREMIUM EXAM FORM STYLING ============= */
+    
+    :root {
+        --primary: #4e73df;
+        --secondary: #1cc88a;
+        --danger: #dc3545;
+        --warning: #f6c23e;
+        --dark: #2e3440;
+        --light: #f8f9fa;
+        --blue-gradient: linear-gradient(135deg, #4e73df 0%, #224abe 100%);
+        --teal-gradient: linear-gradient(135deg, #1cc88a 0%, #128a5f 100%);
+    }
+
+    [data-bs-theme="dark"] {
+        --dark: #e0e0e0;
+        --light: #1a1d23;
+    }
+
+    /* Container */
+    .exam-form-container {
+        position: relative;
+        min-height: 100vh;
+        padding: 40px 20px;
+        overflow: hidden;
+    }
+
+    .form-animated-bg {
+        position: fixed;
+        top: 0;
+        left: 0;
+        width: 100%;
+        height: 100%;
+        background: linear-gradient(135deg, rgba(78, 115, 223, 0.04) 0%, rgba(28, 200, 138, 0.03) 100%);
+        z-index: -1;
+        animation: bgWave 8s ease-in-out infinite;
+    }
+
+    @keyframes bgWave {
+        0%, 100% { opacity: 1; }
+        50% { opacity: 0.85; }
+    }
+
+    .form-wrapper {
+        max-width: 900px;
+        margin: 0 auto;
+    }
+
+    /* Header Section */
+    .form-header {
+        background: linear-gradient(135deg, #ffffff 0%, #f8f9fa 100%);
+        border-radius: 20px;
+        padding: 40px;
+        margin-bottom: 32px;
+        box-shadow: 0 10px 40px rgba(78, 115, 223, 0.12);
+        position: relative;
+        overflow: hidden;
+    }
+
+    [data-bs-theme="dark"] .form-header {
+        background: linear-gradient(135deg, #2d3142 0%, #1a1d23 100%);
+    }
+
+    .form-header::before {
+        content: '';
+        position: absolute;
+        top: -50%;
+        right: -10%;
+        width: 400px;
+        height: 400px;
+        background: radial-gradient(circle, rgba(78, 115, 223, 0.1) 0%, transparent 70%);
+        border-radius: 50%;
+    }
+
+    .header-content {
+        display: flex;
+        align-items: center;
+        gap: 24px;
+        margin-bottom: 32px;
+        position: relative;
+        z-index: 1;
+    }
+
+    .header-icon {
+        width: 80px;
+        height: 80px;
+        background: var(--blue-gradient);
+        border-radius: 16px;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        font-size: 40px;
+        color: white;
+        flex-shrink: 0;
+        box-shadow: 0 8px 20px rgba(78, 115, 223, 0.3);
+    }
+
+    .form-title {
+        font-size: 28px;
+        font-weight: 800;
+        color: var(--dark);
+        margin: 0 0 8px;
+    }
+
+    [data-bs-theme="dark"] .form-title {
+        color: #e0e0e0;
+    }
+
+    .form-subtitle {
+        font-size: 13px;
+        color: #6c757d;
+        margin: 0;
+    }
+
+    [data-bs-theme="dark"] .form-subtitle {
+        color: #b0b0b0;
+    }
+
+    /* Progress Indicator */
+    .form-progress {
+        margin-top: 32px;
+    }
+
+    .progress-steps {
+        display: flex;
+        justify-content: space-between;
+        margin-bottom: 16px;
+        position: relative;
+        z-index: 1;
+    }
+
+    .progress-step {
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+        gap: 8px;
+        flex: 1;
+        cursor: pointer;
+    }
+
+    .step-number {
+        width: 40px;
+        height: 40px;
+        background: #e9ecef;
+        border: 2px solid #e9ecef;
+        border-radius: 50%;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        font-weight: 800;
+        color: #6c757d;
+        transition: all 0.3s ease;
+    }
+
+    [data-bs-theme="dark"] .step-number {
+        background: #3a3f52;
+        border-color: #4a5568;
+        color: #b0b0b0;
+    }
+
+    .progress-step.active .step-number {
+        background: var(--blue-gradient);
+        color: white;
+        border-color: #224abe;
+        box-shadow: 0 4px 12px rgba(78, 115, 223, 0.3);
+    }
+
+    .step-label {
+        font-size: 12px;
+        font-weight: 700;
+        color: #6c757d;
+        text-transform: uppercase;
+        text-align: center;
+    }
+
+    [data-bs-theme="dark"] .step-label {
+        color: #b0b0b0;
+    }
+
+    .progress-bar-container {
+        height: 4px;
+        background: #e9ecef;
+        border-radius: 2px;
+        overflow: hidden;
+    }
+
+    [data-bs-theme="dark"] .progress-bar-container {
+        background: #3a3f52;
+    }
+
+    .progress-bar-fill {
+        height: 100%;
+        background: var(--blue-gradient);
+        border-radius: 2px;
+        transition: width 0.4s cubic-bezier(0.4, 0, 0.2, 1);
+    }
+
+    /* Form Sections */
+    .premium-exam-form {
+        background: linear-gradient(135deg, #ffffff 0%, #f8f9fa 100%);
+        border-radius: 20px;
+        overflow: hidden;
+        box-shadow: 0 10px 40px rgba(78, 115, 223, 0.12);
+    }
+
+    [data-bs-theme="dark"] .premium-exam-form {
+        background: linear-gradient(135deg, #2d3142 0%, #1a1d23 100%);
+    }
+
+    .form-section {
+        padding: 40px;
+        display: none;
+        animation: fadeInUp 0.5s ease-out;
+    }
+
+    .form-section.active {
+        display: block;
+    }
+
+    @keyframes fadeInUp {
+        from {
+            opacity: 0;
+            transform: translateY(20px);
+        }
+        to {
+            opacity: 1;
+            transform: translateY(0);
+        }
+    }
+
+    .section-header-premium {
+        margin-bottom: 32px;
+    }
+
+    .section-header-premium h2 {
+        font-size: 20px;
+        font-weight: 800;
+        color: var(--dark);
+        margin: 0 0 8px;
+        display: flex;
+        align-items: center;
+        gap: 10px;
+    }
+
+    [data-bs-theme="dark"] .section-header-premium h2 {
+        color: #e0e0e0;
+    }
+
+    .section-header-premium p {
+        font-size: 13px;
+        color: #6c757d;
+        margin: 0;
+    }
+
+    [data-bs-theme="dark"] .section-header-premium p {
+        color: #b0b0b0;
+    }
+
+    /* Form Grid */
+    .form-grid {
+        display: grid;
+        grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
+        gap: 24px;
+        margin-bottom: 24px;
+    }
+
+    /* Form Groups */
+    .form-group-premium {
+        display: flex;
+        flex-direction: column;
+    }
+
+    .form-label-premium {
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        margin-bottom: 10px;
+        font-weight: 700;
+        color: var(--dark);
+    }
+
+    [data-bs-theme="dark"] .form-label-premium {
+        color: #e0e0e0;
+    }
+
+    .label-text {
+        font-size: 13px;
+    }
+
+    .required-badge,
+    .optional-badge {
+        font-size: 10px;
+        font-weight: 700;
+        text-transform: uppercase;
+        letter-spacing: 0.5px;
+        padding: 4px 8px;
+        border-radius: 4px;
+    }
+
+    .required-badge {
+        background: rgba(220, 53, 69, 0.1);
+        color: #dc3545;
+    }
+
+    .optional-badge {
+        background: rgba(108, 117, 125, 0.1);
+        color: #6c757d;
+    }
+
+    /* Input Styles */
+    .form-input-premium,
+    .form-select-premium {
+        padding: 12px 14px;
+        border: 2px solid #e9ecef;
+        border-radius: 10px;
+        background: white;
+        color: var(--dark);
+        font-size: 13px;
+        font-weight: 500;
+        transition: all 0.3s ease;
+        font-family: inherit;
+    }
+
+    [data-bs-theme="dark"] .form-input-premium,
+    [data-bs-theme="dark"] .form-select-premium {
+        background: #3a3f52;
+        border-color: #4a5568;
+        color: #e0e0e0;
+    }
+
+    .form-input-premium:focus,
+    .form-select-premium:focus {
+        border-color: #4e73df;
+        box-shadow: 0 0 0 4px rgba(78, 115, 223, 0.15);
+        outline: none;
+    }
+
+    .input-help {
+        font-size: 11px;
+        color: #6c757d;
+        margin-top: 6px;
+        font-weight: 500;
+    }
+
+    [data-bs-theme="dark"] .input-help {
+        color: #b0b0b0;
+    }
+
+    /* Input with Unit */
+    .input-with-unit {
+        display: flex;
+        align-items: center;
+        gap: 8px;
+    }
+
+    .input-with-unit .form-input-premium {
+        flex: 1;
+    }
+
+    .unit-badge,
+    .info-unit {
+        padding: 10px 12px;
+        background: #e9ecef;
+        border: 2px solid #e9ecef;
+        border-radius: 8px;
+        font-size: 11px;
+        font-weight: 700;
+        color: #6c757d;
+        white-space: nowrap;
+    }
+
+    [data-bs-theme="dark"] .unit-badge,
+    [data-bs-theme="dark"] .info-unit {
+        background: #3a3f52;
+        border-color: #4a5568;
+        color: #b0b0b0;
+    }
+
+    .info-unit {
+        cursor: help;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+    }
+
+    /* Setting Box */
+    .premium-setting-box {
+        background: linear-gradient(135deg, rgba(78, 115, 223, 0.05) 0%, rgba(28, 200, 138, 0.05) 100%);
+        border: 2px solid rgba(78, 115, 223, 0.15);
+        border-radius: 12px;
+        padding: 20px;
+        margin-top: 24px;
+    }
+
+    [data-bs-theme="dark"] .premium-setting-box {
+        background: linear-gradient(135deg, rgba(78, 115, 223, 0.1) 0%, rgba(28, 200, 138, 0.08) 100%);
+        border-color: rgba(78, 115, 223, 0.25);
+    }
+
+    .setting-checkbox {
+        display: flex;
+        align-items: start;
+    }
+
+    .premium-checkbox {
+        width: 20px;
+        height: 20px;
+        margin-top: 2px;
+        margin-right: 14px;
+        cursor: pointer;
+        flex-shrink: 0;
+    }
+
+    .setting-label {
+        display: flex;
+        align-items: center;
+        gap: 12px;
+        cursor: pointer;
+        flex: 1;
+    }
+
+    .checkbox-icon {
+        font-size: 18px;
+        color: #4e73df;
+    }
+
+    .setting-text {
+        display: flex;
+        flex-direction: column;
+        gap: 4px;
+    }
+
+    .setting-title {
+        font-weight: 700;
+        color: var(--dark);
+        font-size: 13px;
+    }
+
+    [data-bs-theme="dark"] .setting-title {
+        color: #e0e0e0;
+    }
+
+    .setting-description {
+        font-size: 12px;
+        color: #6c757d;
+    }
+
+    [data-bs-theme="dark"] .setting-description {
+        color: #b0b0b0;
+    }
+
+    /* Form Actions */
+    .form-actions-section {
+        background: linear-gradient(135deg, #f8f9fa 0%, #ffffff 100%);
+        border-top: 2px solid #e9ecef;
+        padding: 24px 40px;
+    }
+
+    [data-bs-theme="dark"] .form-actions-section {
+        background: linear-gradient(135deg, #1a1d23 0%, #2d3142 100%);
+        border-top-color: #4a5568;
+    }
+
+    .actions-container {
+        display: flex;
+        align-items: center;
+        gap: 12px;
+    }
+
+    .action-spacer {
+        flex: 1;
+    }
+
+    .btn-action {
+        padding: 12px 20px;
+        border: none;
+        border-radius: 10px;
+        cursor: pointer;
+        font-weight: 700;
+        font-size: 13px;
+        transition: all 0.3s ease;
+        display: inline-flex;
+        align-items: center;
+        justify-content: center;
+        gap: 8px;
+        text-decoration: none;
+    }
+
+    .cancel-action {
+        background: #e9ecef;
+        color: var(--dark);
+    }
+
+    [data-bs-theme="dark"] .cancel-action {
+        background: #3a3f52;
+        color: #e0e0e0;
+    }
+
+    .cancel-action:hover {
+        background: #dee2e6;
+        transform: translateY(-2px);
+    }
+
+    [data-bs-theme="dark"] .cancel-action:hover {
+        background: #4a5568;
+    }
+
+    .secondary-action {
+        background: #e9ecef;
+        color: var(--dark);
+    }
+
+    [data-bs-theme="dark"] .secondary-action {
+        background: #3a3f52;
+        color: #e0e0e0;
+    }
+
+    .secondary-action:hover {
+        background: #dee2e6;
+        transform: translateY(-2px);
+    }
+
+    [data-bs-theme="dark"] .secondary-action:hover {
+        background: #4a5568;
+    }
+
+    .primary-action {
+        background: var(--blue-gradient);
+        color: white;
+    }
+
+    .primary-action:hover {
+        transform: translateY(-2px);
+        box-shadow: 0 8px 20px rgba(78, 115, 223, 0.3);
+    }
+
+    .submit-action {
+        background: linear-gradient(135deg, #1cc88a 0%, #128a5f 100%);
+        color: white;
+    }
+
+    .submit-action:hover {
+        transform: translateY(-2px);
+        box-shadow: 0 8px 20px rgba(28, 200, 138, 0.3);
+    }
+
+    /* Back Button */
+    .btn-premium-back {
+        display: inline-flex;
+        align-items: center;
+        gap: 6px;
+        padding: 10px 16px;
+        background: var(--blue-gradient);
+        color: white;
+        border: none;
+        border-radius: 8px;
+        cursor: pointer;
+        font-weight: 700;
+        font-size: 12px;
+        text-decoration: none;
+        transition: all 0.3s ease;
+    }
+
+    .btn-premium-back:hover {
+        transform: translateY(-2px);
+        box-shadow: 0 8px 20px rgba(78, 115, 223, 0.3);
+    }
+
+    /* Responsive */
+    @media (max-width: 768px) {
+        .exam-form-container {
+            padding: 20px;
+        }
+
+        .form-header {
+            padding: 24px;
+            margin-bottom: 24px;
+        }
+
+        .header-content {
+            flex-direction: column;
+            text-align: center;
+            gap: 16px;
+        }
+
+        .form-title {
+            font-size: 22px;
+        }
+
+        .form-grid {
+            grid-template-columns: 1fr;
+            gap: 16px;
+        }
+
+        .form-section {
+            padding: 24px;
+        }
+
+        .form-actions-section {
+            padding: 16px 24px;
+        }
+
+        .actions-container {
+            flex-wrap: wrap;
+        }
+
+        .btn-action {
+            flex: 1;
+            min-width: 100px;
+        }
+
+        .action-spacer {
+            width: 100%;
+        }
+
+        .progress-steps {
+            margin-bottom: 12px;
+        }
+
+        .step-label {
+            font-size: 11px;
+        }
+    }
+
+    @media (max-width: 576px) {
+        .form-header {
+            padding: 16px;
+        }
+
+        .header-icon {
+            width: 60px;
+            height: 60px;
+            font-size: 28px;
+        }
+
+        .form-title {
+            font-size: 18px;
+        }
+
+        .form-section {
+            padding: 16px;
+        }
+
+        .form-grid {
+            gap: 12px;
+        }
+
+        .btn-action {
+            padding: 10px 14px;
+            font-size: 12px;
+        }
+
+        .section-header-premium h2 {
+            font-size: 16px;
+        }
+    }
+</style>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+    // Multi-section form management
+    let currentSection = 1;
+    const totalSections = 3;
+
+    const nextBtn = document.getElementById('nextBtn');
+    const prevBtn = document.getElementById('prevBtn');
+    const submitBtn = document.getElementById('submitBtn');
+    const form = document.querySelector('.premium-exam-form');
+
+    function showSection(sectionNum) {
+        // Hide all sections
+        document.querySelectorAll('.form-section').forEach(section => {
+            section.classList.remove('active');
+        });
+
+        // Show current section
+        document.getElementById(`section-${sectionNum}`).classList.add('active');
+
+        // Update progress steps
+        document.querySelectorAll('.progress-step').forEach((step, index) => {
+            if (index + 1 <= sectionNum) {
+                step.classList.add('active');
+            } else {
+                step.classList.remove('active');
+            }
+        });
+
+        // Update progress bar
+        const progressPercent = (sectionNum / totalSections) * 100;
+        document.querySelector('.progress-bar-fill').style.width = progressPercent + '%';
+
+        // Update button visibility
+        prevBtn.style.display = sectionNum > 1 ? 'inline-flex' : 'none';
+        submitBtn.style.display = sectionNum === totalSections ? 'inline-flex' : 'none';
+        nextBtn.style.display = sectionNum < totalSections ? 'inline-flex' : 'none';
+
+        // Scroll to top
+        form.scrollIntoView({ behavior: 'smooth', block: 'start' });
+    }
+
+    nextBtn.addEventListener('click', (e) => {
+        e.preventDefault();
+        if (currentSection < totalSections) {
+            currentSection++;
+            showSection(currentSection);
+        }
+    });
+
+    prevBtn.addEventListener('click', (e) => {
+        e.preventDefault();
+        if (currentSection > 1) {
+            currentSection--;
+            showSection(currentSection);
+        }
+    });
+
+    // Initialize
+    showSection(1);
+
+    // Animate on load
+    window.addEventListener('DOMContentLoaded', function() {
+        const inputs = document.querySelectorAll('.form-input-premium, .form-select-premium');
+        inputs.forEach((input, index) => {
+            input.style.animation = `slideInUp 0.6s ease-out ${index * 0.05}s both`;
+        });
+    });
+
+    // Add slide-in animation
+    const style = document.createElement('style');
+    style.textContent = `
+        @keyframes slideInUp {
+            from {
+                opacity: 0;
+                transform: translateY(20px);
+            }
+            to {
+                opacity: 1;
+                transform: translateY(0);
+            }
+        }
+    `;
+    document.head.appendChild(style);
+</script>
+{% endblock %}

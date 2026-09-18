@@ -1,0 +1,542 @@
+{% load static %}
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>{{ school_settings.school_name|default:"School System" }} - Excellence in Education</title>
+    
+    <!-- Fonts -->
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;500;600;700&family=Plus+Jakarta+Sans:wght@400;500;600;700&display=swap" rel="stylesheet">
+    
+    <!-- Bootstrap 5 (Keep but may override) -->
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+    
+    <!-- Icons -->
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    
+    <!-- AOS Animation -->
+    <link href="https://unpkg.com/aos@2.3.1/dist/aos.css" rel="stylesheet">
+    
+    <link rel="stylesheet" href="{% static 'css/landing.css' %}">
+    <style>
+        /* --- UNIMAGINABLE DEEP SPACE THEME --- */
+        :root {
+            --glass-bg: rgba(255, 255, 255, 0.03);
+            --glass-border: rgba(255, 255, 255, 0.08);
+            --glass-shadow: 0 8px 32px 0 rgba(0, 0, 0, 0.3);
+            --neon-primary: #6366f1;
+            --neon-secondary: #8b5cf6;
+            --text-main: #ffffff;
+            --text-muted: rgba(255, 255, 255, 0.6);
+        }
+
+        body {
+            background: linear-gradient(135deg, #0f172a 0%, #1e1b4b 100%);
+            color: var(--text-main);
+            font-family: 'Plus Jakarta Sans', sans-serif;
+            overflow-x: hidden;
+            position: relative;
+        }
+
+        /* Animated Background Shapes */
+        .bg-shapes {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            z-index: -1;
+            overflow: hidden;
+            pointer-events: none;
+        }
+
+        .shape {
+            position: absolute;
+            filter: blur(100px);
+            opacity: 0.4;
+            animation: float 20s infinite alternate;
+            border-radius: 50%;
+        }
+
+        .shape-1 { top: -10%; left: -10%; width: 600px; height: 600px; background: #7c3aed; animation-delay: 0s; }
+        .shape-2 { bottom: -10%; right: -10%; width: 500px; height: 500px; background: #2563eb; animation-delay: -5s; }
+        .shape-3 { top: 30%; left: 40%; width: 400px; height: 400px; background: #06b6d4; animation-delay: -10s; }
+
+        @keyframes float {
+            0% { transform: translate(0, 0) rotate(0deg); }
+            100% { transform: translate(30px, 50px) rotate(20deg); }
+        }
+
+        /* Glass Components */
+        .glass-nav {
+            background: rgba(15, 23, 42, 0.7) !important;
+            backdrop-filter: blur(20px);
+            border-bottom: 1px solid var(--glass-border);
+        }
+
+        .glass-card {
+            background: var(--glass-bg);
+            backdrop-filter: blur(20px);
+            -webkit-backdrop-filter: blur(20px);
+            border: 1px solid var(--glass-border);
+            box-shadow: var(--glass-shadow);
+            border-radius: 24px;
+            transition: transform 0.4s cubic-bezier(0.175, 0.885, 0.32, 1.275), box-shadow 0.4s ease;
+        }
+
+        .glass-card:hover {
+            transform: translateY(-10px);
+            box-shadow: 0 20px 50px rgba(0, 0, 0, 0.5);
+            border-color: rgba(255, 255, 255, 0.2);
+        }
+
+        /* Typography & Buttons */
+        .text-gradient {
+            background: linear-gradient(to right, #818cf8, #c084fc, #f472b6);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            background-size: 200% auto;
+            animation: gradientText 5s ease infinite;
+        }
+
+        @keyframes gradientText {
+            0% { background-position: 0% 50%; }
+            50% { background-position: 100% 50%; }
+            100% { background-position: 0% 50%; }
+        }
+
+        .btn-neon {
+            background: linear-gradient(135deg, #6366f1 0%, #8b5cf6 100%);
+            border: none;
+            color: white;
+            box-shadow: 0 0 20px rgba(99, 102, 241, 0.4);
+            transition: all 0.3s ease;
+            position: relative;
+            overflow: hidden;
+        }
+
+        .btn-neon:hover {
+            transform: translateY(-3px);
+            box-shadow: 0 0 30px rgba(99, 102, 241, 0.6);
+            color: white;
+        }
+
+        .btn-glass {
+            background: rgba(255, 255, 255, 0.05);
+            border: 1px solid rgba(255, 255, 255, 0.2);
+            color: white;
+            backdrop-filter: blur(10px);
+            transition: all 0.3s ease;
+        }
+
+        .btn-glass:hover {
+            background: rgba(255, 255, 255, 0.15);
+            color: white;
+            border-color: rgba(255, 255, 255, 0.4);
+        }
+
+        /* Hero Image Animation */
+        .hero-img {
+            animation: floatImg 6s ease-in-out infinite;
+            filter: drop-shadow(0 0 30px rgba(99, 102, 241, 0.3));
+            max-width: 100%;
+            height: auto;
+        }
+
+        @keyframes floatImg {
+            0% { transform: translateY(0px); }
+            50% { transform: translateY(-20px); }
+            100% { transform: translateY(0px); }
+        }
+
+        .masthead {
+            min-height: 100vh;
+            display: flex;
+            align-items: center;
+            position: relative;
+            padding-top: 80px;
+        }
+
+        .masthead .row {
+            align-items: center;
+            width: 100%;
+        }
+
+        .masthead .col-lg-6:first-child {
+            display: flex;
+            flex-direction: column;
+            justify-content: center;
+        }
+        
+        .icon-box {
+            width: 80px;
+            height: 80px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            border-radius: 20px !important;
+            font-size: 2rem;
+            margin-bottom: 1.5rem;
+            transition: transform 0.3s;
+            background: rgba(255, 255, 255, 0.05) !important;
+            border: 1px solid rgba(255, 255, 255, 0.1);
+        }
+        
+        .glass-card:hover .icon-box {
+            transform: scale(1.1) rotate(10deg);
+            background: rgba(255, 255, 255, 0.1) !important;
+        }
+
+        .feature-icon {
+            width: 60px;
+            height: 60px;
+            border-radius: 16px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 1.5rem;
+            transition: transform 0.3s;
+        }
+
+        .glass-card:hover .feature-icon {
+            transform: scale(1.1);
+        }
+
+        .text-muted {
+            color: var(--text-muted) !important;
+        }
+        
+        .navbar-brand, .nav-link {
+            text-shadow: 0 0 10px rgba(0,0,0,0.5);
+        }
+
+        /* Enhanced Stat Cards Styling */
+        .stat-card {
+            background: linear-gradient(135deg, rgba(255, 255, 255, 0.05) 0%, rgba(255, 255, 255, 0.02) 100%);
+            backdrop-filter: blur(20px);
+            border: 1px solid rgba(255, 255, 255, 0.1);
+            border-radius: 24px;
+            padding: 2.5rem 2rem !important;
+            transition: all 0.4s cubic-bezier(0.175, 0.885, 0.32, 1.275);
+            position: relative;
+            overflow: hidden;
+        }
+
+        .stat-card::before {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: 0;
+            right: 0;
+            height: 4px;
+            background: linear-gradient(90deg, var(--neon-primary), var(--neon-secondary));
+            transform: scaleX(0);
+            transform-origin: left;
+            transition: transform 0.4s ease;
+        }
+
+        .stat-card:hover::before {
+            transform: scaleX(1);
+        }
+
+        .stat-card:hover {
+            transform: translateY(-15px);
+            background: linear-gradient(135deg, rgba(255, 255, 255, 0.08) 0%, rgba(255, 255, 255, 0.04) 100%);
+            box-shadow: 0 20px 60px rgba(99, 102, 241, 0.2), 
+                        0 0 40px rgba(139, 92, 246, 0.15);
+            border-color: rgba(255, 255, 255, 0.2);
+        }
+
+        .stat-card .icon-box {
+            width: 80px;
+            height: 80px;
+            border-radius: 20px;
+            font-size: 2.5rem;
+            margin-bottom: 1.5rem;
+            transition: all 0.4s ease;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            box-shadow: 0 10px 30px rgba(0, 0, 0, 0.2);
+        }
+
+        .stat-card:hover .icon-box {
+            transform: scale(1.15) rotate(10deg);
+            box-shadow: 0 15px 40px rgba(0, 0, 0, 0.3);
+        }
+
+        .stat-card h2 {
+            font-size: 3.5rem;
+            font-weight: 800;
+            line-height: 1;
+            letter-spacing: -1px;
+            margin: 1rem 0;
+            background: linear-gradient(135deg, #ffffff 0%, #d1d5db 100%);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            background-clip: text;
+            animation: fadeInNumber 0.8s ease;
+        }
+
+        @keyframes fadeInNumber {
+            from { opacity: 0; transform: translateY(10px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
+
+        .stat-card p {
+            font-size: 1rem;
+            font-weight: 500;
+            letter-spacing: 0.5px;
+            margin-top: 0.5rem;
+            color: rgba(255, 255, 255, 0.7);
+            transition: color 0.3s ease;
+        }
+
+        .stat-card:hover p {
+            color: rgba(255, 255, 255, 0.9);
+        }
+                /* CTA decorative circles placed in .bg-shapes to ensure they're behind content */
+                .cta-circle {
+                    position: absolute;
+                    border-radius: 50%;
+                    background: rgba(255, 255, 255, 0.05); /* Reduced opacity */
+                    filter: blur(50px); /* Increased blur */
+                    pointer-events: none;
+                    z-index: -10; /* Lowered z-index */
+                }
+
+                .cta-circle-1 { top: 10%; left: 5%; width: 300px; height: 300px; }
+                .cta-circle-2 { bottom: 5%; right: 5%; width: 400px; height: 400px; }
+            </style>
+        </head>
+        <body style="overflow-x: hidden;" data-bs-theme="dark">
+    <!-- Background Shapes -->
+    <div class="bg-shapes">
+        <div class="shape shape-1"></div>
+        <div class="shape shape-2"></div>
+        <div class="shape shape-3"></div>
+                <div class="cta-circle cta-circle-1"></div>
+                <div class="cta-circle cta-circle-2"></div>
+    </div>
+
+    <nav id="mainNav" class="navbar navbar-expand-lg fixed-top navbar-dark glass-nav" style="z-index: 1000;">
+        <div class="container py-2">
+            <a class="navbar-brand fw-bold" href="#">
+                {% if school_settings.school_logo %}
+                <img src="{{ school_settings.school_logo.url }}" alt="Logo" height="30" class="me-2">
+                {% else %}
+                <i class="fas fa-graduation-cap me-2"></i>
+                {% endif %}
+                {{ school_settings.school_name|default:"MPS" }}
+            </a>
+            <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbarResponsive">
+                <i class="fas fa-bars"></i>
+            </button>
+            <div class="collapse navbar-collapse" id="navbarResponsive">
+                <ul class="navbar-nav ms-auto my-2 my-lg-0">
+                    <li class="nav-item"><a class="nav-link" href="#features">Features</a></li>
+                    <li class="nav-item"><a class="nav-link" href="#stats">Impact</a></li>
+                    <li class="nav-item"><a class="nav-link" href="#about">About</a></li>
+                </ul>
+                <div class="d-flex gap-2 ms-lg-3 flex-column flex-lg-row">
+                    <a href="{% url 'register' %}" class="btn btn-glass rounded-pill px-4">Register</a>
+                    <a href="{% url 'login' %}" class="btn btn-neon rounded-pill px-4">Login</a>
+                </div>
+            </div>
+        </div>
+    </nav>
+
+
+    <header class="masthead">
+        <div class="container position-relative z-2">
+            <div class="row align-items-center">
+                <div class="col-lg-6" data-aos="fade-right">
+                    <div class="badge glass-card text-white mb-4 px-4 py-2 rounded-pill border-0 bg-white bg-opacity-10">
+                        <i class="fas fa-star text-warning me-2"></i> Welcome to the Future of Learning
+                    </div>
+                    <h1 class="display-3 fw-bold text-white mb-4">Welcome to <br><span class="text-gradient">{{ school_settings.school_name|default:"Our School" }}</span></h1>
+                    <p class="lead text-muted mb-5">Experience a world-class education management system designed to streamline administration and enhance the learning journey for students and teachers alike.</p>
+                    <div class="d-flex gap-3">
+                        <a href="{% url 'register' %}" class="btn btn-neon btn-lg rounded-pill px-5">Create Account</a>
+                        <a href="{% url 'login' %}" class="btn btn-glass btn-lg rounded-pill px-5">Sign In</a>
+                    </div>
+                </div>
+                <div class="col-lg-6 d-none d-lg-flex align-items-center justify-content-center" data-aos="fade-left">
+                    <img src="{% static 'images/hero-image.svg' %}" alt="Education" class="img-fluid hero-img floating-anim">
+                </div>
+            </div>
+        </div>
+        <div class="hero-shape" style="position: relative; z-index: -1; pointer-events: none;">
+            <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1440 320"><path fill="#ffffff" fill-opacity="1" d="M0,96L48,112C96,128,192,160,288,160C384,160,480,128,576,112C672,96,768,96,864,112C960,128,1056,160,1152,160C1248,160,1344,128,1392,112L1440,96L1440,320L1392,320C1344,320,1248,320,1152,320C1056,320,960,320,864,320C768,320,672,320,576,320C480,320,384,320,288,320C192,320,96,320,48,320L0,320Z"></path></svg>
+        </div>
+    </header>
+
+    <!-- Stats Section -->
+    <section class="py-5" id="stats">
+        <div class="container">
+            <div class="row justify-content-center text-center g-4">
+                <div class="col-md-4" data-aos="fade-up" data-aos-delay="100">
+                    <div class="stat-card h-100">
+                        <div class="icon-box bg-primary bg-opacity-10 text-primary mx-auto">
+                            <i class="fas fa-user-graduate"></i>
+                        </div>
+                        <h2>{{ total_students|default:0 }}</h2>
+                        <p class="text-muted mb-0">Active Students</p>
+                    </div>
+                </div>
+                <div class="col-md-4" data-aos="fade-up" data-aos-delay="200">
+                    <div class="stat-card h-100">
+                        <div class="icon-box bg-success bg-opacity-10 text-success mx-auto">
+                            <i class="fas fa-chalkboard-user"></i>
+                        </div>
+                        <h2>{{ total_teachers|default:0 }}</h2>
+                        <p class="text-muted mb-0">Expert Teachers</p>
+                    </div>
+                </div>
+                <div class="col-md-4" data-aos="fade-up" data-aos-delay="300">
+                    <div class="stat-card h-100">
+                        <div class="icon-box bg-info bg-opacity-10 text-info mx-auto">
+                            <i class="fas fa-book-open"></i>
+                        </div>
+                        <h2>{{ total_courses|default:0 }}</h2>
+                        <p class="text-muted mb-0">Courses Offered</p>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </section>
+    <!-- Adjust the z-index of the decorative circles to ensure they don't overlap the text -->
+    <div class="position-absolute top-0 start-0 translate-middle rounded-circle bg-white opacity-10" style="width: 300px; height: 300px; z-index: -1; pointer-events: none;"></div>
+    <div class="position-absolute bottom-0 end-0 translate-middle rounded-circle bg-white opacity-10" style="width: 400px; height: 400px; z-index: -1; pointer-events: none;"></div>
+
+    <section class="py-5  position-relative" id="features" style="background: transparent;">
+        <div class="container">
+            <div class="text-center mb-5" data-aos="fade-up">
+                <span class="text-gradient fw-bold text-uppercase tracking-wider">Why Choose Us</span>
+                <h2 class="display-5 fw-bold mt-2 text-white">Everything you need to <br>manage your school</h2>
+            </div>
+            
+            <div class="row g-4">
+                <!-- Feature 1 -->
+                <div class="col-md-4" data-aos="fade-up" data-aos-delay="100">
+                    <div class="card feature-card h-100 border-0 glass-card">
+                        <div class="card-body p-4">
+                            <div class="feature-icon mb-4" style="background: linear-gradient(135deg, #38bdf8, #2563eb); color: white;">
+                                <i class="fas fa-laptop-code"></i>
+                            </div>
+                            <h4 class="fw-bold mb-3">Digital Learning</h4>
+                            <p class="text-muted">Access course materials, assignments, and grades from anywhere, anytime. Seamless integration for modern education.</p>
+                        </div>
+                    </div>
+                </div>
+                
+                <!-- Feature 2 -->
+                <div class="col-md-4" data-aos="fade-up" data-aos-delay="200">
+                    <div class="card feature-card h-100 border-0 glass-card">
+                        <div class="card-body p-4">
+                            <div class="feature-icon mb-4" style="background: linear-gradient(135deg, #4ade80, #16a34a); color: white;">
+                                <i class="fas fa-chart-pie"></i>
+                            </div>
+                            <h4 class="fw-bold mb-3">Real-time Analytics</h4>
+                            <p class="text-muted">Track attendance, performance, and growth with comprehensive dashboards and detailed reports.</p>
+                        </div>
+                    </div>
+                </div>
+                
+                <!-- Feature 3 -->
+                <div class="col-md-4" data-aos="fade-up" data-aos-delay="300">
+                    <div class="card feature-card h-100 border-0 glass-card">
+                        <div class="card-body p-4">
+                            <div class="feature-icon mb-4" style="background: linear-gradient(135deg, #facc15, #ca8a04); color: white;">
+                                <i class="fas fa-shield-alt"></i>
+                            </div>
+                            <h4 class="fw-bold mb-3">Secure & Reliable</h4>
+                            <p class="text-muted">Your data is safe with us. Enterprise-grade security ensures privacy for students, teachers, and administration.</p>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <!-- CTA Section -->
+    <section class="py-5 text-white overflow-hidden" style="position: static;">
+        <div class="container position-relative z-1 text-center py-5">
+            <h2 class="display-4 fw-bold mb-4" data-aos="fade-up">Ready to Transform Your School?</h2>
+            <p class="lead mb-5 text-muted" data-aos="fade-up" data-aos-delay="100">Join hundreds of students and teachers using our platform today.</p>
+            <a href="{% url 'login' %}" class="btn btn-neon btn-lg rounded-pill px-5 fw-bold" data-aos="zoom-in">Access Portal</a>
+        </div>
+        <!-- Decorative circles -->
+        <div class="position-absolute top-0 start-0 translate-middle rounded-circle bg-white opacity-10" style="width: 300px; height: 300px; z-index: -1;"></div>
+        <div class="position-absolute bottom-0 end-0 translate-middle rounded-circle bg-white opacity-10" style="width: 400px; height: 400px; z-index: -1;"></div>
+    </section>
+
+    <!-- Footer -->
+    <footer class="text-white pt-5 pb-3 glass-nav" style="border-top: 1px solid var(--glass-border);">
+        <div class="container">
+            <div class="row g-4 mb-5">
+                <div class="col-lg-4">
+                    <h3 class="fw-bold mb-3"><i class="fas fa-graduation-cap me-2"></i>{{ school_settings.school_name|default:"MPS" }}</h3>
+                    <p class="text-muted">{{ school_settings.school_name }} is dedicated to providing excellence in education through modern technology and traditional values.</p>
+                    <div class="d-flex gap-3 mt-4">
+                        <a href="#" class="text-white social-icon"><i class="fab fa-facebook-f"></i></a>
+                        <a href="#" class="text-white social-icon"><i class="fab fa-twitter"></i></a>
+                        <a href="#" class="text-white social-icon"><i class="fab fa-instagram"></i></a>
+                        <a href="#" class="text-white social-icon"><i class="fab fa-linkedin-in"></i></a>
+                    </div>
+                </div>
+                <div class="col-lg-2 col-6">
+                    <h5 class="fw-bold mb-3">Quick Links</h5>
+                    <ul class="list-unstyled">
+                        <li class="mb-2"><a href="#" class="text-muted text-decoration-none hover-white">Home</a></li>
+                        <li class="mb-2"><a href="#about" class="text-muted text-decoration-none hover-white">About Us</a></li>
+                        <li class="mb-2"><a href="#features" class="text-muted text-decoration-none hover-white">Features</a></li>
+                        <li class="mb-2"><a href="{% url 'login' %}" class="text-muted text-decoration-none hover-white">Login</a></li>
+                    </ul>
+                </div>
+                <div class="col-lg-2 col-6">
+                    <h5 class="fw-bold mb-3">Resources</h5>
+                    <ul class="list-unstyled">
+                        <li class="mb-2"><a href="#" class="text-muted text-decoration-none hover-white">Help Center</a></li>
+                        <li class="mb-2"><a href="#" class="text-muted text-decoration-none hover-white">Privacy Policy</a></li>
+                        <li class="mb-2"><a href="#" class="text-muted text-decoration-none hover-white">Terms of Service</a></li>
+                    </ul>
+                </div>
+                <div class="col-lg-4">
+                    <h5 class="fw-bold mb-3">Contact Us</h5>
+                    <ul class="list-unstyled text-white-50">
+                        <li class="mb-2"><i class="fas fa-map-marker-alt me-2"></i> {{ school_settings.school_address|default:"School Address" }}</li>
+                        <li class="mb-2"><i class="fas fa-phone me-2"></i> {{ school_settings.school_phone|default:"Phone Number" }}</li>
+                        <li class="mb-2"><i class="fas fa-envelope me-2"></i> {{ school_settings.school_email|default:"info@school.com" }}</li>
+                    </ul>
+                </div>
+            </div>
+            <div class="border-top border-white-10 pt-3 text-center text-muted">
+                <small>&copy; {% now "Y" %} {{ school_settings.school_name|default:"School System" }}. All rights reserved.</small>
+            </div>
+        </div>
+    </footer>
+
+    <!-- Scripts -->
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
+    <script src="https://unpkg.com/aos@2.3.1/dist/aos.js"></script>
+    <script>
+        AOS.init({
+            duration: 800,
+            once: true
+        });
+
+        // Navbar scroll effect
+        window.addEventListener('scroll', function() {
+            if (window.scrollY > 50) {
+                document.getElementById('mainNav').classList.add('navbar-scrolled');
+            } else {
+                document.getElementById('mainNav').classList.remove('navbar-scrolled');
+            }
+        });
+    </script>
+</body>
+</html>

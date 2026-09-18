@@ -1,0 +1,1297 @@
+{% extends 'base.html' %}
+{% load custom_filters %}
+
+{% block title %}{{ class.name }} - Class Details{% endblock %}
+{% block page_title %}Class Details{% endblock %}
+
+{% block breadcrumb %}
+<li class="breadcrumb-item"><a href="{% url 'class_list' %}">Classes</a></li>
+<li class="breadcrumb-item active">{{ class.name }} - {{ class.section }}</li>
+{% endblock %}
+
+{% block page_actions %}
+<a href="{% url 'class_update' class.id %}" class="btn-action-primary">
+    <i class="fas fa-edit me-2"></i>Edit Class
+</a>
+{% endblock %}
+
+{% block content %}
+<div class="class-detail-container">
+    <!-- Hero Section -->
+    <div class="hero-section">
+        <div class="hero-gradient"></div>
+        <div class="hero-content">
+            <div class="class-badge-primary">
+                <i class="fas fa-school"></i> CLASS DETAILS
+            </div>
+            <h1 class="class-title">{{ class.name }}</h1>
+            <div class="class-section-display">Section {{ class.section }}</div>
+            <p class="hero-subtitle">{{ class.academic_year }} Academic Year</p>
+        </div>
+    </div>
+
+    <!-- Main Content Grid -->
+    <div class="content-grid">
+        <!-- Left Column: Key Info -->
+        <div class="sidebar-column">
+            <!-- Quick Stats -->
+            <div class="stats-card">
+                <div class="stats-title">
+                    <i class="fas fa-chart-pie"></i>
+                    Key Statistics
+                </div>
+                <div class="stats-grid">
+                    <div class="stat-item">
+                        <div class="stat-icon students">
+                            <i class="fas fa-user-graduate"></i>
+                        </div>
+                        <div class="stat-info">
+                            <div class="stat-value">{{ class.total_students }}</div>
+                            <div class="stat-label">Students</div>
+                        </div>
+                    </div>
+                    <div class="stat-item">
+                        <div class="stat-icon subjects">
+                            <i class="fas fa-book"></i>
+                        </div>
+                        <div class="stat-info">
+                            <div class="stat-value">{{ class.subjects.count }}</div>
+                            <div class="stat-label">Subjects</div>
+                        </div>
+                    </div>
+                    <div class="stat-item">
+                        <div class="stat-icon teachers">
+                            <i class="fas fa-chalkboard-user"></i>
+                        </div>
+                        <div class="stat-info">
+                            <div class="stat-value">{{ male_students|default:0 }}</div>
+                            <div class="stat-label">Male</div>
+                        </div>
+                    </div>
+                    <div class="stat-item">
+                        <div class="stat-icon female">
+                            <i class="fas fa-user-tie"></i>
+                        </div>
+                        <div class="stat-info">
+                            <div class="stat-value">{{ female_students|default:0 }}</div>
+                            <div class="stat-label">Female</div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Class Info Card -->
+            <div class="info-card">
+                <div class="info-title">
+                    <i class="fas fa-info-circle"></i>
+                    Class Information
+                </div>
+                <div class="info-body">
+                    <div class="info-item">
+                        <div class="info-label">Academic Year</div>
+                        <div class="info-value">{{ class.academic_year }}</div>
+                    </div>
+                    <div class="info-item">
+                        <div class="info-label">Room Number</div>
+                        <div class="info-value">{{ class.room_number|default:"N/A" }}</div>
+                    </div>
+                    <div class="info-item">
+                        <div class="info-label">Capacity</div>
+                        <div class="info-value">{{ class.total_students }}/{{ class.capacity }}</div>
+                    </div>
+                    <div class="info-item">
+                        <div class="info-label">Class Timing</div>
+                        <div class="info-value">
+                            {% if class.start_time and class.end_time %}
+                            {{ class.start_time|time:"g:i A" }} - {{ class.end_time|time:"g:i A" }}
+                            {% else %}
+                            Not set
+                            {% endif %}
+                        </div>
+                    </div>
+                </div>
+                
+                <!-- Capacity Bar -->
+                <div class="capacity-info">
+                    <div class="capacity-label">Enrollment Status</div>
+                    <div class="capacity-bar">
+                        <div class="capacity-fill {% if class.total_students > class.capacity %}overfull{% elif class.total_students == class.capacity %}full{% else %}available{% endif %}" 
+                             style="width: {% widthratio class.total_students class.capacity 100 %}%"></div>
+                    </div>
+                    <div class="capacity-text">
+                        {% widthratio class.total_students class.capacity 100 %}% capacity
+                    </div>
+                </div>
+            </div>
+
+            <!-- Class Teacher Card -->
+            <div class="teacher-card">
+                <div class="teacher-title">
+                    <i class="fas fa-chalkboard-user"></i>
+                    Class Teacher
+                </div>
+                {% if class.class_teacher %}
+                <div class="teacher-profile">
+                    <div class="teacher-avatar">
+                        {% if class.class_teacher.user.profile_picture %}
+                        <img src="{{ class.class_teacher.user.profile_picture.url }}" alt="{{ class.class_teacher.user.get_full_name }}">
+                        {% else %}
+                        <div class="avatar-placeholder">
+                            <i class="fas fa-user"></i>
+                        </div>
+                        {% endif %}
+                    </div>
+                    <div class="teacher-info">
+                        <h4 class="teacher-name">{{ class.class_teacher.user.get_full_name }}</h4>
+                        <p class="teacher-role">{{ class.class_teacher.designation }}</p>
+                        <p class="teacher-contact">
+                            <i class="fas fa-envelope"></i> {{ class.class_teacher.user.email }}
+                        </p>
+                        <a href="{% url 'teacher_detail' class.class_teacher.employee_id %}" class="teacher-link">
+                            View Profile <i class="fas fa-arrow-right"></i>
+                        </a>
+                    </div>
+                </div>
+                {% else %}
+                <div class="teacher-unassigned">
+                    <i class="fas fa-user-times"></i>
+                    <p>No teacher assigned</p>
+                    <a href="{% url 'class_update' class.id %}" class="assign-btn">
+                        <i class="fas fa-plus me-1"></i>Assign Teacher
+                    </a>
+                </div>
+                {% endif %}
+            </div>
+        </div>
+
+        <!-- Right Column: Main Content -->
+        <div class="main-column">
+            <!-- Subjects Section -->
+            <div class="content-card">
+                <div class="card-header-custom">
+                    <i class="fas fa-book"></i>
+                    <h3>Course Subjects</h3>
+                    <span class="badge-count">{{ class.subjects.count }}</span>
+                </div>
+                <div class="card-body-custom">
+                    {% if class.subjects.all %}
+                    <div class="subjects-grid">
+                        {% for subject in class.subjects.all %}
+                        <div class="subject-item">
+                            <div class="subject-header">
+                                <h4 class="subject-name">{{ subject.name }}</h4>
+                                {% if subject.is_elective %}
+                                <span class="subject-badge elective">Elective</span>
+                                {% else %}
+                                <span class="subject-badge core">Core</span>
+                                {% endif %}
+                            </div>
+                            <div class="subject-info">
+                                <div class="info-row">
+                                    <i class="fas fa-barcode"></i>
+                                    <span>{{ subject.code }}</span>
+                                </div>
+                                <div class="info-row">
+                                    <i class="fas fa-clock"></i>
+                                    <span>{{ subject.credit_hours }} credits</span>
+                                </div>
+                            </div>
+                            <div class="subject-teachers">
+                                <div class="teachers-label">Teachers:</div>
+                                <div class="teachers-list">
+                                    {% for teacher in subject.teachers.all|slice:":3" %}
+                                    <span class="teacher-badge">{{ teacher.user.get_full_name|truncatechars:20 }}</span>
+                                    {% endfor %}
+                                </div>
+                            </div>
+                            <a href="{% url 'subject_detail' subject.id %}" class="subject-link">
+                                View Subject <i class="fas fa-arrow-right"></i>
+                            </a>
+                        </div>
+                        {% endfor %}
+                    </div>
+                    {% else %}
+                    <div class="empty-state">
+                        <i class="fas fa-book-open"></i>
+                        <p>No subjects assigned</p>
+                    </div>
+                    {% endif %}
+                </div>
+            </div>
+
+            <!-- Students Section -->
+            <div class="content-card">
+                <div class="card-header-custom">
+                    <i class="fas fa-user-graduate"></i>
+                    <h3>Class Students</h3>
+                    <span class="badge-count">{{ class.total_students }}</span>
+                </div>
+                <div class="card-body-custom">
+                    {% if class.student_list %}
+                    <div class="students-table">
+                        <div class="table-header">
+                            <div class="col-roll">Roll No</div>
+                            <div class="col-name">Student Name</div>
+                            <div class="col-admission">Admission No</div>
+                            <div class="col-gender">Gender</div>
+                            <div class="col-attendance">Attendance</div>
+                        </div>
+                        {% for student in class.student_list %}
+                        <div class="table-row">
+                            <div class="col-roll">{{ student.roll_number }}</div>
+                            <div class="col-name">
+                                <div class="student-name-cell">
+                                    {% if student.user.profile_picture %}
+                                    <img src="{{ student.user.profile_picture.url }}" alt="{{ student.user.get_full_name }}" class="student-avatar">
+                                    {% else %}
+                                    <div class="avatar-placeholder-small">
+                                        <i class="fas fa-user"></i>
+                                    </div>
+                                    {% endif %}
+                                    <div>
+                                        <div class="student-full-name">{{ student.user.get_full_name }}</div>
+                                        <div class="student-email">{{ student.user.email|default:"No email" }}</div>
+                                    </div>
+                                </div>
+                            </div>
+                            <div class="col-admission">{{ student.admission_number }}</div>
+                            <div class="col-gender">
+                                <span class="gender-badge {% if student.user.gender == 'Male' %}male{% elif student.user.gender == 'Female' %}female{% else %}other{% endif %}">
+                                    {{ student.user.gender|default:"-" }}
+                                </span>
+                            </div>
+                            <div class="col-attendance">
+                                <div class="attendance-cell">
+                                    <div class="attendance-bar">
+                                        <div class="attendance-fill {% if student.attendance_percentage >= 75 %}good{% elif student.attendance_percentage >= 50 %}average{% else %}poor{% endif %}" 
+                                             style="width: {{ student.attendance_percentage|default:0 }}%"></div>
+                                    </div>
+                                    <span class="attendance-percent">{{ student.attendance_percentage|default:0|floatformat:1 }}%</span>
+                                </div>
+                            </div>
+                        </div>
+                        {% endfor %}
+                    </div>
+                    {% else %}
+                    <div class="empty-state">
+                        <i class="fas fa-user-graduate"></i>
+                        <p>No students in this class</p>
+                    </div>
+                    {% endif %}
+                </div>
+            </div>
+
+            <!-- Timetable Section -->
+            <div class="content-card">
+                <div class="card-header-custom">
+                    <i class="fas fa-calendar-alt"></i>
+                    <h3>Class Timetable</h3>
+                    <a href="{% url 'timetable_class' class.id %}" class="view-all-link">View Full →</a>
+                </div>
+                <div class="card-body-custom">
+                    <div class="timetable-wrapper">
+                        <table class="timetable-modern">
+                            <thead>
+                                <tr>
+                                    <th>Day</th>
+                                    {% for period in "1,2,3,4,5,6,7,8"|split:"," %}
+                                    <th>P{{ period }}</th>
+                                    {% endfor %}
+                                </tr>
+                            </thead>
+                            <tbody>
+                                {% for day in "Monday,Tuesday,Wednesday,Thursday,Friday,Saturday"|split:"," %}
+                                <tr>
+                                    <td class="day-header">{{ day|slice:":3" }}</td>
+                                    {% for period in "1,2,3,4,5,6,7,8"|split:"," %}
+                                    <td>
+                                        {% for entry in class.timetables.all %}
+                                            {% if entry.day == day and entry.period == period|add:0 %}
+                                            <div class="timetable-slot">
+                                                <div class="slot-subject">{{ entry.subject.code }}</div>
+                                                <div class="slot-room">{{ entry.room_assignment|default:"--" }}</div>
+                                            </div>
+                                            {% endif %}
+                                        {% empty %}
+                                            <div class="timetable-empty">-</div>
+                                        {% endfor %}
+                                    </td>
+                                    {% endfor %}
+                                </tr>
+                                {% endfor %}
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block extra_css %}
+<style>
+    /* ====== Container ====== */
+    .class-detail-container {
+        background: linear-gradient(135deg, #f5f7fa 0%, #c3cfe2 100%);
+        min-height: 100vh;
+        padding-bottom: 3rem;
+        animation: fadeIn 0.6s ease;
+    }
+
+    /* ====== Hero Section ====== */
+    .hero-section {
+        position: relative;
+        height: 500px;
+        display: flex;
+        align-items: flex-end;
+        padding: 3rem 2rem;
+        overflow: hidden;
+        margin-bottom: 3rem;
+    }
+
+    .hero-gradient {
+        position: absolute;
+        top: 0;
+        left: 0;
+        right: 0;
+        bottom: 0;
+        background: linear-gradient(135deg, #4e73df 0%, #1cc88a 100%);
+        z-index: 0;
+    }
+
+    .hero-section::before {
+        content: '';
+        position: absolute;
+        top: 0;
+        left: 0;
+        right: 0;
+        bottom: 0;
+        background: 
+            radial-gradient(circle at 20% 50%, rgba(255,255,255,0.1) 0%, transparent 50%),
+            radial-gradient(circle at 80% 80%, rgba(255,255,255,0.1) 0%, transparent 50%);
+        z-index: 1;
+    }
+
+    .hero-content {
+        position: relative;
+        z-index: 2;
+        width: 100%;
+        max-width: 1200px;
+        margin: 0 auto;
+        padding: 0 1rem;
+    }
+
+    .class-badge-primary {
+        display: inline-flex;
+        align-items: center;
+        gap: 0.5rem;
+        background: rgba(255, 255, 255, 0.25);
+        color: white;
+        padding: 0.5rem 1rem;
+        border-radius: 30px;
+        font-weight: 600;
+        font-size: 0.85rem;
+        margin-bottom: 1.5rem;
+        backdrop-filter: blur(10px);
+    }
+
+    .class-title {
+        font-size: 3rem;
+        font-weight: 800;
+        color: white;
+        margin: 0 0 0.5rem 0;
+        text-shadow: 0 2px 10px rgba(0,0,0,0.2);
+        line-height: 1.2;
+    }
+
+    .class-section-display {
+        font-size: 2rem;
+        font-weight: 700;
+        color: rgba(255, 255, 255, 0.9);
+        margin-bottom: 1rem;
+    }
+
+    .hero-subtitle {
+        font-size: 1.1rem;
+        color: rgba(255, 255, 255, 0.9);
+        margin: 0;
+    }
+
+    /* ====== Content Grid ====== */
+    .content-grid {
+        display: grid;
+        grid-template-columns: 300px 1fr;
+        gap: 2rem;
+        max-width: 1400px;
+        margin: 0 auto;
+        padding: 0 1rem;
+    }
+
+    /* ====== Stats Card ====== */
+    .stats-card {
+        background: linear-gradient(135deg, rgba(255, 255, 255, 0.95) 0%, rgba(255, 255, 255, 0.85) 100%);
+        border: 1px solid rgba(78, 115, 223, 0.1);
+        border-radius: 20px;
+        backdrop-filter: blur(10px);
+        padding: 2rem 1.5rem;
+        margin-bottom: 2rem;
+        box-shadow: 0 8px 32px 0 rgba(31, 38, 135, 0.07);
+        animation: slideInLeft 0.6s ease;
+    }
+
+    .stats-title {
+        display: flex;
+        align-items: center;
+        gap: 0.75rem;
+        font-size: 1.2rem;
+        font-weight: 700;
+        color: #2e3440;
+        margin-bottom: 1.5rem;
+        padding-bottom: 1rem;
+        border-bottom: 2px solid rgba(78, 115, 223, 0.15);
+    }
+
+    .stats-title i {
+        color: #4e73df;
+        font-size: 1.3rem;
+    }
+
+    .stats-grid {
+        display: grid;
+        grid-template-columns: 1fr;
+        gap: 1rem;
+    }
+
+    .stat-item {
+        display: flex;
+        align-items: center;
+        gap: 1rem;
+        padding: 1rem;
+        background: linear-gradient(135deg, rgba(78, 115, 223, 0.05) 0%, rgba(28, 200, 138, 0.05) 100%);
+        border-radius: 12px;
+        transition: all 0.3s ease;
+    }
+
+    .stat-item:hover {
+        background: linear-gradient(135deg, rgba(78, 115, 223, 0.1) 0%, rgba(28, 200, 138, 0.1) 100%);
+        transform: translateX(5px);
+    }
+
+    .stat-icon {
+        width: 50px;
+        height: 50px;
+        border-radius: 10px;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        color: white;
+        font-size: 1.3rem;
+    }
+
+    .stat-icon.students {
+        background: linear-gradient(135deg, #4e73df 0%, #224abe 100%);
+    }
+
+    .stat-icon.subjects {
+        background: linear-gradient(135deg, #1cc88a 0%, #13a968 100%);
+    }
+
+    .stat-icon.teachers {
+        background: linear-gradient(135deg, #36b9cc 0%, #1f8b94 100%);
+    }
+
+    .stat-icon.female {
+        background: linear-gradient(135deg, #f6c23e 0%, #daa520 100%);
+    }
+
+    .stat-info {
+        flex: 1;
+    }
+
+    .stat-value {
+        font-size: 1.5rem;
+        font-weight: 700;
+        color: #2e3440;
+    }
+
+    .stat-label {
+        font-size: 0.85rem;
+        color: #6c757d;
+        text-transform: uppercase;
+        letter-spacing: 0.5px;
+    }
+
+    /* ====== Info Card ====== */
+    .info-card {
+        background: linear-gradient(135deg, rgba(255, 255, 255, 0.95) 0%, rgba(255, 255, 255, 0.85) 100%);
+        border: 1px solid rgba(78, 115, 223, 0.1);
+        border-radius: 20px;
+        backdrop-filter: blur(10px);
+        padding: 2rem 1.5rem;
+        margin-bottom: 2rem;
+        box-shadow: 0 8px 32px 0 rgba(31, 38, 135, 0.07);
+        animation: slideInLeft 0.6s ease 0.1s both;
+    }
+
+    .info-title {
+        display: flex;
+        align-items: center;
+        gap: 0.75rem;
+        font-size: 1.2rem;
+        font-weight: 700;
+        color: #2e3440;
+        margin-bottom: 1.5rem;
+        padding-bottom: 1rem;
+        border-bottom: 2px solid rgba(78, 115, 223, 0.15);
+    }
+
+    .info-title i {
+        color: #4e73df;
+    }
+
+    .info-body {
+        display: grid;
+        grid-template-columns: 1fr;
+        gap: 1.25rem;
+        margin-bottom: 1.5rem;
+    }
+
+    .info-item {
+        display: flex;
+        flex-direction: column;
+        gap: 0.4rem;
+    }
+
+    .info-label {
+        font-size: 0.8rem;
+        font-weight: 600;
+        color: #6c757d;
+        text-transform: uppercase;
+        letter-spacing: 0.5px;
+    }
+
+    .info-value {
+        font-size: 1rem;
+        font-weight: 600;
+        color: #2e3440;
+    }
+
+    /* ====== Capacity Info ====== */
+    .capacity-info {
+        padding-top: 1rem;
+        border-top: 2px solid rgba(78, 115, 223, 0.1);
+    }
+
+    .capacity-label {
+        font-size: 0.8rem;
+        font-weight: 600;
+        color: #6c757d;
+        text-transform: uppercase;
+        letter-spacing: 0.5px;
+        margin-bottom: 0.75rem;
+    }
+
+    .capacity-bar {
+        height: 8px;
+        background: rgba(78, 115, 223, 0.1);
+        border-radius: 10px;
+        overflow: hidden;
+        margin-bottom: 0.5rem;
+    }
+
+    .capacity-fill {
+        height: 100%;
+        transition: all 0.3s ease;
+        border-radius: 10px;
+    }
+
+    .capacity-fill.available {
+        background: linear-gradient(90deg, #1cc88a 0%, #13a968 100%);
+    }
+
+    .capacity-fill.full {
+        background: linear-gradient(90deg, #ffc107 0%, #ff9800 100%);
+    }
+
+    .capacity-fill.overfull {
+        background: linear-gradient(90deg, #dc3545 0%, #c82333 100%);
+    }
+
+    .capacity-text {
+        font-size: 0.85rem;
+        color: #6c757d;
+        text-align: right;
+    }
+
+    /* ====== Teacher Card ====== */
+    .teacher-card {
+        background: linear-gradient(135deg, rgba(255, 255, 255, 0.95) 0%, rgba(255, 255, 255, 0.85) 100%);
+        border: 1px solid rgba(78, 115, 223, 0.1);
+        border-radius: 20px;
+        backdrop-filter: blur(10px);
+        padding: 2rem 1.5rem;
+        box-shadow: 0 8px 32px 0 rgba(31, 38, 135, 0.07);
+        animation: slideInLeft 0.6s ease 0.2s both;
+    }
+
+    .teacher-title {
+        display: flex;
+        align-items: center;
+        gap: 0.75rem;
+        font-size: 1.2rem;
+        font-weight: 700;
+        color: #2e3440;
+        margin-bottom: 1.5rem;
+        padding-bottom: 1rem;
+        border-bottom: 2px solid rgba(78, 115, 223, 0.15);
+    }
+
+    .teacher-title i {
+        color: #4e73df;
+    }
+
+    .teacher-profile {
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+        text-align: center;
+    }
+
+    .teacher-avatar {
+        width: 100px;
+        height: 100px;
+        border-radius: 50%;
+        margin-bottom: 1rem;
+    }
+
+    .teacher-avatar img,
+    .avatar-placeholder {
+        width: 100%;
+        height: 100%;
+        border-radius: 50%;
+        object-fit: cover;
+        background: linear-gradient(135deg, #4e73df 0%, #1cc88a 100%);
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        color: white;
+        font-size: 2rem;
+    }
+
+    .teacher-name {
+        margin: 1rem 0 0.5rem 0;
+        font-size: 1.1rem;
+        color: #2e3440;
+    }
+
+    .teacher-role {
+        color: #4e73df;
+        font-weight: 600;
+        margin: 0.5rem 0;
+        font-size: 0.9rem;
+    }
+
+    .teacher-contact {
+        color: #6c757d;
+        font-size: 0.85rem;
+        margin: 0.5rem 0 1rem 0;
+    }
+
+    .teacher-link {
+        display: inline-flex;
+        align-items: center;
+        gap: 0.5rem;
+        color: #4e73df;
+        text-decoration: none;
+        font-weight: 600;
+        transition: all 0.3s ease;
+    }
+
+    .teacher-link:hover {
+        color: #1cc88a;
+        gap: 1rem;
+    }
+
+    .teacher-unassigned {
+        padding: 2rem 1rem;
+        text-align: center;
+    }
+
+    .teacher-unassigned i {
+        font-size: 3rem;
+        color: rgba(78, 115, 223, 0.2);
+        margin-bottom: 1rem;
+    }
+
+    .teacher-unassigned p {
+        color: #6c757d;
+        margin: 0 0 1rem 0;
+    }
+
+    .assign-btn {
+        display: inline-flex;
+        align-items: center;
+        padding: 0.6rem 1.2rem;
+        background: linear-gradient(135deg, #4e73df 0%, #1cc88a 100%);
+        color: white;
+        text-decoration: none;
+        border-radius: 8px;
+        font-weight: 600;
+        transition: all 0.3s ease;
+    }
+
+    .assign-btn:hover {
+        transform: translateY(-2px);
+        box-shadow: 0 5px 15px rgba(78, 115, 223, 0.3);
+    }
+
+    /* ====== Main Column ====== */
+    .main-column {
+        display: flex;
+        flex-direction: column;
+        gap: 2rem;
+    }
+
+    /* ====== Content Card ====== */
+    .content-card {
+        background: linear-gradient(135deg, rgba(255, 255, 255, 0.95) 0%, rgba(255, 255, 255, 0.85) 100%);
+        border: 1px solid rgba(78, 115, 223, 0.1);
+        border-radius: 20px;
+        backdrop-filter: blur(10px);
+        overflow: hidden;
+        box-shadow: 0 8px 32px 0 rgba(31, 38, 135, 0.07);
+        animation: slideInRight 0.6s ease;
+    }
+
+    .content-card:nth-child(2) {
+        animation-delay: 0.1s;
+    }
+
+    .content-card:nth-child(3) {
+        animation-delay: 0.2s;
+    }
+
+    .card-header-custom {
+        display: flex;
+        align-items: center;
+        gap: 1rem;
+        background: linear-gradient(135deg, rgba(78, 115, 223, 0.08) 0%, rgba(28, 200, 138, 0.08) 100%);
+        padding: 1.5rem;
+        border-bottom: 2px solid rgba(78, 115, 223, 0.1);
+    }
+
+    .card-header-custom i {
+        font-size: 1.3rem;
+        color: #4e73df;
+    }
+
+    .card-header-custom h3 {
+        margin: 0;
+        font-size: 1.2rem;
+        color: #2e3440;
+        flex: 1;
+    }
+
+    .badge-count {
+        background: linear-gradient(135deg, #4e73df 0%, #1cc88a 100%);
+        color: white;
+        padding: 0.4rem 0.8rem;
+        border-radius: 20px;
+        font-size: 0.85rem;
+        font-weight: 700;
+    }
+
+    .view-all-link {
+        color: #4e73df;
+        text-decoration: none;
+        font-weight: 600;
+        font-size: 0.9rem;
+        transition: all 0.3s ease;
+    }
+
+    .view-all-link:hover {
+        color: #1cc88a;
+    }
+
+    .card-body-custom {
+        padding: 2rem;
+    }
+
+    /* ====== Subjects Grid ====== */
+    .subjects-grid {
+        display: grid;
+        grid-template-columns: repeat(auto-fill, minmax(250px, 1fr));
+        gap: 1.5rem;
+    }
+
+    .subject-item {
+        background: linear-gradient(135deg, rgba(78, 115, 223, 0.05) 0%, rgba(28, 200, 138, 0.05) 100%);
+        border: 1px solid rgba(78, 115, 223, 0.1);
+        border-radius: 12px;
+        padding: 1.5rem;
+        transition: all 0.3s ease;
+    }
+
+    .subject-item:hover {
+        transform: translateY(-5px);
+        border-color: rgba(78, 115, 223, 0.2);
+        box-shadow: 0 10px 25px rgba(78, 115, 223, 0.1);
+    }
+
+    .subject-header {
+        display: flex;
+        justify-content: space-between;
+        align-items: flex-start;
+        margin-bottom: 1rem;
+    }
+
+    .subject-name {
+        margin: 0;
+        font-size: 1rem;
+        color: #2e3440;
+    }
+
+    .subject-badge {
+        display: inline-flex;
+        padding: 0.3rem 0.6rem;
+        border-radius: 6px;
+        font-size: 0.75rem;
+        font-weight: 600;
+    }
+
+    .subject-badge.core {
+        background: linear-gradient(135deg, rgba(28, 200, 138, 0.2) 0%, rgba(13, 202, 240, 0.2) 100%);
+        color: #1cc88a;
+    }
+
+    .subject-badge.elective {
+        background: linear-gradient(135deg, rgba(255, 193, 7, 0.2) 0%, rgba(255, 152, 0, 0.2) 100%);
+        color: #ffc107;
+    }
+
+    .subject-info {
+        display: flex;
+        flex-direction: column;
+        gap: 0.5rem;
+        margin-bottom: 1rem;
+        padding-bottom: 1rem;
+        border-bottom: 1px solid rgba(78, 115, 223, 0.1);
+    }
+
+    .info-row {
+        display: flex;
+        align-items: center;
+        gap: 0.5rem;
+        font-size: 0.85rem;
+        color: #6c757d;
+    }
+
+    .info-row i {
+        color: #4e73df;
+    }
+
+    .subject-teachers {
+        margin-bottom: 1rem;
+    }
+
+    .teachers-label {
+        font-size: 0.75rem;
+        font-weight: 600;
+        color: #6c757d;
+        text-transform: uppercase;
+        margin-bottom: 0.5rem;
+    }
+
+    .teachers-list {
+        display: flex;
+        gap: 0.5rem;
+        flex-wrap: wrap;
+    }
+
+    .teacher-badge {
+        display: inline-flex;
+        background: rgba(78, 115, 223, 0.15);
+        color: #4e73df;
+        padding: 0.3rem 0.6rem;
+        border-radius: 20px;
+        font-size: 0.75rem;
+        font-weight: 600;
+    }
+
+    .subject-link {
+        display: inline-flex;
+        align-items: center;
+        gap: 0.5rem;
+        color: #4e73df;
+        text-decoration: none;
+        font-weight: 600;
+        transition: all 0.3s ease;
+    }
+
+    .subject-link:hover {
+        color: #1cc88a;
+        gap: 1rem;
+    }
+
+    /* ====== Students Table ====== */
+    .students-table {
+        display: flex;
+        flex-direction: column;
+        gap: 0;
+    }
+
+    .table-header {
+        display: grid;
+        grid-template-columns: 80px 1fr 120px 80px 120px;
+        gap: 1rem;
+        padding: 1rem;
+        background: linear-gradient(135deg, rgba(78, 115, 223, 0.08) 0%, rgba(28, 200, 138, 0.08) 100%);
+        border-radius: 8px 8px 0 0;
+        font-weight: 700;
+        color: #2e3440;
+        font-size: 0.85rem;
+        text-transform: uppercase;
+        letter-spacing: 0.5px;
+    }
+
+    .table-row {
+        display: grid;
+        grid-template-columns: 80px 1fr 120px 80px 120px;
+        gap: 1rem;
+        padding: 1rem;
+        border-bottom: 1px solid rgba(78, 115, 223, 0.1);
+        align-items: center;
+        transition: all 0.3s ease;
+    }
+
+    .table-row:hover {
+        background: rgba(78, 115, 223, 0.03);
+    }
+
+    .table-row:last-child {
+        border-bottom: none;
+    }
+
+    .col-roll {
+        font-weight: 600;
+        color: #2e3440;
+    }
+
+    .col-name {
+        min-width: 0;
+    }
+
+    .student-name-cell {
+        display: flex;
+        align-items: center;
+        gap: 0.75rem;
+    }
+
+    .student-avatar {
+        width: 40px;
+        height: 40px;
+        border-radius: 50%;
+        object-fit: cover;
+    }
+
+    .avatar-placeholder-small {
+        width: 40px;
+        height: 40px;
+        border-radius: 50%;
+        background: linear-gradient(135deg, #4e73df 0%, #1cc88a 100%);
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        color: white;
+        flex-shrink: 0;
+    }
+
+    .student-full-name {
+        font-weight: 600;
+        color: #2e3440;
+        font-size: 0.95rem;
+    }
+
+    .student-email {
+        font-size: 0.8rem;
+        color: #6c757d;
+    }
+
+    .col-admission {
+        color: #6c757d;
+        font-size: 0.9rem;
+    }
+
+    .col-gender {
+        text-align: center;
+    }
+
+    .gender-badge {
+        display: inline-flex;
+        padding: 0.3rem 0.75rem;
+        border-radius: 6px;
+        font-size: 0.75rem;
+        font-weight: 600;
+        color: white;
+    }
+
+    .gender-badge.male {
+        background: linear-gradient(135deg, #4e73df 0%, #224abe 100%);
+    }
+
+    .gender-badge.female {
+        background: linear-gradient(135deg, #f6c23e 0%, #daa520 100%);
+    }
+
+    .gender-badge.other {
+        background: linear-gradient(135deg, #6c757d 0%, #5a6268 100%);
+    }
+
+    .col-attendance {
+        text-align: center;
+    }
+
+    .attendance-cell {
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+        gap: 0.3rem;
+    }
+
+    .attendance-bar {
+        width: 100%;
+        height: 6px;
+        background: rgba(78, 115, 223, 0.1);
+        border-radius: 10px;
+        overflow: hidden;
+    }
+
+    .attendance-fill {
+        height: 100%;
+        transition: all 0.3s ease;
+    }
+
+    .attendance-fill.good {
+        background: linear-gradient(90deg, #1cc88a 0%, #13a968 100%);
+    }
+
+    .attendance-fill.average {
+        background: linear-gradient(90deg, #ffc107 0%, #ff9800 100%);
+    }
+
+    .attendance-fill.poor {
+        background: linear-gradient(90deg, #dc3545 0%, #c82333 100%);
+    }
+
+    .attendance-percent {
+        font-size: 0.75rem;
+        font-weight: 600;
+        color: #6c757d;
+    }
+
+    /* ====== Timetable ====== */
+    .timetable-wrapper {
+        overflow-x: auto;
+    }
+
+    .timetable-modern {
+        width: 100%;
+        border-collapse: collapse;
+        font-size: 0.85rem;
+    }
+
+    .timetable-modern thead {
+        background: linear-gradient(135deg, rgba(78, 115, 223, 0.08) 0%, rgba(28, 200, 138, 0.08) 100%);
+    }
+
+    .timetable-modern th {
+        padding: 0.75rem;
+        text-align: center;
+        font-weight: 700;
+        color: #2e3440;
+        border-bottom: 2px solid rgba(78, 115, 223, 0.1);
+    }
+
+    .timetable-modern td {
+        padding: 0.75rem;
+        text-align: center;
+        border: 1px solid rgba(78, 115, 223, 0.1);
+    }
+
+    .day-header {
+        background: linear-gradient(135deg, rgba(78, 115, 223, 0.05) 0%, rgba(28, 200, 138, 0.05) 100%);
+        font-weight: 700;
+        color: #2e3440;
+    }
+
+    .timetable-slot {
+        padding: 0.5rem;
+        background: linear-gradient(135deg, rgba(78, 115, 223, 0.1) 0%, rgba(28, 200, 138, 0.1) 100%);
+        border-radius: 6px;
+        border-left: 3px solid #4e73df;
+    }
+
+    .slot-subject {
+        font-weight: 600;
+        color: #2e3440;
+    }
+
+    .slot-room {
+        font-size: 0.75rem;
+        color: #6c757d;
+    }
+
+    .timetable-empty {
+        color: #c3cfe2;
+        font-weight: 600;
+    }
+
+    /* ====== Empty State ====== */
+    .empty-state {
+        text-align: center;
+        padding: 3rem 2rem;
+    }
+
+    .empty-state i {
+        font-size: 3rem;
+        color: rgba(78, 115, 223, 0.2);
+        margin-bottom: 1rem;
+    }
+
+    .empty-state p {
+        color: #6c757d;
+        font-size: 1rem;
+        margin: 0;
+    }
+
+    .btn-action-primary {
+        display: inline-flex;
+        align-items: center;
+        padding: 0.75rem 1.75rem;
+        background: linear-gradient(135deg, #4e73df 0%, #1cc88a 100%);
+        color: white;
+        text-decoration: none;
+        border-radius: 12px;
+        font-weight: 600;
+        transition: all 0.3s ease;
+        box-shadow: 0 4px 15px rgba(78, 115, 223, 0.3);
+        border: none;
+        cursor: pointer;
+    }
+
+    .btn-action-primary:hover {
+        transform: translateY(-2px);
+        box-shadow: 0 8px 25px rgba(78, 115, 223, 0.4);
+        color: white;
+    }
+
+    /* ====== Animations ====== */
+    @keyframes fadeIn {
+        from { opacity: 0; }
+        to { opacity: 1; }
+    }
+
+    @keyframes slideInLeft {
+        from {
+            opacity: 0;
+            transform: translateX(-30px);
+        }
+        to {
+            opacity: 1;
+            transform: translateX(0);
+        }
+    }
+
+    @keyframes slideInRight {
+        from {
+            opacity: 0;
+            transform: translateX(30px);
+        }
+        to {
+            opacity: 1;
+            transform: translateX(0);
+        }
+    }
+
+    /* ====== Responsive Design ====== */
+    @media (max-width: 1024px) {
+        .content-grid {
+            grid-template-columns: 1fr;
+        }
+
+        .class-title {
+            font-size: 2rem;
+        }
+
+        .class-section-display {
+            font-size: 1.5rem;
+        }
+    }
+
+    @media (max-width: 768px) {
+        .hero-section {
+            height: auto;
+            min-height: 350px;
+            padding: 2rem 1rem 3rem;
+        }
+
+        .class-title {
+            font-size: 1.75rem;
+        }
+
+        .class-section-display {
+            font-size: 1.25rem;
+        }
+
+        .table-header,
+        .table-row {
+            grid-template-columns: 60px 1fr 80px;
+        }
+
+        .col-admission,
+        .col-gender,
+        .col-attendance {
+            display: none;
+        }
+
+        .subjects-grid {
+            grid-template-columns: 1fr;
+        }
+
+        .stats-grid {
+            grid-template-columns: repeat(2, 1fr);
+            gap: 0.75rem;
+        }
+    }
+
+    /* Dark Mode Support */
+    [data-bs-theme="dark"] .class-detail-container {
+        background: linear-gradient(135deg, #1a1f2e 0%, #2d3436 100%);
+    }
+
+    [data-bs-theme="dark"] .stats-card,
+    [data-bs-theme="dark"] .info-card,
+    [data-bs-theme="dark"] .teacher-card,
+    [data-bs-theme="dark"] .content-card {
+        background: linear-gradient(135deg, rgba(45, 52, 64, 0.9) 0%, rgba(45, 52, 64, 0.8) 100%);
+    }
+
+    [data-bs-theme="dark"] .stats-title,
+    [data-bs-theme="dark"] .info-title,
+    [data-bs-theme="dark"] .teacher-title,
+    [data-bs-theme="dark"] .card-header-custom h3,
+    [data-bs-theme="dark"] .class-title,
+    [data-bs-theme="dark"] .teacher-name,
+    [data-bs-theme="dark"] .subject-name,
+    [data-bs-theme="dark"] .student-full-name,
+    [data-bs-theme="dark"] .col-roll {
+        color: #e0e0e0;
+    }
+
+    [data-bs-theme="dark"] .table-header,
+    [data-bs-theme="dark"] .day-header {
+        background: rgba(78, 115, 223, 0.15);
+    }
+</style>
+{% endblock %}

@@ -1,0 +1,1031 @@
+{% extends 'base.html' %}
+{% load static %}
+
+{% block title %}Email Command Center - School System{% endblock %}
+
+{% block content %}
+<div class="email-command-center">
+    <!-- Animated Header -->
+    <div class="hero-section">
+        <div class="stars"></div>
+        <div class="stars-2"></div>
+        <div class="stars-3"></div>
+        
+        <div class="hero-content">
+            <h1 class="main-title">
+                <span class="title-text">📧 Email Command Center</span>
+            </h1>
+            <p class="subtitle">Real-time notification management & delivery tracking</p>
+            
+            <div class="breadcrumb-modern">
+                <a href="{% url 'dashboard' %}" class="breadcrumb-link">Dashboard</a>
+                <span class="breadcrumb-separator">→</span>
+                <span class="breadcrumb-current">Email Center</span>
+            </div>
+        </div>
+    </div>
+
+    <!-- Metrics Dashboard with Pulse Effect -->
+    <div class="metrics-container">
+        <div class="metric-card metric-primary" style="--index: 0;">
+            <div class="metric-inner">
+                <div class="metric-icon">📬</div>
+                <div class="metric-content">
+                    <span class="metric-label">Total Requests</span>
+                    <span class="metric-value pulse-number">{{ requests|length }}</span>
+                </div>
+            </div>
+            <div class="metric-progress">
+                <div class="progress-bar" style="width: 100%;"></div>
+            </div>
+        </div>
+
+        <div class="metric-card metric-success" style="--index: 1;">
+            <div class="metric-inner">
+                <div class="metric-icon">✈️</div>
+                <div class="metric-content">
+                    <span class="metric-label">Approved</span>
+                    <span class="metric-value pulse-number" id="approvedCount">0</span>
+                </div>
+            </div>
+            <div class="metric-progress">
+                <div class="progress-bar" style="width: 75%;"></div>
+            </div>
+        </div>
+
+        <div class="metric-card metric-warning" style="--index: 2;">
+            <div class="metric-inner">
+                <div class="metric-icon">⏳</div>
+                <div class="metric-content">
+                    <span class="metric-label">Pending</span>
+                    <span class="metric-value pulse-number" id="pendingCount">0</span>
+                </div>
+            </div>
+            <div class="metric-progress">
+                <div class="progress-bar" style="width: 45%;"></div>
+            </div>
+        </div>
+
+        <div class="metric-card metric-danger" style="--index: 3;">
+            <div class="metric-inner">
+                <div class="metric-icon">❌</div>
+                <div class="metric-content">
+                    <span class="metric-label">Rejected</span>
+                    <span class="metric-value pulse-number" id="rejectedCount">0</span>
+                </div>
+            </div>
+            <div class="metric-progress">
+                <div class="progress-bar" style="width: 20%;"></div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Control Panel -->
+    <div class="control-panel">
+        <div class="control-group">
+            <div class="search-wrapper">
+                <i class="fas fa-search search-icon"></i>
+                <input type="text" id="searchInput" class="search-input" placeholder="Search by email, name, or type..." />
+                <div class="search-indicator"></div>
+            </div>
+        </div>
+
+        <div class="filter-group">
+            <button class="filter-btn" data-filter="all" style="color: #6366f1;">All</button>
+            <button class="filter-btn" data-filter="pending">Pending</button>
+            <button class="filter-btn" data-filter="approved">Approved</button>
+            <button class="filter-btn" data-filter="rejected">Rejected</button>
+        </div>
+    </div>
+
+    <!-- Requests Grid - Kanban Style -->
+    <div class="requests-grid" id="requestsGrid">
+        {% if requests %}
+            {% for request in requests %}
+            <div class="request-card" data-email="{{ request.email }}" data-status="{{ request.status }}" data-id="{{ request.id }}">
+                <!-- Status Indicator -->
+                <div class="card-status-indicator 
+                    {% if request.status == 'pending' %}pending{% elif request.status == 'approved' %}approved{% else %}rejected{% endif %}">
+                </div>
+
+                <!-- Card Header -->
+                <div class="card-header">
+                    <div class="user-avatar">{{ request.first_name|first }}{{ request.last_name|first }}</div>
+                    <div class="header-info">
+                        <h3 class="user-name">{{ request.first_name }} {{ request.last_name }}</h3>
+                        <span class="user-type-badge">{{ request.get_user_type_display }}</span>
+                    </div>
+                </div>
+
+                <!-- Card Body -->
+                <div class="card-body">
+                    <div class="email-display">
+                        <i class="fas fa-envelope"></i>
+                        <span>{{ request.email }}</span>
+                    </div>
+
+                    <div class="status-section">
+                        <span class="status-label">Status:</span>
+                        <span class="status-badge status-{{ request.status }}">
+                            {% if request.status == 'pending' %}⏳ Pending{% elif request.status == 'approved' %}✓ Approved{% else %}✗ Rejected{% endif %}
+                        </span>
+                    </div>
+
+                    <!-- Email Tracking -->
+                    <div class="email-tracker">
+                        <div class="tracker-item {% if request.approval_email_sent %}sent{% else %}unsent{% endif %}">
+                            <div class="tracker-dot"></div>
+                            <div class="tracker-info">
+                                <span class="tracker-label">Approval</span>
+                                {% if request.approval_email_sent and request.approval_email_sent_at %}
+                                    <span class="tracker-time">{{ request.approval_email_sent_at|date:"M d" }}</span>
+                                {% else %}
+                                    <span class="tracker-time unsent">Not sent</span>
+                                {% endif %}
+                            </div>
+                        </div>
+                        <div class="tracker-item {% if request.rejection_email_sent %}sent{% else %}unsent{% endif %}">
+                            <div class="tracker-dot"></div>
+                            <div class="tracker-info">
+                                <span class="tracker-label">Rejection</span>
+                                {% if request.rejection_email_sent and request.rejection_email_sent_at %}
+                                    <span class="tracker-time">{{ request.rejection_email_sent_at|date:"M d" }}</span>
+                                {% else %}
+                                    <span class="tracker-time unsent">Not sent</span>
+                                {% endif %}
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Card Footer - Action Buttons -->
+                <div class="card-footer">
+                    <a href="{% url 'access_request_detail' request.id %}" class="btn-view">
+                        <i class="fas fa-eye"></i>
+                    </a>
+                    <button type="button" class="btn-actions" data-request-id="{{ request.id }}" data-status="{{ request.status }}">
+                        <i class="fas fa-wand-magic-sparkles"></i>
+                    </button>
+                </div>
+
+                <!-- Quick Actions Menu (Hidden) -->
+                <div class="quick-menu" style="display: none;" data-request-id="{{ request.id }}">
+                    {% if request.status == 'approved' %}
+                        <form method="POST" class="action-form">
+                            {% csrf_token %}
+                            <input type="hidden" name="action" value="resend_approval">
+                            <input type="hidden" name="request_id" value="{{ request.id }}">
+                            <button type="submit" class="action-item approval-action">
+                                <i class="fas fa-check-double"></i>
+                                <span>Resend Approval</span>
+                            </button>
+                        </form>
+                        <form method="POST" class="action-form">
+                            {% csrf_token %}
+                            <input type="hidden" name="action" value="resend_credentials">
+                            <input type="hidden" name="request_id" value="{{ request.id }}">
+                            <button type="submit" class="action-item credentials-action">
+                                <i class="fas fa-key"></i>
+                                <span>Send Credentials</span>
+                            </button>
+                        </form>
+                    {% elif request.status == 'rejected' %}
+                        <form method="POST" class="action-form">
+                            {% csrf_token %}
+                            <input type="hidden" name="action" value="resend_rejection">
+                            <input type="hidden" name="request_id" value="{{ request.id }}">
+                            <button type="submit" class="action-item rejection-action">
+                                <i class="fas fa-times"></i>
+                                <span>Resend Rejection</span>
+                            </button>
+                        </form>
+                    {% else %}
+                        <div class="action-item disabled">
+                            <i class="fas fa-lock"></i>
+                            <span>No actions available</span>
+                        </div>
+                    {% endif %}
+                </div>
+            </div>
+            {% endfor %}
+        {% else %}
+            <div class="empty-state">
+                <div class="empty-icon">📭</div>
+                <h2>No Requests Found</h2>
+                <p>All access requests have been processed</p>
+            </div>
+        {% endif %}
+    </div>
+
+    <!-- Back Navigation -->
+    <div class="footer-nav">
+        <a href="{% url 'access_request_list' %}" class="back-link">
+            <i class="fas fa-arrow-left"></i>
+            <span>Back to Requests</span>
+        </a>
+    </div>
+</div>
+
+<style>
+    * {
+        --primary: #6366f1;
+        --success: #10b981;
+        --warning: #f59e0b;
+        --danger: #ef4444;
+        --dark: #1f2937;
+        --light: #f3f4f6;
+    }
+
+    .email-command-center {
+        background: linear-gradient(135deg, #0f172a 0%, #1e293b 50%, #0f172a 100%);
+        min-height: 100vh;
+        padding: 2rem;
+        color: #e2e8f0;
+        overflow: hidden;
+        position: relative;
+    }
+
+    /* Animated Stars Background */
+    .stars, .stars-2, .stars-3 {
+        position: absolute;
+        width: 100%;
+        height: 100%;
+        top: 0;
+        left: 0;
+        pointer-events: none;
+    }
+
+    @keyframes twinkle {
+        0%, 100% { opacity: 0.3; }
+        50% { opacity: 1; }
+    }
+
+    .stars::before {
+        content: '';
+        position: absolute;
+        width: 2px;
+        height: 2px;
+        background: white;
+        border-radius: 50%;
+        top: 20%;
+        left: 10%;
+        animation: twinkle 3s infinite;
+    }
+
+    /* Hero Section */
+    .hero-section {
+        text-align: center;
+        margin-bottom: 4rem;
+        padding: 2rem;
+        position: relative;
+        z-index: 1;
+    }
+
+    .main-title {
+        font-size: 3.5rem;
+        font-weight: 800;
+        margin-bottom: 1rem;
+        background: linear-gradient(135deg, #6366f1 0%, #8b5cf6 50%, #6366f1 100%);
+        background-size: 200% auto;
+        -webkit-background-clip: text;
+        -webkit-text-fill-color: transparent;
+        background-clip: text;
+        animation: gradient-shift 3s ease infinite;
+    }
+
+    @keyframes gradient-shift {
+        0%, 100% { background-position: 0% center; }
+        50% { background-position: 100% center; }
+    }
+
+    .title-text {
+        display: inline-block;
+        animation: float 3s ease-in-out infinite;
+    }
+
+    @keyframes float {
+        0%, 100% { transform: translateY(0px); }
+        50% { transform: translateY(-10px); }
+    }
+
+    .subtitle {
+        font-size: 1.1rem;
+        color: #cbd5e1;
+        margin-bottom: 1.5rem;
+    }
+
+    .breadcrumb-modern {
+        display: inline-flex;
+        align-items: center;
+        gap: 0.75rem;
+        background: rgba(99, 102, 241, 0.1);
+        padding: 0.75rem 1.5rem;
+        border-radius: 50px;
+        border: 1px solid rgba(99, 102, 241, 0.3);
+        backdrop-filter: blur(10px);
+    }
+
+    .breadcrumb-link {
+        color: #6366f1;
+        text-decoration: none;
+        transition: all 0.3s;
+    }
+
+    .breadcrumb-link:hover {
+        color: #8b5cf6;
+    }
+
+    .breadcrumb-separator {
+        color: #64748b;
+    }
+
+    .breadcrumb-current {
+        color: #cbd5e1;
+    }
+
+    /* Metrics Container */
+    .metrics-container {
+        display: grid;
+        grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
+        gap: 1.5rem;
+        margin-bottom: 3rem;
+        position: relative;
+        z-index: 1;
+    }
+
+    .metric-card {
+        background: rgba(30, 41, 59, 0.7);
+        border: 1px solid rgba(148, 163, 184, 0.2);
+        border-radius: 16px;
+        padding: 1.5rem;
+        backdrop-filter: blur(10px);
+        transition: all 0.3s ease;
+        animation: slideUp 0.6s ease-out both;
+        animation-delay: calc(var(--index) * 100ms);
+    }
+
+    @keyframes slideUp {
+        from {
+            opacity: 0;
+            transform: translateY(20px);
+        }
+        to {
+            opacity: 1;
+            transform: translateY(0);
+        }
+    }
+
+    .metric-card:hover {
+        border-color: rgba(99, 102, 241, 0.5);
+        transform: translateY(-5px);
+        box-shadow: 0 20px 40px rgba(99, 102, 241, 0.2);
+    }
+
+    .metric-inner {
+        display: flex;
+        align-items: center;
+        gap: 1rem;
+        margin-bottom: 1rem;
+    }
+
+    .metric-icon {
+        font-size: 2.5rem;
+        filter: drop-shadow(0 0 10px rgba(99, 102, 241, 0.3));
+    }
+
+    .metric-content {
+        flex: 1;
+    }
+
+    .metric-label {
+        display: block;
+        font-size: 0.875rem;
+        color: #94a3b8;
+        margin-bottom: 0.5rem;
+        text-transform: uppercase;
+        letter-spacing: 0.05em;
+    }
+
+    .metric-value {
+        display: block;
+        font-size: 2rem;
+        font-weight: 700;
+        color: #f1f5f9;
+    }
+
+    .pulse-number {
+        animation: pulse-glow 2s ease-in-out infinite;
+    }
+
+    @keyframes pulse-glow {
+        0%, 100% { text-shadow: 0 0 10px rgba(99, 102, 241, 0); }
+        50% { text-shadow: 0 0 20px rgba(99, 102, 241, 0.5); }
+    }
+
+    .metric-progress {
+        height: 4px;
+        background: rgba(71, 85, 105, 0.3);
+        border-radius: 10px;
+        overflow: hidden;
+    }
+
+    .progress-bar {
+        height: 100%;
+        border-radius: 10px;
+        animation: growWidth 1s ease-out 0.5s both;
+    }
+
+    @keyframes growWidth {
+        from { width: 0 !important; }
+    }
+
+    .metric-primary { --color: #6366f1; }
+    .metric-success { --color: #10b981; }
+    .metric-warning { --color: #f59e0b; }
+    .metric-danger { --color: #ef4444; }
+
+    .metric-primary .progress-bar { background: var(--color); }
+    .metric-success .progress-bar { background: var(--color); }
+    .metric-warning .progress-bar { background: var(--color); }
+    .metric-danger .progress-bar { background: var(--color); }
+
+    /* Control Panel */
+    .control-panel {
+        display: flex;
+        flex-wrap: wrap;
+        gap: 2rem;
+        margin-bottom: 3rem;
+        align-items: center;
+        position: relative;
+        z-index: 1;
+    }
+
+    .control-group {
+        flex: 1;
+        min-width: 250px;
+    }
+
+    .search-wrapper {
+        position: relative;
+    }
+
+    .search-icon {
+        position: absolute;
+        left: 1rem;
+        top: 50%;
+        transform: translateY(-50%);
+        color: #64748b;
+        pointer-events: none;
+    }
+
+    .search-input {
+        width: 100%;
+        padding: 0.875rem 1rem 0.875rem 2.75rem;
+        background: rgba(30, 41, 59, 0.8);
+        border: 1px solid rgba(148, 163, 184, 0.3);
+        border-radius: 12px;
+        color: #e2e8f0;
+        font-size: 0.95rem;
+        transition: all 0.3s;
+        backdrop-filter: blur(10px);
+    }
+
+    .search-input::placeholder {
+        color: #64748b;
+    }
+
+    .search-input:focus {
+        outline: none;
+        border-color: #6366f1;
+        box-shadow: 0 0 0 3px rgba(99, 102, 241, 0.1);
+        background: rgba(30, 41, 59, 0.95);
+    }
+
+    .filter-group {
+        display: flex;
+        gap: 0.75rem;
+        flex-wrap: wrap;
+    }
+
+    .filter-btn {
+        padding: 0.75rem 1.5rem;
+        background: rgba(30, 41, 59, 0.8);
+        border: 1px solid rgba(148, 163, 184, 0.2);
+        border-radius: 12px;
+        color: #cbd5e1;
+        cursor: pointer;
+        transition: all 0.3s;
+        backdrop-filter: blur(10px);
+        font-weight: 500;
+    }
+
+    .filter-btn:hover,
+    .filter-btn.active {
+        border-color: currentColor;
+        background: rgba(99, 102, 241, 0.2);
+        transform: translateY(-2px);
+    }
+
+    /* Requests Grid */
+    .requests-grid {
+        display: grid;
+        grid-template-columns: repeat(auto-fill, minmax(320px, 1fr));
+        gap: 2rem;
+        margin-bottom: 3rem;
+        position: relative;
+        z-index: 1;
+    }
+
+    .request-card {
+        background: rgba(30, 41, 59, 0.6);
+        border: 1px solid rgba(148, 163, 184, 0.2);
+        border-radius: 16px;
+        overflow: hidden;
+        transition: all 0.3s;
+        cursor: pointer;
+        display: flex;
+        flex-direction: column;
+        animation: cardBounce 0.5s ease-out;
+        backdrop-filter: blur(10px);
+        position: relative;
+    }
+
+    @keyframes cardBounce {
+        from {
+            opacity: 0;
+            transform: scale(0.95);
+        }
+        to {
+            opacity: 1;
+            transform: scale(1);
+        }
+    }
+
+    .request-card:hover {
+        border-color: rgba(99, 102, 241, 0.5);
+        box-shadow: 0 20px 40px rgba(99, 102, 241, 0.15);
+        transform: translateY(-8px);
+    }
+
+    .card-status-indicator {
+        height: 4px;
+        width: 100%;
+        background: var(--indicator-color, #6366f1);
+        animation: shimmer 2s infinite;
+    }
+
+    @keyframes shimmer {
+        0%, 100% { opacity: 0.5; }
+        50% { opacity: 1; }
+    }
+
+    .card-status-indicator.pending {
+        --indicator-color: #f59e0b;
+    }
+
+    .card-status-indicator.approved {
+        --indicator-color: #10b981;
+    }
+
+    .card-status-indicator.rejected {
+        --indicator-color: #ef4444;
+    }
+
+    .card-header {
+        padding: 1.5rem;
+        display: flex;
+        gap: 1rem;
+        align-items: center;
+        border-bottom: 1px solid rgba(148, 163, 184, 0.1);
+    }
+
+    .user-avatar {
+        width: 50px;
+        height: 50px;
+        border-radius: 50%;
+        background: linear-gradient(135deg, #6366f1, #8b5cf6);
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        font-weight: bold;
+        font-size: 1.2rem;
+        flex-shrink: 0;
+    }
+
+    .header-info {
+        flex: 1;
+        min-width: 0;
+    }
+
+    .user-name {
+        font-size: 1.1rem;
+        font-weight: 600;
+        margin-bottom: 0.25rem;
+        word-break: break-word;
+    }
+
+    .user-type-badge {
+        display: inline-block;
+        padding: 0.25rem 0.75rem;
+        background: rgba(99, 102, 241, 0.2);
+        border: 1px solid rgba(99, 102, 241, 0.3);
+        border-radius: 20px;
+        font-size: 0.75rem;
+        color: #a5b4fc;
+    }
+
+    .card-body {
+        padding: 1.5rem;
+        flex: 1;
+        display: flex;
+        flex-direction: column;
+        gap: 1rem;
+    }
+
+    .email-display {
+        display: flex;
+        align-items: center;
+        gap: 0.75rem;
+        padding: 0.75rem;
+        background: rgba(99, 102, 241, 0.1);
+        border-radius: 8px;
+        font-size: 0.9rem;
+        color: #cbd5e1;
+        word-break: break-all;
+    }
+
+    .email-display i {
+        color: #6366f1;
+        flex-shrink: 0;
+    }
+
+    .status-section {
+        display: flex;
+        align-items: center;
+        gap: 0.75rem;
+    }
+
+    .status-label {
+        font-size: 0.75rem;
+        color: #94a3b8;
+        text-transform: uppercase;
+    }
+
+    .status-badge {
+        padding: 0.5rem 1rem;
+        border-radius: 20px;
+        font-size: 0.85rem;
+        font-weight: 600;
+    }
+
+    .status-badge.status-pending {
+        background: rgba(245, 158, 11, 0.2);
+        color: #fbbf24;
+    }
+
+    .status-badge.status-approved {
+        background: rgba(16, 185, 129, 0.2);
+        color: #6ee7b7;
+    }
+
+    .status-badge.status-rejected {
+        background: rgba(239, 68, 68, 0.2);
+        color: #fca5a5;
+    }
+
+    .email-tracker {
+        display: flex;
+        flex-direction: column;
+        gap: 0.75rem;
+        padding-top: 1rem;
+        border-top: 1px solid rgba(148, 163, 184, 0.1);
+    }
+
+    .tracker-item {
+        display: flex;
+        align-items: center;
+        gap: 0.75rem;
+        padding: 0.5rem 0;
+    }
+
+    .tracker-dot {
+        width: 8px;
+        height: 8px;
+        border-radius: 50%;
+        background: #64748b;
+        flex-shrink: 0;
+    }
+
+    .tracker-item.sent .tracker-dot {
+        background: #10b981;
+        box-shadow: 0 0 10px rgba(16, 185, 129, 0.5);
+        animation: pulse-dot 2s infinite;
+    }
+
+    @keyframes pulse-dot {
+        0%, 100% { box-shadow: 0 0 10px rgba(16, 185, 129, 0.5); }
+        50% { box-shadow: 0 0 20px rgba(16, 185, 129, 0.8); }
+    }
+
+    .tracker-info {
+        flex: 1;
+        min-width: 0;
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        font-size: 0.85rem;
+    }
+
+    .tracker-label {
+        color: #94a3b8;
+    }
+
+    .tracker-time {
+        color: #6ee7b7;
+        font-weight: 500;
+    }
+
+    .tracker-time.unsent {
+        color: #64748b;
+        font-style: italic;
+    }
+
+    .card-footer {
+        padding: 1rem 1.5rem;
+        background: rgba(0, 0, 0, 0.2);
+        display: flex;
+        gap: 0.75rem;
+        border-top: 1px solid rgba(148, 163, 184, 0.1);
+    }
+
+    .btn-view, .btn-actions {
+        flex: 1;
+        padding: 0.75rem;
+        background: rgba(99, 102, 241, 0.2);
+        border: 1px solid rgba(99, 102, 241, 0.3);
+        border-radius: 8px;
+        color: #a5b4fc;
+        cursor: pointer;
+        transition: all 0.3s;
+        font-size: 1rem;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+    }
+
+    .btn-view:hover, .btn-actions:hover {
+        background: rgba(99, 102, 241, 0.4);
+        border-color: rgba(99, 102, 241, 0.6);
+        transform: translateY(-2px);
+    }
+
+    .btn-actions {
+        position: relative;
+    }
+
+    /* Quick Menu */
+    .quick-menu {
+        position: absolute;
+        top: 100%;
+        left: 50%;
+        transform: translateX(-50%);
+        background: rgba(15, 23, 42, 0.95);
+        border: 1px solid rgba(148, 163, 184, 0.3);
+        border-radius: 12px;
+        margin-top: 0.5rem;
+        min-width: 220px;
+        backdrop-filter: blur(10px);
+        z-index: 10;
+        box-shadow: 0 20px 40px rgba(0, 0, 0, 0.3);
+    }
+
+    .action-form {
+        margin: 0;
+    }
+
+    .action-item {
+        display: flex;
+        align-items: center;
+        gap: 0.75rem;
+        padding: 0.75rem 1rem;
+        background: none;
+        border: none;
+        color: #cbd5e1;
+        cursor: pointer;
+        width: 100%;
+        text-align: left;
+        transition: all 0.2s;
+        font-size: 0.9rem;
+    }
+
+    .action-item:first-child {
+        border-radius: 11px 11px 0 0;
+    }
+
+    .action-item:last-child {
+        border-radius: 0 0 11px 11px;
+    }
+
+    .action-item:hover:not(.disabled) {
+        background: rgba(99, 102, 241, 0.2);
+        padding-left: 1.25rem;
+    }
+
+    .action-item.disabled {
+        opacity: 0.5;
+        cursor: not-allowed;
+    }
+
+    .approval-action:hover { color: #6ee7b7; }
+    .credentials-action:hover { color: #fbbf24; }
+    .rejection-action:hover { color: #fca5a5; }
+
+    /* Empty State */
+    .empty-state {
+        grid-column: 1 / -1;
+        text-align: center;
+        padding: 4rem 2rem;
+        color: #94a3b8;
+    }
+
+    .empty-icon {
+        font-size: 5rem;
+        margin-bottom: 1rem;
+        opacity: 0.5;
+    }
+
+    .empty-state h2 {
+        color: #cbd5e1;
+        margin-bottom: 0.5rem;
+    }
+
+    /* Footer Navigation */
+    .footer-nav {
+        display: flex;
+        justify-content: center;
+        padding: 2rem;
+        position: relative;
+        z-index: 1;
+    }
+
+    .back-link {
+        display: inline-flex;
+        align-items: center;
+        gap: 0.75rem;
+        padding: 0.875rem 1.75rem;
+        background: rgba(99, 102, 241, 0.2);
+        border: 1px solid rgba(99, 102, 241, 0.3);
+        border-radius: 12px;
+        color: #a5b4fc;
+        text-decoration: none;
+        transition: all 0.3s;
+    }
+
+    .back-link:hover {
+        background: rgba(99, 102, 241, 0.4);
+        border-color: rgba(99, 102, 241, 0.6);
+        transform: translateX(-5px);
+    }
+
+    /* Responsive */
+    @media (max-width: 768px) {
+        .email-command-center {
+            padding: 1rem;
+        }
+
+        .main-title {
+            font-size: 2rem;
+        }
+
+        .metrics-container {
+            grid-template-columns: repeat(2, 1fr);
+            gap: 1rem;
+        }
+
+        .control-panel {
+            flex-direction: column;
+            gap: 1rem;
+        }
+
+        .control-group {
+            width: 100%;
+        }
+
+        .filter-group {
+            width: 100%;
+        }
+
+        .requests-grid {
+            grid-template-columns: 1fr;
+            gap: 1rem;
+        }
+    }
+
+    .request-card.hidden {
+        display: none;
+    }
+</style>
+
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+    const searchInput = document.getElementById('searchInput');
+    const filterButtons = document.querySelectorAll('.filter-btn');
+    const requestCards = document.querySelectorAll('.request-card');
+    const approvedCount = document.getElementById('approvedCount');
+    const pendingCount = document.getElementById('pendingCount');
+    const rejectedCount = document.getElementById('rejectedCount');
+
+    // Calculate counts
+    function updateCounts() {
+        let approved = 0, pending = 0, rejected = 0;
+        requestCards.forEach(card => {
+            const status = card.getAttribute('data-status');
+            if (status === 'approved') approved++;
+            else if (status === 'pending') pending++;
+            else if (status === 'rejected') rejected++;
+        });
+        approvedCount.textContent = approved;
+        pendingCount.textContent = pending;
+        rejectedCount.textContent = rejected;
+    }
+
+    updateCounts();
+
+    // Set first filter as active
+    if (filterButtons.length > 0) {
+        filterButtons[0].classList.add('active');
+    }
+
+    // Filter functionality
+    function applyFilters() {
+        const searchTerm = searchInput.value.toLowerCase();
+        let activeFilter = 'all';
+
+        filterButtons.forEach(btn => {
+            if (btn.classList.contains('active')) {
+                activeFilter = btn.getAttribute('data-filter');
+            }
+        });
+
+        requestCards.forEach(card => {
+            const status = card.getAttribute('data-status');
+            const email = card.getAttribute('data-email').toLowerCase();
+            const text = card.textContent.toLowerCase();
+
+            const matchesSearch = email.includes(searchTerm) || text.includes(searchTerm);
+            const matchesFilter = activeFilter === 'all' || status === activeFilter;
+
+            if (matchesSearch && matchesFilter) {
+                card.classList.remove('hidden');
+            } else {
+                card.classList.add('hidden');
+            }
+        });
+    }
+
+    searchInput.addEventListener('keyup', applyFilters);
+
+    filterButtons.forEach(btn => {
+        btn.addEventListener('click', function() {
+            filterButtons.forEach(b => b.classList.remove('active'));
+            this.classList.add('active');
+            applyFilters();
+        });
+    });
+
+    // Action button menu toggle
+    document.querySelectorAll('.btn-actions').forEach(btn => {
+        btn.addEventListener('click', function(e) {
+            e.stopPropagation();
+            const menu = this.closest('.request-card').querySelector('.quick-menu');
+            
+            // Close other menus
+            document.querySelectorAll('.quick-menu').forEach(m => {
+                if (m !== menu) m.style.display = 'none';
+            });
+
+            menu.style.display = menu.style.display === 'none' ? 'block' : 'none';
+        });
+    });
+
+    // Close menu when clicking outside
+    document.addEventListener('click', function(e) {
+        if (!e.target.closest('.request-card')) {
+            document.querySelectorAll('.quick-menu').forEach(m => {
+                m.style.display = 'none';
+            });
+        }
+    });
+
+    // Add loading state to forms
+    document.querySelectorAll('.action-form').forEach(form => {
+        form.addEventListener('submit', function(e) {
+            const btn = this.querySelector('button');
+            btn.disabled = true;
+            btn.style.opacity = '0.5';
+            btn.innerHTML += ' <i class="fas fa-spinner fa-spin"></i>';
+        });
+    });
+});
+</script>
+{% endblock %}

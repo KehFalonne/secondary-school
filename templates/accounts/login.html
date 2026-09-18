@@ -1,0 +1,205 @@
+{% extends 'base.html' %}
+{% load static %}
+
+{% block title %}Login | School System{% endblock %}
+{% block body_class %}auth-page{% endblock %}
+
+{% block extra_css %}
+<style>
+    /* --- UNIMAGINABLE LOGIN PORTAL --- */
+    body {
+        background: linear-gradient(135deg, #0f172a 0%, #1e1b4b 100%);
+        min-height: 100vh;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        overflow-x: hidden;
+        padding: 1rem;
+    }
+
+    /* Animated background shapes */
+    .login-shapes {
+        position: fixed;
+        top: 0;
+        left: 0;
+        width: 100%;
+        height: 100%;
+        overflow: hidden;
+        z-index: -1;
+    }
+
+    .shape {
+        position: absolute;
+        filter: blur(80px);
+        opacity: 0.6;
+        animation: float 20s infinite alternate;
+    }
+
+    .shape-1 {
+        top: -10%;
+        left: -10%;
+        width: 500px;
+        height: 500px;
+        background: #7c3aed; /* Violet */
+        border-radius: 50%;
+        animation-delay: 0s;
+    }
+
+    .shape-2 {
+        bottom: -10%;
+        right: -10%;
+        width: 400px;
+        height: 400px;
+        background: #2563eb; /* Blue */
+        border-radius: 50%;
+        animation-delay: -5s;
+    }
+
+    .shape-3 {
+        top: 40%;
+        left: 40%;
+        width: 300px;
+        height: 300px;
+        background: #06b6d4; /* Cyan */
+        border-radius: 50%;
+        animation-delay: -10s;
+    }
+
+    @keyframes float {
+        0% { transform: translate(0, 0) rotate(0deg); }
+        100% { transform: translate(30px, 50px) rotate(20deg); }
+    }
+
+    .login-card {
+        width: 100%;
+        max-width: 420px;
+        padding: 2.5rem;
+        background: rgba(255, 255, 255, 0.03);
+        backdrop-filter: blur(20px);
+        -webkit-backdrop-filter: blur(20px);
+        border: 1px solid rgba(255, 255, 255, 0.1);
+        border-radius: 24px;
+        box-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.5);
+        position: relative;
+        z-index: 1;
+    }
+
+    @media (max-width: 576px) {
+        .login-card {
+            padding: 1.5rem;
+        }
+    }
+
+    .login-icon-container {
+        width: 80px;
+        height: 80px;
+        margin: 0 auto 1.5rem;
+        background: rgba(255, 255, 255, 0.05);
+        border-radius: 20px;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        font-size: 2rem;
+        color: #fff;
+        box-shadow: 0 0 30px rgba(139, 92, 246, 0.3);
+        border: 1px solid rgba(255, 255, 255, 0.1);
+        transform: rotate(45deg);
+    }
+
+    .login-icon-container i {
+        transform: rotate(-45deg);
+    }
+    
+    .form-control {
+        background: rgba(255, 255, 255, 0.05) !important;
+        border: 1px solid rgba(255, 255, 255, 0.1) !important;
+        color: #fff !important;
+        border-radius: 12px;
+        padding: 0.75rem 1rem;
+    }
+    
+    .form-control:focus {
+        background: rgba(255, 255, 255, 0.1) !important;
+        border-color: rgba(139, 92, 246, 0.5) !important;
+        box-shadow: 0 0 0 4px rgba(139, 92, 246, 0.1) !important;
+    }
+
+    .form-floating label {
+        color: rgba(255, 255, 255, 0.6);
+    }
+    
+    .btn-login {
+        background: linear-gradient(135deg, #6366f1 0%, #8b5cf6 100%);
+        border: none;
+        border-radius: 12px;
+        padding: 0.8rem;
+        font-weight: 600;
+        letter-spacing: 0.5px;
+        box-shadow: 0 4px 15px rgba(99, 102, 241, 0.4);
+        transition: all 0.3s ease;
+    }
+    
+    .btn-login:hover {
+        transform: translateY(-2px);
+        box-shadow: 0 8px 25px rgba(99, 102, 241, 0.5);
+        background: linear-gradient(135deg, #4f46e5 0%, #7c3aed 100%);
+    }
+    
+    .login-footer a {
+        color: rgba(255, 255, 255, 0.6);
+        transition: color 0.2s;
+    }
+    
+    .login-footer a:hover {
+        color: #fff;
+    }
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="login-shapes">
+    <div class="shape shape-1"></div>
+    <div class="shape shape-2"></div>
+    <div class="shape shape-3"></div>
+</div>
+
+<div class="login-card">
+    <div class="text-center mb-4">
+        <div class="login-icon-container">
+            <i class="fas fa-user-astronaut"></i>
+        </div>
+        <h2 class="fw-bold text-white mb-1">Welcome Back</h2>
+        <p class="text-white-50">Enter your credentials to access the portal</p>
+    </div>
+
+    <form method="post" action="{% url 'login' %}">
+        {% csrf_token %}
+        
+        {% if form.non_field_errors %}
+            <div class="alert alert-danger bg-danger bg-opacity-25 border-danger border-opacity-25 text-white mb-4 rounded-3">
+                {% for error in form.non_field_errors %}
+                    {{ error }}
+                {% endfor %}
+            </div>
+        {% endif %}
+        
+        <div class="form-floating mb-3">
+            <input type="text" name="username" class="form-control" id="id_username" placeholder="Username" required autofocus>
+            <label for="id_username">Username</label>
+        </div>
+        
+        <div class="form-floating mb-4">
+            <input type="password" name="password" class="form-control" id="id_password" placeholder="Password" required>
+            <label for="id_password">Password</label>
+        </div>
+        
+        <button type="submit" class="btn btn-primary w-100 btn-login mb-3">
+            Sign In
+        </button>
+        
+        <div class="text-center login-footer">
+            <a href="{% url 'password_reset' %}" class="text-decoration-none small">Forgot Password?</a>
+        </div>
+    </form>
+</div>
+{% endblock %}

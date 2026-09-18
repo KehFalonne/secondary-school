@@ -1,0 +1,1863 @@
+{% extends 'base.html' %}
+{% load crispy_forms_tags %}
+
+{% block title %}Fees Dashboard{% endblock %}
+{% block page_title %}Fees Management{% endblock %}
+
+{% block breadcrumb %}
+<li class="breadcrumb-item active">Fees</li>
+{% endblock %}
+
+{% block page_actions %}
+<div class="action-buttons">
+    <button type="button" class="btn-action-secondary" data-bs-toggle="modal" data-bs-target="#addFeeTypeModal">
+        <i class="fas fa-tag me-2"></i>Add Fee Type
+    </button>
+    <a href="{% url 'fee_structure_create' %}" class="btn-action-primary">
+        <i class="fas fa-plus me-2"></i>New Fee Structure
+    </a>
+    <a href="{% url 'student_fee_list' %}" class="btn-action-primary">
+        <i class="fas fa-list me-2"></i>Student Fees
+    </a>
+</div>
+{% endblock %}
+
+{% block content %}
+<div class="fees-dashboard-container">
+    <!-- Hero Section -->
+    <div class="hero-section">
+        <div class="hero-gradient"></div>
+        <div class="hero-content">
+            <div class="dashboard-badge">
+                <i class="fas fa-coins"></i> FINANCIAL OVERVIEW
+            </div>
+            <h1 class="dashboard-title">Fees Management</h1>
+            <p class="hero-subtitle">Monitor collections, manage fee structures, and track payments</p>
+        </div>
+    </div>
+
+    <!-- Main Stats Grid -->
+    <div class="stats-grid">
+        <!-- Total Collected -->
+        <div class="stat-card collected">
+            <div class="stat-icon">
+                <i class="fas fa-wallet"></i>
+            </div>
+            <div class="stat-content">
+                <div class="stat-label">Total Collected</div>
+                <div class="stat-value">${{ total_collected|floatformat:2 }}</div>
+                <div class="stat-meta">{% widthratio total_collected total_expected 100 %}% collected</div>
+            </div>
+            <div class="stat-bar">
+                <div class="stat-fill" style="width: {% widthratio total_collected total_expected 100 %}%"></div>
+            </div>
+        </div>
+
+        <!-- Pending Amount -->
+        <div class="stat-card pending">
+            <div class="stat-icon">
+                <i class="fas fa-hourglass-end"></i>
+            </div>
+            <div class="stat-content">
+                <div class="stat-label">Pending Amount</div>
+                <div class="stat-value">${{ pending_amount|floatformat:2 }}</div>
+                <div class="stat-meta">{% widthratio pending_amount total_expected 100 %}% outstanding</div>
+            </div>
+            <div class="stat-bar">
+                <div class="stat-fill" style="width: {% widthratio pending_amount total_expected 100 %}%"></div>
+            </div>
+        </div>
+
+        <!-- Total Expected -->
+        <div class="stat-card expected">
+            <div class="stat-icon">
+                <i class="fas fa-file-invoice-dollar"></i>
+            </div>
+            <div class="stat-content">
+                <div class="stat-label">Total Expected</div>
+                <div class="stat-value">${{ total_expected|floatformat:2 }}</div>
+                <div class="stat-meta">Total projected revenue</div>
+            </div>
+            <div class="stat-bar">
+                <div class="stat-fill" style="width: 100%"></div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Content Grid -->
+    <div class="content-grid">
+        <!-- Recent Payments -->
+        <div class="content-card full-width">
+            <div class="card-header-custom">
+                <i class="fas fa-history"></i>
+                <h3>Recent Payments</h3>
+                <a href="{% url 'student_fee_list' %}" class="view-all-link">View All →</a>
+            </div>
+            <div class="card-body-custom">
+                {% if recent_payments %}
+                <div class="payments-table">
+                    <div class="table-header">
+                        <div class="col-student">Student</div>
+                        <div class="col-fee">Fee Type</div>
+                        <div class="col-amount">Amount</div>
+                        <div class="col-date">Date</div>
+                        <div class="col-action">Action</div>
+                    </div>
+                    {% for payment in recent_payments %}
+                    <div class="table-row">
+                        <div class="col-student">
+                            <div class="student-cell">
+                                <div class="avatar-badge">
+                                    <i class="fas fa-user"></i>
+                                </div>
+                                <div>
+                                    <div class="student-name">{{ payment.student_fee.student.user.get_full_name }}</div>
+                                </div>
+                            </div>
+                        </div>
+                        <div class="col-fee">
+                            <span class="fee-type-badge">{{ payment.student_fee.fee_structure.fee_type.name }}</span>
+                        </div>
+                        <div class="col-amount">
+                            <span class="amount-value">${{ payment.amount }}</span>
+                        </div>
+                        <div class="col-date">
+                            <span class="date-label">{{ payment.date|date:"d M Y" }}</span>
+                        </div>
+                        <div class="col-action">
+                            <a href="{% url 'payment_receipt' payment.id %}" class="action-icon" title="Receipt">
+                                <i class="fas fa-download"></i>
+                            </a>
+                        </div>
+                    </div>
+                    {% endfor %}
+                </div>
+                {% else %}
+                <div class="empty-state">
+                    <i class="fas fa-inbox"></i>
+                    <p>No recent payments</p>
+                </div>
+                {% endif %}
+            </div>
+        </div>
+
+        <!-- Collection Chart & Fee Structures -->
+        <div class="content-grid-2col">
+            <!-- Collection Status Chart -->
+            <div class="content-card">
+                <div class="card-header-custom">
+                    <i class="fas fa-chart-pie"></i>
+                    <h3>Collection Status</h3>
+                </div>
+                <div class="card-body-custom">
+                    <div class="chart-container">
+                        <canvas id="collectionChart"></canvas>
+                    </div>
+                    <div class="chart-legend">
+                        <div class="legend-item collected">
+                            <span class="legend-dot"></span>
+                            <span>Collected</span>
+                        </div>
+                        <div class="legend-item pending">
+                            <span class="legend-dot"></span>
+                            <span>Pending</span>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Fee Structures Summary -->
+            <div class="content-card">
+                <div class="card-header-custom">
+                    <i class="fas fa-layer-group"></i>
+                    <h3>Active Structures</h3>
+                    <span class="badge-count">{{ fee_structures|length }}</span>
+                </div>
+                <div class="card-body-custom">
+                    {% if fee_structures %}
+                    <div class="fee-structures-list">
+                        {% for structure in fee_structures|slice:":5" %}
+                        <div class="fee-structure-item">
+                            <div class="structure-header">
+                                <span class="class-badge">{{ structure.class_name.name }}</span>
+                                <span class="term-badge">{{ structure.get_term_display }}</span>
+                            </div>
+                            <div class="structure-body">
+                                <div class="structure-info">
+                                    <div class="info-row">
+                                        <span class="info-label">{{ structure.fee_type.name }}</span>
+                                    </div>
+                                    <div class="info-row">
+                                        <i class="fas fa-calendar-alt"></i>
+                                        <span>Due: {{ structure.due_date|date:"d M" }}</span>
+                                    </div>
+                                </div>
+                                <div class="structure-amount">${{ structure.amount }}</div>
+                            </div>
+                        </div>
+                        {% endfor %}
+                    </div>
+                    {% if fee_structures|length > 5 %}
+                    <div class="view-more-link">
+                        <a href="#">View all {{ fee_structures|length }} structures →</a>
+                    </div>
+                    {% endif %}
+                    {% else %}
+                    <div class="empty-state">
+                        <i class="fas fa-layer-group"></i>
+                        <p>No fee structures defined</p>
+                    </div>
+                    {% endif %}
+                </div>
+            </div>
+        </div>
+
+        <!-- Complete Fee Structures Table -->
+        <div class="content-card full-width">
+            <div class="card-header-custom">
+                <i class="fas fa-table"></i>
+                <h3>All Fee Structures</h3>
+                <span class="badge-count">{{ fee_structures|length }}</span>
+            </div>
+            <div class="card-body-custom">
+                {% if fee_structures %}
+                <div class="structures-table">
+                    <div class="table-header">
+                        <div class="col-class">Class</div>
+                        <div class="col-type">Fee Type</div>
+                        <div class="col-term">Term</div>
+                        <div class="col-amount">Amount</div>
+                        <div class="col-due">Due Date</div>
+                    </div>
+                    {% for structure in fee_structures %}
+                    <div class="table-row">
+                        <div class="col-class">
+                            <span class="class-name">{{ structure.class_name.name }}</span>
+                        </div>
+                        <div class="col-type">
+                            <span class="type-name">{{ structure.fee_type.name }}</span>
+                        </div>
+                        <div class="col-term">
+                            <span class="term-label">{{ structure.get_term_display }}</span>
+                        </div>
+                        <div class="col-amount">
+                            <span class="amount-strong">${{ structure.amount }}</span>
+                        </div>
+                        <div class="col-due">
+                            <span class="date-badge">{{ structure.due_date|date:"d M Y" }}</span>
+                        </div>
+                    </div>
+                    {% endfor %}
+                </div>
+                {% else %}
+                <div class="empty-state">
+                    <i class="fas fa-layer-group"></i>
+                    <p>No fee structures defined</p>
+                </div>
+                {% endif %}
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Add Fee Type Modal -->
+<div class="modal fade" id="addFeeTypeModal" tabindex="-1" aria-hidden="true">
+    <div class="modal-dialog modal-dialog-centered modal-dialog-scrollable">
+        <div class="modal-content glass-modal">
+            <div class="modal-header glass-header">
+                <div class="modal-header-content">
+                    <div class="modal-icon">
+                        <i class="fas fa-tag"></i>
+                    </div>
+                    <div>
+                        <h5 class="modal-title">Add New Fee Type</h5>
+                        <p class="modal-subtitle">Create a new fee category for students</p>
+                    </div>
+                </div>
+                <button type="button" class="btn-modal-close" data-bs-dismiss="modal" aria-label="Close">
+                    <i class="fas fa-times"></i>
+                </button>
+            </div>
+            <form method="post" action="{% url 'fee_type_create' %}">
+                <div class="modal-body glass-body">
+                    {% csrf_token %}
+                    <div class="form-content">
+                        {{ fee_type_form|crispy }}
+                    </div>
+                </div>
+                <div class="modal-footer glass-footer">
+                    <button type="button" class="btn-modal-secondary" data-bs-dismiss="modal">
+                        <i class="fas fa-times me-2"></i>Cancel
+                    </button>
+                    <button type="submit" class="btn-modal-primary">
+                        <i class="fas fa-check me-2"></i>Save Fee Type
+                    </button>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block extra_css %}
+<style>
+    /* ====== Container ====== */
+    .fees-dashboard-container {
+        background: linear-gradient(135deg, #f5f7fa 0%, #c3cfe2 100%);
+        min-height: 100vh;
+        padding-bottom: 3rem;
+        animation: fadeIn 0.6s ease;
+    }
+
+    /* ====== Hero Section ====== */
+    .hero-section {
+        position: relative;
+        height: 400px;
+        display: flex;
+        align-items: flex-end;
+        padding: 3rem 2rem;
+        overflow: hidden;
+        margin-bottom: 3rem;
+    }
+
+    .hero-gradient {
+        position: absolute;
+        top: 0;
+        left: 0;
+        right: 0;
+        bottom: 0;
+        background: linear-gradient(135deg, #4e73df 0%, #1cc88a 100%);
+        z-index: 0;
+    }
+
+    .hero-section::before {
+        content: '';
+        position: absolute;
+        top: 0;
+        left: 0;
+        right: 0;
+        bottom: 0;
+        background: 
+            radial-gradient(circle at 20% 50%, rgba(255,255,255,0.1) 0%, transparent 50%),
+            radial-gradient(circle at 80% 80%, rgba(255,255,255,0.1) 0%, transparent 50%);
+        z-index: 1;
+    }
+
+    .hero-content {
+        position: relative;
+        z-index: 2;
+        width: 100%;
+        max-width: 1200px;
+        margin: 0 auto;
+        padding: 0 1rem;
+    }
+
+    .dashboard-badge {
+        display: inline-flex;
+        align-items: center;
+        gap: 0.5rem;
+        background: rgba(255, 255, 255, 0.25);
+        color: white;
+        padding: 0.6rem 1.2rem;
+        border-radius: 30px;
+        font-weight: 600;
+        font-size: 0.85rem;
+        margin-bottom: 1.5rem;
+        backdrop-filter: blur(10px);
+    }
+
+    .dashboard-title {
+        font-size: 3rem;
+        font-weight: 800;
+        color: white;
+        margin: 0 0 0.5rem 0;
+        text-shadow: 0 2px 10px rgba(0,0,0,0.2);
+    }
+
+    .hero-subtitle {
+        font-size: 1.1rem;
+        color: rgba(255, 255, 255, 0.9);
+        margin: 0;
+    }
+
+    /* ====== Stats Grid ====== */
+    .stats-grid {
+        display: grid;
+        grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
+        gap: 2rem;
+        max-width: 1400px;
+        margin: -2.5rem auto 3rem;
+        padding: 0 1rem;
+        position: relative;
+        z-index: 10;
+    }
+
+    /* ====== Stat Card ====== */
+    .stat-card {
+        background: linear-gradient(135deg, rgba(255, 255, 255, 0.95) 0%, rgba(255, 255, 255, 0.85) 100%);
+        border: 1px solid rgba(78, 115, 223, 0.1);
+        border-radius: 20px;
+        backdrop-filter: blur(10px);
+        padding: 2rem;
+        box-shadow: 0 8px 32px 0 rgba(31, 38, 135, 0.07);
+        animation: slideInUp 0.6s ease;
+        display: flex;
+        align-items: flex-start;
+        gap: 1.5rem;
+    }
+
+    .stat-card.collected { animation-delay: 0s; }
+    .stat-card.pending { animation-delay: 0.1s; }
+    .stat-card.expected { animation-delay: 0.2s; }
+
+    .stat-icon {
+        width: 80px;
+        height: 80px;
+        border-radius: 15px;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        color: white;
+        font-size: 2rem;
+        flex-shrink: 0;
+    }
+
+    .stat-card.collected .stat-icon {
+        background: linear-gradient(135deg, #1cc88a 0%, #13a968 100%);
+    }
+
+    .stat-card.pending .stat-icon {
+        background: linear-gradient(135deg, #ffc107 0%, #ff9800 100%);
+    }
+
+    .stat-card.expected .stat-icon {
+        background: linear-gradient(135deg, #4e73df 0%, #224abe 100%);
+    }
+
+    .stat-content {
+        flex: 1;
+    }
+
+    .stat-label {
+        font-size: 0.8rem;
+        font-weight: 600;
+        color: #6c757d;
+        text-transform: uppercase;
+        letter-spacing: 0.5px;
+        margin-bottom: 0.5rem;
+    }
+
+    .stat-value {
+        font-size: 2rem;
+        font-weight: 800;
+        color: #2e3440;
+        margin-bottom: 0.5rem;
+    }
+
+    .stat-meta {
+        font-size: 0.85rem;
+        color: #6c757d;
+    }
+
+    .stat-bar {
+        height: 6px;
+        background: rgba(78, 115, 223, 0.1);
+        border-radius: 10px;
+        overflow: hidden;
+        margin-top: 1rem;
+    }
+
+    .stat-fill {
+        height: 100%;
+        background: linear-gradient(90deg, #4e73df 0%, #1cc88a 100%);
+        transition: width 0.6s ease;
+    }
+
+    /* ====== Content Grid ====== */
+    .content-grid {
+        display: flex;
+        flex-direction: column;
+        gap: 2rem;
+        max-width: 1400px;
+        margin: 0 auto;
+        padding: 0 1rem;
+    }
+
+    .content-grid-2col {
+        display: grid;
+        grid-template-columns: repeat(auto-fit, minmax(350px, 1fr));
+        gap: 2rem;
+    }
+
+    /* ====== Content Card ====== */
+    .content-card {
+        background: linear-gradient(135deg, rgba(255, 255, 255, 0.95) 0%, rgba(255, 255, 255, 0.85) 100%);
+        border: 1px solid rgba(78, 115, 223, 0.1);
+        border-radius: 20px;
+        backdrop-filter: blur(10px);
+        overflow: hidden;
+        box-shadow: 0 8px 32px 0 rgba(31, 38, 135, 0.07);
+        animation: slideInUp 0.6s ease;
+    }
+
+    .content-card.full-width {
+        grid-column: 1 / -1;
+    }
+
+    .card-header-custom {
+        display: flex;
+        align-items: center;
+        gap: 1rem;
+        background: linear-gradient(135deg, rgba(78, 115, 223, 0.08) 0%, rgba(28, 200, 138, 0.08) 100%);
+        padding: 1.5rem;
+        border-bottom: 2px solid rgba(78, 115, 223, 0.1);
+    }
+
+    .card-header-custom i {
+        font-size: 1.3rem;
+        color: #4e73df;
+    }
+
+    .card-header-custom h3 {
+        margin: 0;
+        font-size: 1.2rem;
+        color: #2e3440;
+        flex: 1;
+    }
+
+    .badge-count {
+        background: linear-gradient(135deg, #4e73df 0%, #1cc88a 100%);
+        color: white;
+        padding: 0.4rem 0.8rem;
+        border-radius: 20px;
+        font-size: 0.85rem;
+        font-weight: 700;
+    }
+
+    .view-all-link {
+        color: #4e73df;
+        text-decoration: none;
+        font-weight: 600;
+        font-size: 0.9rem;
+        transition: all 0.3s ease;
+    }
+
+    .view-all-link:hover {
+        color: #1cc88a;
+    }
+
+    .card-body-custom {
+        padding: 2rem;
+    }
+
+    /* ====== Payments Table ====== */
+    .payments-table,
+    .structures-table {
+        display: flex;
+        flex-direction: column;
+        gap: 0;
+    }
+
+    .table-header {
+        display: grid;
+        grid-template-columns: 1fr 150px 120px 150px 100px;
+        gap: 1rem;
+        padding: 1rem;
+        background: linear-gradient(135deg, rgba(78, 115, 223, 0.08) 0%, rgba(28, 200, 138, 0.08) 100%);
+        border-radius: 8px 8px 0 0;
+        font-weight: 700;
+        color: #2e3440;
+        font-size: 0.85rem;
+        text-transform: uppercase;
+        letter-spacing: 0.5px;
+    }
+
+    .table-row {
+        display: grid;
+        grid-template-columns: 1fr 150px 120px 150px 100px;
+        gap: 1rem;
+        padding: 1rem;
+        border-bottom: 1px solid rgba(78, 115, 223, 0.1);
+        align-items: center;
+        transition: all 0.3s ease;
+    }
+
+    .table-row:hover {
+        background: rgba(78, 115, 223, 0.03);
+    }
+
+    .table-row:last-child {
+        border-bottom: none;
+    }
+
+    .student-cell {
+        display: flex;
+        align-items: center;
+        gap: 1rem;
+    }
+
+    .avatar-badge {
+        width: 45px;
+        height: 45px;
+        border-radius: 10px;
+        background: linear-gradient(135deg, #4e73df 0%, #1cc88a 100%);
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        color: white;
+        flex-shrink: 0;
+    }
+
+    .student-name {
+        font-weight: 600;
+        color: #2e3440;
+    }
+
+    .fee-type-badge {
+        display: inline-flex;
+        background: rgba(78, 115, 223, 0.15);
+        color: #4e73df;
+        padding: 0.4rem 0.8rem;
+        border-radius: 6px;
+        font-size: 0.85rem;
+        font-weight: 600;
+    }
+
+    .amount-value {
+        font-weight: 700;
+        color: #1cc88a;
+        font-size: 1rem;
+    }
+
+    .date-label {
+        color: #6c757d;
+        font-size: 0.9rem;
+    }
+
+    .action-icon {
+        display: inline-flex;
+        align-items: center;
+        justify-content: center;
+        width: 35px;
+        height: 35px;
+        border-radius: 8px;
+        background: rgba(78, 115, 223, 0.1);
+        color: #4e73df;
+        text-decoration: none;
+        transition: all 0.3s ease;
+    }
+
+    .action-icon:hover {
+        background: linear-gradient(135deg, #4e73df 0%, #1cc88a 100%);
+        color: white;
+        transform: translateY(-2px);
+    }
+
+    /* ====== Chart Container ====== */
+    .chart-container {
+        position: relative;
+        height: 300px;
+        margin-bottom: 1.5rem;
+    }
+
+    .chart-legend {
+        display: flex;
+        justify-content: center;
+        gap: 2rem;
+        padding-top: 1rem;
+        border-top: 1px solid rgba(78, 115, 223, 0.1);
+    }
+
+    .legend-item {
+        display: flex;
+        align-items: center;
+        gap: 0.5rem;
+        font-weight: 600;
+        color: #2e3440;
+    }
+
+    .legend-dot {
+        width: 12px;
+        height: 12px;
+        border-radius: 50%;
+    }
+
+    .legend-item.collected .legend-dot {
+        background: linear-gradient(135deg, #1cc88a 0%, #13a968 100%);
+    }
+
+    .legend-item.pending .legend-dot {
+        background: linear-gradient(135deg, #ffc107 0%, #ff9800 100%);
+    }
+
+    /* ====== Fee Structures List ====== */
+    .fee-structures-list {
+        display: flex;
+        flex-direction: column;
+        gap: 1rem;
+    }
+
+    .fee-structure-item {
+        background: linear-gradient(135deg, rgba(78, 115, 223, 0.05) 0%, rgba(28, 200, 138, 0.05) 100%);
+        border: 1px solid rgba(78, 115, 223, 0.1);
+        border-radius: 12px;
+        padding: 1.25rem;
+        transition: all 0.3s ease;
+    }
+
+    .fee-structure-item:hover {
+        border-color: rgba(78, 115, 223, 0.2);
+        box-shadow: 0 5px 15px rgba(78, 115, 223, 0.1);
+    }
+
+    .structure-header {
+        display: flex;
+        gap: 0.75rem;
+        margin-bottom: 0.75rem;
+    }
+
+    .class-badge,
+    .term-badge {
+        display: inline-flex;
+        padding: 0.3rem 0.75rem;
+        border-radius: 6px;
+        font-size: 0.75rem;
+        font-weight: 600;
+    }
+
+    .class-badge {
+        background: linear-gradient(135deg, rgba(78, 115, 223, 0.2) 0%, rgba(224, 174, 223, 0.2) 100%);
+        color: #4e73df;
+    }
+
+    .term-badge {
+        background: linear-gradient(135deg, rgba(28, 200, 138, 0.2) 0%, rgba(13, 202, 240, 0.2) 100%);
+        color: #1cc88a;
+    }
+
+    .structure-body {
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        gap: 1rem;
+    }
+
+    .structure-info {
+        flex: 1;
+    }
+
+    .info-row {
+        display: flex;
+        align-items: center;
+        gap: 0.5rem;
+        font-size: 0.9rem;
+        color: #2e3440;
+        margin-bottom: 0.3rem;
+    }
+
+    .info-row:last-child {
+        margin-bottom: 0;
+    }
+
+    .info-row i {
+        color: #4e73df;
+        font-size: 0.8rem;
+    }
+
+    .info-label {
+        font-weight: 600;
+        color: #2e3440;
+    }
+
+    .structure-amount {
+        font-size: 1.25rem;
+        font-weight: 800;
+        color: #4e73df;
+        white-space: nowrap;
+    }
+
+    .view-more-link {
+        text-align: center;
+        padding-top: 1rem;
+        border-top: 1px solid rgba(78, 115, 223, 0.1);
+    }
+
+    .view-more-link a {
+        color: #4e73df;
+        text-decoration: none;
+        font-weight: 600;
+        transition: all 0.3s ease;
+    }
+
+    .view-more-link a:hover {
+        color: #1cc88a;
+    }
+
+    /* ====== Structures Table ====== */
+    .structures-table .table-header,
+    .structures-table .table-row {
+        grid-template-columns: 120px 1fr 100px 120px 140px;
+    }
+
+    .class-name,
+    .type-name,
+    .amount-strong {
+        font-weight: 600;
+        color: #2e3440;
+    }
+
+    .term-label {
+        display: inline-flex;
+        background: rgba(28, 200, 138, 0.15);
+        color: #1cc88a;
+        padding: 0.3rem 0.75rem;
+        border-radius: 6px;
+        font-size: 0.85rem;
+        font-weight: 600;
+    }
+
+    .amount-strong {
+        font-size: 1.05rem;
+        color: #4e73df;
+    }
+
+    .date-badge {
+        display: inline-flex;
+        background: rgba(78, 115, 223, 0.1);
+        color: #4e73df;
+        padding: 0.3rem 0.8rem;
+        border-radius: 6px;
+        font-size: 0.8rem;
+        font-weight: 600;
+    }
+
+    /* ====== Empty State ====== */
+    .empty-state {
+        text-align: center;
+        padding: 3rem 2rem;
+    }
+
+    .empty-state i {
+        font-size: 3rem;
+        color: rgba(78, 115, 223, 0.2);
+        margin-bottom: 1rem;
+    }
+
+    .empty-state p {
+        color: #6c757d;
+        font-size: 1rem;
+        margin: 0;
+    }
+
+    /* ====== Action Buttons ====== */
+    .action-buttons {
+        display: flex;
+        gap: 1rem;
+        flex-wrap: wrap;
+    }
+
+    .btn-action-primary,
+    .btn-action-secondary {
+        display: inline-flex;
+        align-items: center;
+        padding: 0.75rem 1.75rem;
+        text-decoration: none;
+        border-radius: 12px;
+        font-weight: 600;
+        transition: all 0.3s ease;
+        border: none;
+        cursor: pointer;
+    }
+
+    .btn-action-primary {
+        background: linear-gradient(135deg, #4e73df 0%, #1cc88a 100%);
+        color: white;
+        box-shadow: 0 4px 15px rgba(78, 115, 223, 0.3);
+    }
+
+    .btn-action-primary:hover {
+        transform: translateY(-2px);
+        box-shadow: 0 8px 25px rgba(78, 115, 223, 0.4);
+        color: white;
+    }
+
+    .btn-action-secondary {
+        background: rgba(78, 115, 223, 0.1);
+        color: #4e73df;
+    }
+
+    .btn-action-secondary:hover {
+        background: rgba(78, 115, 223, 0.2);
+    }
+
+    /* ====== Modal ====== */
+    .glass-modal {
+        background: linear-gradient(135deg, rgba(255, 255, 255, 0.95) 0%, rgba(255, 255, 255, 0.85) 100%);
+        border: 1px solid rgba(78, 115, 223, 0.1);
+        backdrop-filter: blur(10px);
+        border-radius: 20px;
+        box-shadow: 0 20px 60px rgba(0, 0, 0, 0.15);
+        animation: modalSlideIn 0.4s ease;
+    }
+
+    @keyframes modalSlideIn {
+        from {
+            opacity: 0;
+            transform: scale(0.95) translateY(20px);
+        }
+        to {
+            opacity: 1;
+            transform: scale(1) translateY(0);
+        }
+    }
+
+    .glass-header {
+        background: linear-gradient(135deg, rgba(78, 115, 223, 0.08) 0%, rgba(28, 200, 138, 0.08) 100%);
+        border-bottom: 2px solid rgba(78, 115, 223, 0.1);
+        padding: 2rem;
+        border-radius: 20px 20px 0 0;
+    }
+
+    .modal-header-content {
+        display: flex;
+        align-items: center;
+        gap: 1.25rem;
+        flex: 1;
+    }
+
+    .modal-icon {
+        width: 50px;
+        height: 50px;
+        border-radius: 12px;
+        background: linear-gradient(135deg, #4e73df 0%, #1cc88a 100%);
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        color: white;
+        font-size: 1.5rem;
+        flex-shrink: 0;
+    }
+
+    .modal-title {
+        margin: 0;
+        font-size: 1.3rem;
+        font-weight: 700;
+        color: #2e3440;
+    }
+
+    .modal-subtitle {
+        margin: 0.25rem 0 0 0;
+        font-size: 0.9rem;
+        color: #6c757d;
+        font-weight: 500;
+    }
+
+    .btn-modal-close {
+        background: rgba(78, 115, 223, 0.1);
+        border: none;
+        border-radius: 10px;
+        width: 40px;
+        height: 40px;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        color: #4e73df;
+        cursor: pointer;
+        transition: all 0.3s ease;
+        padding: 0;
+        margin-left: auto;
+        flex-shrink: 0;
+    }
+
+    .btn-modal-close:hover {
+        background: rgba(78, 115, 223, 0.2);
+        transform: rotate(90deg);
+    }
+
+    .glass-body {
+        padding: 2rem;
+    }
+
+    .form-content {
+        display: flex;
+        flex-direction: column;
+        gap: 1.5rem;
+    }
+
+    .form-content form {
+        display: flex;
+        flex-direction: column;
+        gap: 1rem;
+    }
+
+    .form-group {
+        display: flex;
+        flex-direction: column;
+        gap: 0.5rem;
+    }
+
+    .form-group label {
+        font-weight: 600;
+        color: #2e3440;
+        font-size: 0.95rem;
+    }
+
+    .form-group input,
+    .form-group textarea,
+    .form-group select {
+        padding: 0.75rem 1rem;
+        border: 1px solid rgba(78, 115, 223, 0.2);
+        border-radius: 10px;
+        background: rgba(255, 255, 255, 0.5);
+        color: #2e3440;
+        font-size: 0.95rem;
+        transition: all 0.3s ease;
+    }
+
+    .form-group input:focus,
+    .form-group textarea:focus,
+    .form-group select:focus {
+        outline: none;
+        border-color: #4e73df;
+        background: white;
+        box-shadow: 0 0 0 3px rgba(78, 115, 223, 0.1);
+    }
+
+    .glass-footer {
+        background: linear-gradient(135deg, rgba(78, 115, 223, 0.02) 0%, rgba(28, 200, 138, 0.02) 100%);
+        border-top: 1px solid rgba(78, 115, 223, 0.1);
+        padding: 1.5rem 2rem;
+        border-radius: 0 0 20px 20px;
+        display: flex;
+        gap: 1rem;
+        justify-content: flex-end;
+    }
+
+    .btn-modal-primary,
+    .btn-modal-secondary {
+        padding: 0.75rem 1.75rem;
+        border-radius: 10px;
+        font-weight: 600;
+        border: none;
+        cursor: pointer;
+        transition: all 0.3s ease;
+        display: inline-flex;
+        align-items: center;
+        gap: 0.5rem;
+        font-size: 0.95rem;
+    }
+
+    .btn-modal-primary {
+        background: linear-gradient(135deg, #4e73df 0%, #1cc88a 100%);
+        color: white;
+        box-shadow: 0 4px 15px rgba(78, 115, 223, 0.3);
+    }
+
+    .btn-modal-primary:hover {
+        transform: translateY(-2px);
+        box-shadow: 0 8px 25px rgba(78, 115, 223, 0.4);
+    }
+
+    .btn-modal-secondary {
+        background: rgba(78, 115, 223, 0.1);
+        color: #4e73df;
+        border: 1px solid rgba(78, 115, 223, 0.2);
+    }
+
+    .btn-modal-secondary:hover {
+        background: rgba(78, 115, 223, 0.2);
+        border-color: rgba(78, 115, 223, 0.3);
+    }
+
+    /* Modal backdrop enhancement */
+    .modal-backdrop {
+        backdrop-filter: blur(5px);
+        background-color: rgba(0, 0, 0, 0.3);
+    }
+
+    /* ====== Animations ====== */
+    @keyframes fadeIn {
+        from { opacity: 0; }
+        to { opacity: 1; }
+    }
+
+    @keyframes slideInUp {
+        from {
+            opacity: 0;
+            transform: translateY(30px);
+        }
+        to {
+            opacity: 1;
+            transform: translateY(0);
+        }
+    }
+
+    /* ====== Responsive Design ====== */
+    @media (max-width: 1024px) {
+        .stats-grid {
+            grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
+        }
+
+        .dashboard-title {
+            font-size: 2rem;
+        }
+
+        .content-grid-2col {
+            grid-template-columns: 1fr;
+        }
+    }
+
+    @media (max-width: 768px) {
+        .fees-dashboard-container {
+            padding-bottom: 2rem;
+        }
+
+        .hero-section {
+            height: auto;
+            min-height: 280px;
+            padding: 2rem 1rem 2.5rem;
+            margin-bottom: 2rem;
+        }
+
+        .dashboard-badge {
+            font-size: 0.75rem;
+            padding: 0.5rem 1rem;
+        }
+
+        .dashboard-title {
+            font-size: 1.75rem;
+            margin-bottom: 0.75rem;
+        }
+
+        .hero-subtitle {
+            font-size: 0.95rem;
+        }
+
+        .stats-grid {
+            margin: -1.75rem 1rem 2rem 1rem;
+            grid-template-columns: 1fr;
+            gap: 1.5rem;
+        }
+
+        .stat-card {
+            flex-direction: column;
+            text-align: center;
+            padding: 1.5rem;
+        }
+
+        .stat-icon {
+            width: 60px;
+            height: 60px;
+            font-size: 1.5rem;
+            margin: 0 auto;
+        }
+
+        .stat-content {
+            width: 100%;
+        }
+
+        .stat-value {
+            font-size: 1.75rem;
+        }
+
+        .stat-bar {
+            margin-top: 0.75rem;
+        }
+
+        .content-grid {
+            gap: 1.5rem;
+            padding: 0 1rem;
+        }
+
+        .card-body-custom {
+            padding: 1.5rem 1rem;
+        }
+
+        .card-header-custom {
+            padding: 1.25rem 1rem;
+            gap: 0.75rem;
+        }
+
+        .card-header-custom h3 {
+            font-size: 1.1rem;
+        }
+
+        .card-header-custom i {
+            font-size: 1.1rem;
+        }
+
+        .badge-count {
+            padding: 0.3rem 0.6rem;
+            font-size: 0.75rem;
+        }
+
+        .view-all-link {
+            font-size: 0.85rem;
+        }
+
+        /* Tables Mobile Optimization */
+        .payments-table,
+        .structures-table {
+            gap: 0.5rem;
+        }
+
+        .table-header {
+            grid-template-columns: 1fr 80px !important;
+            gap: 0.75rem;
+            padding: 0.75rem;
+            font-size: 0.75rem;
+        }
+
+        .table-row {
+            grid-template-columns: 1fr 80px !important;
+            gap: 0.75rem;
+            padding: 0.75rem;
+            flex-wrap: wrap;
+        }
+
+        .col-student,
+        .col-amount {
+            grid-column: 1 / 2;
+        }
+
+        .col-action {
+            grid-column: 2 / 3;
+            grid-row: 1 / 3;
+        }
+
+        .col-date,
+        .col-fee,
+        .col-type,
+        .col-term,
+        .col-admission,
+        .col-gender,
+        .col-attendance {
+            display: none !important;
+        }
+
+        .student-cell {
+            gap: 0.75rem;
+        }
+
+        .avatar-badge {
+            width: 40px;
+            height: 40px;
+            font-size: 0.9rem;
+        }
+
+        .student-name {
+            font-size: 0.9rem;
+        }
+
+        .amount-value {
+            font-size: 0.95rem;
+        }
+
+        .action-icon {
+            width: 32px;
+            height: 32px;
+            font-size: 0.85rem;
+        }
+
+        /* Fee Structures Mobile */
+        .fee-structures-list {
+            gap: 0.75rem;
+        }
+
+        .fee-structure-item {
+            padding: 1rem;
+        }
+
+        .structure-header {
+            gap: 0.5rem;
+            margin-bottom: 0.5rem;
+        }
+
+        .class-badge,
+        .term-badge {
+            padding: 0.25rem 0.5rem;
+            font-size: 0.7rem;
+        }
+
+        .structure-body {
+            flex-direction: column;
+            gap: 0.75rem;
+        }
+
+        .structure-amount {
+            font-size: 1.1rem;
+        }
+
+        .info-row {
+            font-size: 0.85rem;
+        }
+
+        /* Chart Container Mobile */
+        .chart-container {
+            height: 250px;
+        }
+
+        .chart-legend {
+            gap: 1rem;
+            flex-wrap: wrap;
+            padding-top: 1rem;
+        }
+
+        .legend-item {
+            font-size: 0.9rem;
+        }
+
+        /* Modal Mobile */
+        .modal-dialog {
+            margin: 0.5rem;
+        }
+
+        .glass-modal {
+            border-radius: 16px;
+        }
+
+        .glass-header {
+            padding: 1.5rem 1rem;
+            border-radius: 16px 16px 0 0;
+        }
+
+        .modal-header-content {
+            flex-direction: column;
+            gap: 1rem;
+            align-items: flex-start;
+        }
+
+        .modal-icon {
+            width: 45px;
+            height: 45px;
+            font-size: 1.25rem;
+        }
+
+        .modal-title {
+            font-size: 1.1rem;
+        }
+
+        .modal-subtitle {
+            font-size: 0.85rem;
+        }
+
+        .btn-modal-close {
+            width: 36px;
+            height: 36px;
+            margin-left: auto;
+            margin-top: -0.5rem;
+        }
+
+        .glass-body {
+            padding: 1.5rem 1rem;
+        }
+
+        .glass-footer {
+            padding: 1rem;
+            border-radius: 0 0 16px 16px;
+            flex-direction: column;
+            gap: 0.75rem;
+        }
+
+        .btn-modal-primary,
+        .btn-modal-secondary {
+            padding: 0.65rem 1.25rem;
+            font-size: 0.9rem;
+            width: 100%;
+            justify-content: center;
+        }
+
+        /* Action Buttons Mobile */
+        .action-buttons {
+            gap: 0.75rem;
+        }
+
+        .btn-action-primary,
+        .btn-action-secondary {
+            padding: 0.65rem 1.25rem;
+            font-size: 0.85rem;
+            flex: 1;
+            min-width: 120px;
+        }
+
+        /* Empty State Mobile */
+        .empty-state {
+            padding: 2rem 1rem;
+        }
+
+        .empty-state i {
+            font-size: 2.5rem;
+        }
+
+        .empty-state p {
+            font-size: 0.95rem;
+        }
+
+        .view-more-link {
+            padding-top: 0.75rem;
+            font-size: 0.85rem;
+        }
+
+        .view-more-link a {
+            font-size: 0.85rem;
+        }
+    }
+
+    @media (max-width: 480px) {
+        .hero-section {
+            min-height: 240px;
+            padding: 1.5rem 1rem 2rem;
+        }
+
+        .dashboard-badge {
+            font-size: 0.7rem;
+            padding: 0.4rem 0.8rem;
+        }
+
+        .dashboard-title {
+            font-size: 1.5rem;
+            margin-bottom: 0.5rem;
+        }
+
+        .hero-subtitle {
+            font-size: 0.85rem;
+        }
+
+        .stats-grid {
+            margin: -1.5rem 0.75rem 1.5rem 0.75rem;
+            gap: 1rem;
+        }
+
+        .stat-card {
+            padding: 1.25rem 1rem;
+        }
+
+        .stat-icon {
+            width: 55px;
+            height: 55px;
+        }
+
+        .stat-value {
+            font-size: 1.5rem;
+        }
+
+        .stat-label {
+            font-size: 0.7rem;
+        }
+
+        .stat-meta {
+            font-size: 0.75rem;
+        }
+
+        .content-grid {
+            padding: 0 0.75rem;
+            gap: 1rem;
+        }
+
+        .content-card {
+            border-radius: 16px;
+        }
+
+        .card-header-custom {
+            padding: 1rem 0.75rem;
+            flex-wrap: wrap;
+        }
+
+        .card-header-custom h3 {
+            font-size: 1rem;
+        }
+
+        .card-header-custom i {
+            font-size: 1rem;
+        }
+
+        .badge-count {
+            padding: 0.25rem 0.5rem;
+            font-size: 0.65rem;
+        }
+
+        .view-all-link {
+            font-size: 0.75rem;
+            width: 100%;
+            text-align: center;
+        }
+
+        .card-body-custom {
+            padding: 1rem 0.75rem;
+        }
+
+        .table-header {
+            grid-template-columns: 1fr !important;
+            gap: 0.5rem;
+            padding: 0.5rem;
+            font-size: 0.7rem;
+        }
+
+        .table-row {
+            grid-template-columns: 1fr !important;
+            gap: 0.5rem;
+            padding: 0.5rem;
+        }
+
+        .col-action {
+            display: none !important;
+        }
+
+        .student-cell {
+            gap: 0.5rem;
+        }
+
+        .avatar-badge {
+            width: 35px;
+            height: 35px;
+            font-size: 0.8rem;
+        }
+
+        .student-name {
+            font-size: 0.8rem;
+        }
+
+        .amount-value {
+            font-size: 0.9rem;
+        }
+
+        .fee-structure-item {
+            padding: 0.75rem;
+        }
+
+        .structure-header {
+            gap: 0.4rem;
+            margin-bottom: 0.4rem;
+        }
+
+        .class-badge,
+        .term-badge {
+            padding: 0.2rem 0.4rem;
+            font-size: 0.65rem;
+        }
+
+        .structure-amount {
+            font-size: 1rem;
+        }
+
+        .info-row {
+            font-size: 0.8rem;
+        }
+
+        .chart-container {
+            height: 200px;
+        }
+
+        .modal-dialog {
+            margin: 0.25rem;
+        }
+
+        .glass-header {
+            padding: 1.25rem 0.75rem;
+        }
+
+        .modal-header-content {
+            gap: 0.75rem;
+        }
+
+        .modal-icon {
+            width: 40px;
+            height: 40px;
+            font-size: 1.1rem;
+        }
+
+        .modal-title {
+            font-size: 1rem;
+        }
+
+        .modal-subtitle {
+            font-size: 0.8rem;
+        }
+
+        .btn-modal-close {
+            width: 32px;
+            height: 32px;
+            font-size: 0.85rem;
+        }
+
+        .glass-body {
+            padding: 1.25rem 0.75rem;
+        }
+
+        .glass-footer {
+            padding: 0.75rem;
+        }
+
+        .btn-modal-primary,
+        .btn-modal-secondary {
+            padding: 0.6rem 1rem;
+            font-size: 0.8rem;
+        }
+
+        .btn-action-primary,
+        .btn-action-secondary {
+            padding: 0.6rem 1rem;
+            font-size: 0.8rem;
+        }
+
+        .action-buttons {
+            gap: 0.5rem;
+        }
+
+        .btn-action-primary,
+        .btn-action-secondary {
+            min-width: auto;
+            flex: 1;
+        }
+    }
+
+    /* Dark Mode Support */
+    [data-bs-theme="dark"] .fees-dashboard-container {
+        background: linear-gradient(135deg, #1a1f2e 0%, #2d3436 100%);
+    }
+
+    [data-bs-theme="dark"] .stat-card,
+    [data-bs-theme="dark"] .content-card {
+        background: linear-gradient(135deg, rgba(45, 52, 64, 0.9) 0%, rgba(45, 52, 64, 0.8) 100%);
+    }
+
+    /* Dark mode text colors */
+    [data-bs-theme="dark"] .dashboard-title,
+    [data-bs-theme="dark"] .stat-value,
+    [data-bs-theme="dark"] .card-header-custom h3,
+    [data-bs-theme="dark"] .student-name,
+    [data-bs-theme="dark"] .class-name,
+    [data-bs-theme="dark"] .type-name,
+    [data-bs-theme="dark"] .amount-strong {
+        color: #e0e0e0;
+    }
+
+    [data-bs-theme="dark"] .stat-label,
+    [data-bs-theme="dark"] .stat-meta,
+    [data-bs-theme="dark"] .info-label,
+    [data-bs-theme="dark"] .empty-state p,
+    [data-bs-theme="dark"] .date-label {
+        color: #b0b0b0;
+    }
+
+    [data-bs-theme="dark"] .fee-type-badge {
+        background: rgba(78, 115, 223, 0.25);
+        color: #7fb3ff;
+    }
+
+    [data-bs-theme="dark"] .table-header {
+        background: rgba(78, 115, 223, 0.15);
+        color: #e0e0e0;
+    }
+
+    [data-bs-theme="dark"] .table-row {
+        border-color: rgba(78, 115, 223, 0.15);
+    }
+
+    [data-bs-theme="dark"] .table-row:hover {
+        background: rgba(78, 115, 223, 0.1);
+    }
+
+    [data-bs-theme="dark"] .card-header-custom {
+        background: rgba(78, 115, 223, 0.1);
+        border-color: rgba(78, 115, 223, 0.2);
+    }
+
+    [data-bs-theme="dark"] .view-all-link {
+        color: #7fb3ff;
+    }
+
+    [data-bs-theme="dark"] .view-all-link:hover {
+        color: #6dd5ed;
+    }
+
+    [data-bs-theme="dark"] .date-badge {
+        background: rgba(78, 115, 223, 0.2);
+        color: #7fb3ff;
+    }
+
+    [data-bs-theme="dark"] .term-label {
+        background: rgba(28, 200, 138, 0.2);
+        color: #6dd5ed;
+    }
+
+    [data-bs-theme="dark"] .class-badge {
+        background: rgba(78, 115, 223, 0.15);
+        color: #7fb3ff;
+    }
+
+    [data-bs-theme="dark"] .term-badge {
+        background: rgba(28, 200, 138, 0.15);
+        color: #6dd5ed;
+    }
+
+    [data-bs-theme="dark"] .fee-structure-item {
+        background: rgba(78, 115, 223, 0.08);
+        border-color: rgba(78, 115, 223, 0.15);
+    }
+
+    [data-bs-theme="dark"] .fee-structure-item:hover {
+        border-color: rgba(78, 115, 223, 0.25);
+    }
+
+    [data-bs-theme="dark"] .structure-amount {
+        color: #7fb3ff;
+    }
+
+    [data-bs-theme="dark"] .info-row {
+        color: #b0b0b0;
+    }
+
+    [data-bs-theme="dark"] .view-more-link {
+        border-color: rgba(78, 115, 223, 0.15);
+    }
+
+    [data-bs-theme="dark"] .view-more-link a {
+        color: #7fb3ff;
+    }
+
+    [data-bs-theme="dark"] .view-more-link a:hover {
+        color: #6dd5ed;
+    }
+
+    [data-bs-theme="dark"] .amount-value {
+        color: #6dd5ed;
+    }
+
+    [data-bs-theme="dark"] .glass-modal {
+        background: linear-gradient(135deg, rgba(45, 52, 64, 0.95) 0%, rgba(45, 52, 64, 0.85) 100%);
+    }
+
+    [data-bs-theme="dark"] .glass-header {
+        background: rgba(78, 115, 223, 0.1);
+        border-color: rgba(78, 115, 223, 0.2);
+    }
+
+    [data-bs-theme="dark"] .glass-header .modal-title,
+    [data-bs-theme="dark"] .modal-title {
+        color: #e0e0e0;
+    }
+
+    [data-bs-theme="dark"] .modal-subtitle {
+        color: #b0b0b0;
+    }
+
+    [data-bs-theme="dark"] .btn-modal-close {
+        background: rgba(78, 115, 223, 0.15);
+        color: #7fb3ff;
+    }
+
+    [data-bs-theme="dark"] .btn-modal-close:hover {
+        background: rgba(78, 115, 223, 0.25);
+    }
+
+    [data-bs-theme="dark"] .glass-footer {
+        background: rgba(78, 115, 223, 0.05);
+        border-color: rgba(78, 115, 223, 0.15);
+    }
+
+    [data-bs-theme="dark"] .form-group label {
+        color: #e0e0e0;
+    }
+
+    [data-bs-theme="dark"] .form-group input,
+    [data-bs-theme="dark"] .form-group textarea,
+    [data-bs-theme="dark"] .form-group select {
+        background: rgba(78, 115, 223, 0.1);
+        color: #e0e0e0;
+        border-color: rgba(78, 115, 223, 0.2);
+    }
+
+    [data-bs-theme="dark"] .form-group input::placeholder,
+    [data-bs-theme="dark"] .form-group textarea::placeholder {
+        color: #7fb3ff;
+    }
+
+    [data-bs-theme="dark"] .form-group input:focus,
+    [data-bs-theme="dark"] .form-group textarea:focus,
+    [data-bs-theme="dark"] .form-group select:focus {
+        background: rgba(78, 115, 223, 0.15);
+        border-color: #7fb3ff;
+        box-shadow: 0 0 0 3px rgba(127, 179, 255, 0.1);
+    }
+
+    [data-bs-theme="dark"] .btn-modal-secondary {
+        background: rgba(78, 115, 223, 0.15);
+        color: #7fb3ff;
+        border-color: rgba(78, 115, 223, 0.3);
+    }
+
+    [data-bs-theme="dark"] .btn-modal-secondary:hover {
+        background: rgba(78, 115, 223, 0.25);
+        border-color: rgba(78, 115, 223, 0.4);
+    }
+
+    [data-bs-theme="dark"] .btn-action-secondary {
+        background: rgba(78, 115, 223, 0.15);
+        color: #7fb3ff;
+    }
+
+    [data-bs-theme="dark"] .btn-action-secondary:hover {
+        background: rgba(78, 115, 223, 0.25);
+    }
+
+    [data-bs-theme="dark"] .stat-bar {
+        background: rgba(78, 115, 223, 0.15);
+    }
+
+    [data-bs-theme="dark"] .legend-item {
+        color: #b0b0b0;
+    }
+
+    [data-bs-theme="dark"] .empty-state i {
+        color: rgba(127, 179, 255, 0.2);
+    }
+
+    [data-bs-theme="dark"] .chart-legend {
+        border-color: rgba(78, 115, 223, 0.15);
+    }
+</style>
+{% endblock %}
+
+{% block extra_js %}
+<script src="https://cdn.jsdelivr.net/npm/chart.js@3.9.1/dist/chart.min.js"></script>
+<script>
+    document.addEventListener('DOMContentLoaded', function() {
+        const ctx = document.getElementById('collectionChart');
+        if (ctx) {
+            const collectionChart = new Chart(ctx, {
+                type: 'doughnut',
+                data: {
+                    labels: ['Collected', 'Pending'],
+                    datasets: [{
+                        data: [{{ total_collected }}, {{ pending_amount }}],
+                        backgroundColor: [
+                            'rgba(28, 200, 138, 0.8)',
+                            'rgba(255, 193, 7, 0.8)'
+                        ],
+                        borderColor: [
+                            '#1cc88a',
+                            '#ffc107'
+                        ],
+                        borderWidth: 2,
+                        hoverBackgroundColor: [
+                            'rgba(19, 169, 104, 0.9)',
+                            'rgba(255, 152, 0, 0.9)'
+                        ]
+                    }]
+                },
+                options: {
+                    responsive: true,
+                    maintainAspectRatio: false,
+                    plugins: {
+                        legend: {
+                            display: false
+                        }
+                    },
+                    cutout: '65%'
+                }
+            });
+        }
+    });
+</script>
+{% endblock %}

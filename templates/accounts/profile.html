@@ -1,0 +1,206 @@
+{% extends 'base.html' %}
+{% load crispy_forms_tags %}
+
+{% block title %}My Profile{% endblock %}
+{% block page_title %}My Profile{% endblock %}
+
+{% block breadcrumb %}
+<li class="breadcrumb-item active">Profile</li>
+{% endblock %}
+
+{% block content %}
+<div class="row justify-content-center">
+    <div class="col-lg-8">
+
+        <!-- PROFILE CARD -->
+        <div class="card glass-card border-0 mb-4">
+            <div class="card-header bg-transparent border-0 pt-4 px-4">
+                <h5 class="mb-0 fw-bold">
+                    <i class="fas fa-user-circle me-2"></i>Profile Information
+                </h5>
+            </div>
+
+            <div class="card-body p-4">
+                <div class="row">
+
+                    <!-- PROFILE IMAGE -->
+                    <div class="col-lg-4 text-center mb-4">
+                        <div class="mb-3 position-relative d-inline-block">
+                        {% if user.profile_picture %}
+                            <img src="{{ user.profile_picture.url }}"
+                                 class="rounded-circle border border-2 border-light shadow-sm"
+                                 style="width:160px;height:160px;object-fit:cover;">
+                        {% else %}
+                            <div class="rounded-circle bg-gradient-primary text-white d-flex align-items-center justify-content-center shadow-sm"
+                                 style="width:160px;height:160px;">
+                                <i class="fas fa-user fa-4x"></i>
+                            </div>
+                        {% endif %}
+                        </div>
+
+                        <h4 class="fw-bold mb-1">{{ user.get_full_name }}</h4>
+                        <span class="badge glass-badge rounded-pill px-3 py-2">{{ user.get_user_type_display }}</span>
+
+                        <div class="d-grid mt-4">
+                            <button class="btn btn-glass" data-bs-toggle="modal" data-bs-target="#changePhotoModal">
+                                <i class="fas fa-camera me-2"></i> Change Photo
+                            </button>
+                        </div>
+                    </div>
+
+                    <!-- PROFILE FORM -->
+                    <div class="col-lg-8">
+                        <form method="post" enctype="multipart/form-data">
+                            {% csrf_token %}
+                            <input type="hidden" name="form_type" value="profile">
+
+                            <div class="row">
+                                <div class="col-md-6 mb-3">{{ form.first_name|as_crispy_field }}</div>
+                                <div class="col-md-6 mb-3">{{ form.last_name|as_crispy_field }}</div>
+                                <div class="col-md-6 mb-3">{{ form.email|as_crispy_field }}</div>
+                                <div class="col-md-6 mb-3">{{ form.phone|as_crispy_field }}</div>
+                                <div class="col-md-6 mb-3">{{ form.date_of_birth|as_crispy_field }}</div>
+                                <div class="col-md-6 mb-3">{{ form.gender|as_crispy_field }}</div>
+                                <div class="col-12 mb-3">{{ form.address|as_crispy_field }}</div>
+                                <div class="col-md-6 mb-3">{{ form.blood_group|as_crispy_field }}</div>
+                                <div class="col-md-6 mb-3">{{ form.nationality|as_crispy_field }}</div>
+                            </div>
+
+                            <div class="d-grid mt-3">
+                                <button class="btn btn-glass">
+                                    <i class="fas fa-save me-2"></i> Update Profile
+                                </button>
+                            </div>
+                        </form>
+                    </div>
+
+                </div>
+            </div>
+        </div>
+
+        <!-- STUDENT INFO -->
+        {% if user.user_type == 'student' and student %}
+        <div class="card glass-card border-0 mt-4">
+            <div class="card-header bg-transparent border-0 pt-4 px-4">
+                <h5 class="mb-0 fw-bold">
+                    <i class="fas fa-graduation-cap me-2"></i>Academic Information
+                </h5>
+            </div>
+            <div class="card-body p-4">
+                <div class="row g-3">
+                    <div class="col-md-4">
+                        <div class="p-3 rounded-3 glass-stat-box">
+                            <small class="d-block opacity-75 text-uppercase text-xs">Admission No</small>
+                            <span class="fw-bold">{{ student.admission_number }}</span>
+                        </div>
+                    </div>
+                    <div class="col-md-4">
+                        <div class="p-3 rounded-3 glass-stat-box">
+                            <small class="d-block opacity-75 text-uppercase text-xs">Roll No</small>
+                            <span class="fw-bold">{{ student.roll_number }}</span>
+                        </div>
+                    </div>
+                    <div class="col-md-4">
+                        <div class="p-3 rounded-3 glass-stat-box">
+                            <small class="d-block opacity-75 text-uppercase text-xs">Class</small>
+                            <span class="fw-bold">{{ student.class_enrolled }} - {{ student.section }}</span>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+        {% endif %}
+
+        <!-- TEACHER INFO -->
+        {% if user.user_type == 'teacher' and teacher %}
+        <div class="card glass-card border-0 mt-4">
+            <div class="card-header bg-transparent border-0 pt-4 px-4">
+                <h5 class="mb-0 fw-bold">
+                    <i class="fas fa-chalkboard-teacher me-2"></i>Professional Information
+                </h5>
+            </div>
+            <div class="card-body p-4">
+                <div class="row g-3">
+                    <div class="col-md-6">
+                        <div class="p-3 rounded-3 glass-stat-box">
+                            <small class="d-block opacity-75 text-uppercase text-xs">Employee ID</small>
+                            <span class="fw-bold">{{ teacher.employee_id }}</span>
+                        </div>
+                    </div>
+                    <div class="col-md-6">
+                        <div class="p-3 rounded-3 glass-stat-box">
+                            <small class="d-block opacity-75 text-uppercase text-xs">Designation</small>
+                            <span class="fw-bold">{{ teacher.designation }}</span>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+        {% endif %}
+
+    </div>
+</div>
+<!-- BEAUTIFUL CHANGE PHOTO MODAL -->
+<div class="modal fade" id="changePhotoModal" tabindex="-1">
+    <div class="modal-dialog modal-dialog-centered modal-sm">
+        <div class="modal-content glass-card border-0">
+
+            <form method="post" enctype="multipart/form-data" class="p-4 text-center">
+                {% csrf_token %}
+                <input type="hidden" name="form_type" value="photo">
+
+                <!-- MODAL HEADER -->
+                <div class="modal-header border-0 justify-content-center pb-0">
+                    <h5 class="modal-title fw-bold">Change Profile Picture</h5>
+                    <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+                </div>
+
+                <!-- IMAGE PREVIEW -->
+                <div class="mb-4 mt-4">
+                    <img id="previewImage"
+                         src="{% if user.profile_picture %}{{ user.profile_picture.url }}{% endif %}"
+                         class="rounded-circle border border-3 border-light shadow-sm"
+                         style="width:160px; height:160px; object-fit:cover; display: {% if user.profile_picture %}block{% else %}none{% endif %}; margin: 0 auto;">
+                </div>
+
+                <!-- CUSTOM FILE INPUT -->
+                <div class="mb-4">
+                    <label class="btn btn-glass w-100 rounded-pill position-relative overflow-hidden">
+                        <i class="fas fa-upload me-2"></i> Choose New Photo
+                        <input type="file" name="profile_picture" id="profile_picture" accept="image/*"
+                               class="position-absolute top-0 start-0 w-100 h-100 opacity-0 cursor-pointer">
+                    </label>
+                </div>
+
+                <!-- MODAL FOOTER BUTTONS -->
+                <div class="d-flex justify-content-between gap-2">
+                    <button type="button" class="btn btn-light border-0 rounded-pill px-4 bg-transparent text-muted" data-bs-dismiss="modal">
+                        Cancel
+                    </button>
+                    <button type="submit" class="btn btn-glass rounded-pill px-4">
+                        <i class="fas fa-check me-2"></i> Upload
+                    </button>
+                </div>
+
+            </form>
+        </div>
+    </div>
+</div>
+
+{% block extra_js %}
+<script>
+const input = document.getElementById('profile_picture');
+if (input) {
+    input.addEventListener('change', function () {
+        const reader = new FileReader();
+        reader.onload = function (e) {
+            const img = document.getElementById('previewImage');
+            img.src = e.target.result;
+            img.style.display = 'block';
+        };
+        reader.readAsDataURL(this.files[0]);
+    });
+}
+</script>
+{% endblock %}
+{% endblock %}

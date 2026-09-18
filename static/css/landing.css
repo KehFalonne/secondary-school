@@ -1,0 +1,130 @@
+:root {
+    --primary-color: #4e73df;
+    --secondary-color: #858796;
+    --accent-color: #1cc88a;
+    --dark-color: #1a1c23;
+    --light-color: #f8f9fc;
+}
+
+body {
+    font-family: 'Plus Jakarta Sans', sans-serif;
+    overflow-x: hidden;
+}
+
+h1, h2, h3, h4, h5, h6 {
+    font-family: 'Outfit', sans-serif;
+}
+
+/* Navbar */
+#mainNav {
+    transition: all 0.3s ease;
+    padding-top: 1.5rem;
+    padding-bottom: 1.5rem;
+    background-color: transparent;
+}
+
+#mainNav.navbar-scrolled {
+    background-color: rgba(26, 28, 35, 0.95);
+    backdrop-filter: blur(10px);
+    padding-top: 0.8rem;
+    padding-bottom: 0.8rem;
+    box-shadow: 0 2px 15px rgba(0,0,0,0.1);
+}
+
+/* Hero Section */
+.masthead {
+    position: relative;
+    background: linear-gradient(135deg, #1a1c23 0%, #2c3e50 100%);
+    padding-top: 10rem;
+    padding-bottom: 8rem;
+    min-height: 100vh;
+    display: flex;
+    align-items: center;
+    overflow: hidden;
+}
+
+.text-gradient {
+    background: linear-gradient(to right, #4e73df, #1cc88a);
+    -webkit-background-clip: text;
+    -webkit-text-fill-color: transparent;
+}
+
+.hero-shape {
+    position: absolute;
+    bottom: 0;
+    left: 0;
+    width: 100%;
+    line-height: 0;
+}
+
+.hero-img {
+    max-height: 500px;
+    filter: drop-shadow(0 10px 20px rgba(0,0,0,0.2));
+}
+
+.floating-anim {
+    animation: float 6s ease-in-out infinite;
+}
+
+@keyframes float {
+    0% { transform: translateY(0px); }
+    50% { transform: translateY(-20px); }
+    100% { transform: translateY(0px); }
+}
+
+/* Stats Cards */
+.stat-card {
+    transition: transform 0.3s ease, box-shadow 0.3s ease;
+}
+
+.stat-card:hover {
+    transform: translateY(-10px);
+    box-shadow: 0 15px 30px rgba(0,0,0,0.1) !important;
+}
+
+.icon-box {
+    width: 80px;
+    height: 80px;
+}
+
+/* Feature Cards */
+.feature-card {
+    transition: all 0.3s ease;
+    background: #fff;
+}
+
+.feature-card:hover {
+    transform: translateY(-5px);
+    box-shadow: 0 10px 25px rgba(0,0,0,0.08) !important;
+}
+
+.feature-icon {
+    width: 60px;
+    height: 60px;
+    border-radius: 12px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 1.5rem;
+}
+
+/* Footer */
+.social-icon {
+    width: 40px;
+    height: 40px;
+    background: rgba(255,255,255,0.1);
+    border-radius: 50%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    transition: all 0.3s ease;
+}
+
+.social-icon:hover {
+    background: var(--primary-color);
+    transform: translateY(-3px);
+}
+
+.border-white-10 {
+    border-color: rgba(255,255,255,0.1) !important;
+}

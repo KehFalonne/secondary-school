@@ -1,0 +1,385 @@
+{% extends 'base.html' %}
+
+{% block title %}Deactivate Student{% endblock %}
+{% block page_title %}Deactivate Student{% endblock %}
+
+{% block breadcrumb %}
+<li class="breadcrumb-item"><a href="{% url 'student_list' %}">Students</a></li>
+<li class="breadcrumb-item"><a href="{% url 'student_detail' student.admission_number %}">{{ student.user.get_full_name }}</a></li>
+<li class="breadcrumb-item active">Deactivate</li>
+{% endblock %}
+
+{% block content %}
+<style>
+    .modal-container {
+        min-height: 100vh;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        padding: 2rem;
+        animation: fadeInBg 0.4s ease;
+    }
+
+    @keyframes fadeInBg {
+        from { opacity: 0; }
+        to { opacity: 1; }
+    }
+
+    .confirmation-card {
+        background: linear-gradient(135deg, rgba(255, 255, 255, 0.08) 0%, rgba(255, 255, 255, 0.03) 100%);
+        border: 1px solid rgba(220, 38, 38, 0.2);
+        border-radius: 24px;
+        backdrop-filter: blur(10px);
+        max-width: 580px;
+        width: 100%;
+        padding: 3rem;
+        box-shadow: 0 20px 60px rgba(220, 38, 38, 0.15), inset 0 1px 0 rgba(255, 255, 255, 0.1);
+        animation: slideUp 0.6s cubic-bezier(0.34, 1.56, 0.64, 1);
+    }
+
+    @keyframes slideUp {
+        from { opacity: 0; transform: translateY(30px); }
+        to { opacity: 1; transform: translateY(0); }
+    }
+
+    .warning-icon-container {
+        width: 100px;
+        height: 100px;
+        background: linear-gradient(135deg, rgba(220, 38, 38, 0.2), rgba(220, 38, 38, 0.1));
+        border: 2px solid rgba(220, 38, 38, 0.3);
+        border-radius: 20px;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        margin: 0 auto 2rem;
+        font-size: 2.5rem;
+        color: #dc2626;
+        animation: pulse 2s ease infinite;
+    }
+
+    @keyframes pulse {
+        0%, 100% { transform: scale(1); }
+        50% { transform: scale(1.05); }
+    }
+
+    .confirmation-title {
+        font-size: 1.75rem;
+        font-weight: 800;
+        color: #dc2626;
+        text-align: center;
+        margin-bottom: 1rem;
+    }
+
+    .confirmation-subtitle {
+        color: rgba(0, 0, 0, 0.6);
+        text-align: center;
+        margin-bottom: 2.5rem;
+        font-size: 0.95rem;
+        line-height: 1.6;
+    }
+
+    [data-bs-theme="dark"] .confirmation-subtitle {
+        color: rgba(255, 255, 255, 0.7);
+    }
+
+    .student-info-card {
+        background: linear-gradient(135deg, rgba(220, 38, 38, 0.08), rgba(220, 38, 38, 0.04));
+        border: 1px solid rgba(220, 38, 38, 0.15);
+        border-radius: 16px;
+        padding: 1.5rem;
+        margin-bottom: 2rem;
+        animation: fadeInUp 0.6s ease 0.2s both;
+    }
+
+    @keyframes fadeInUp {
+        from { opacity: 0; transform: translateY(20px); }
+        to { opacity: 1; transform: translateY(0); }
+    }
+
+    .student-info-row {
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        padding: 0.75rem 0;
+        border-bottom: 1px solid rgba(220, 38, 38, 0.1);
+    }
+
+    .student-info-row:last-child {
+        border-bottom: none;
+    }
+
+    .info-label {
+        font-size: 0.8rem;
+        text-transform: uppercase;
+        color: rgba(0, 0, 0, 0.5);
+        font-weight: 700;
+        letter-spacing: 0.03em;
+    }
+
+    [data-bs-theme="dark"] .info-label {
+        color: rgba(255, 255, 255, 0.5);
+    }
+
+    .info-value {
+        font-weight: 700;
+        color: #dc2626;
+        font-size: 1rem;
+    }
+
+    .warning-box {
+        background: linear-gradient(135deg, rgba(220, 38, 38, 0.12), rgba(220, 38, 38, 0.06));
+        border-left: 4px solid #dc2626;
+        border-radius: 12px;
+        padding: 1.5rem;
+        margin-bottom: 2rem;
+        animation: fadeInUp 0.6s ease 0.3s both;
+    }
+
+    .warning-title {
+        font-weight: 700;
+        color: #dc2626;
+        margin-bottom: 0.75rem;
+        display: flex;
+        align-items: center;
+        gap: 0.5rem;
+    }
+
+    .warning-list {
+        list-style: none;
+        padding: 0;
+        margin: 0;
+    }
+
+    .warning-list li {
+        color: rgba(0, 0, 0, 0.7);
+        font-size: 0.9rem;
+        padding: 0.4rem 0;
+        display: flex;
+        align-items: center;
+        gap: 0.5rem;
+    }
+
+    [data-bs-theme="dark"] .warning-list li {
+        color: rgba(255, 255, 255, 0.7);
+    }
+
+    .warning-list li:before {
+        content: '✓';
+        color: #dc2626;
+        font-weight: bold;
+        margin-right: 0.25rem;
+    }
+
+    .reason-section {
+        margin-bottom: 2.5rem;
+        animation: fadeInUp 0.6s ease 0.4s both;
+    }
+
+    .form-label {
+        color: rgba(0, 0, 0, 0.7);
+        font-weight: 600;
+        font-size: 0.9rem;
+        margin-bottom: 0.6rem;
+        text-transform: uppercase;
+        letter-spacing: 0.03em;
+        display: block;
+    }
+
+    [data-bs-theme="dark"] .form-label {
+        color: rgba(255, 255, 255, 0.8);
+    }
+
+    .form-control {
+        background: rgba(255, 255, 255, 0.06);
+        border: 1px solid rgba(220, 38, 38, 0.2);
+        color: inherit;
+        border-radius: 12px;
+        padding: 0.85rem 1rem;
+        transition: all 0.3s ease;
+        font-weight: 500;
+    }
+
+    .form-control::placeholder {
+        color: rgba(0, 0, 0, 0.4);
+    }
+
+    [data-bs-theme="dark"] .form-control::placeholder {
+        color: rgba(255, 255, 255, 0.4);
+    }
+
+    .form-control:focus {
+        background: rgba(255, 255, 255, 0.1);
+        border-color: #dc2626;
+        box-shadow: 0 0 20px rgba(220, 38, 38, 0.4);
+        color: inherit;
+    }
+
+    .action-buttons {
+        display: flex;
+        gap: 1rem;
+        animation: fadeInUp 0.6s ease 0.5s both;
+    }
+
+    .btn-cancel {
+        flex: 1;
+        background: rgba(255, 255, 255, 0.1);
+        border: 1px solid rgba(78, 115, 223, 0.2);
+        color: #4e73df;
+        border-radius: 12px;
+        padding: 0.95rem 1.5rem;
+        font-weight: 600;
+        transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+        cursor: pointer;
+        text-decoration: none;
+        display: inline-flex;
+        align-items: center;
+        justify-content: center;
+        gap: 0.6rem;
+    }
+
+    .btn-cancel:hover {
+        background: rgba(78, 115, 223, 0.1);
+        border-color: #4e73df;
+        transform: translateY(-3px);
+        box-shadow: 0 10px 25px rgba(78, 115, 223, 0.2);
+        color: #4e73df;
+        text-decoration: none;
+    }
+
+    .btn-deactivate {
+        flex: 1;
+        background: linear-gradient(135deg, #dc2626, #b91c1c);
+        border: none;
+        color: white;
+        border-radius: 12px;
+        padding: 0.95rem 1.5rem;
+        font-weight: 600;
+        transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+        cursor: pointer;
+        display: inline-flex;
+        align-items: center;
+        justify-content: center;
+        gap: 0.6rem;
+        position: relative;
+        overflow: hidden;
+    }
+
+    .btn-deactivate::before {
+        content: '';
+        position: absolute;
+        top: 0;
+        left: -100%;
+        width: 100%;
+        height: 100%;
+        background: linear-gradient(90deg, transparent, rgba(255, 255, 255, 0.2), transparent);
+        transition: left 0.5s ease;
+    }
+
+    .btn-deactivate:hover::before {
+        left: 100%;
+    }
+
+    .btn-deactivate:hover {
+        transform: translateY(-3px);
+        box-shadow: 0 15px 40px rgba(220, 38, 38, 0.4);
+        background: linear-gradient(135deg, #b91c1c, #991b1b);
+    }
+
+    .btn-deactivate:active {
+        transform: translateY(-1px);
+    }
+
+    @media (max-width: 600px) {
+        .confirmation-card {
+            padding: 2rem;
+        }
+
+        .confirmation-title {
+            font-size: 1.5rem;
+        }
+
+        .action-buttons {
+            flex-direction: column;
+        }
+    }
+</style>
+
+<div class="modal-container">
+    <div class="confirmation-card">
+        <!-- Warning Icon -->
+        <div class="warning-icon-container">
+            <i class="fas fa-exclamation-triangle"></i>
+        </div>
+
+        <!-- Title and Subtitle -->
+        <h2 class="confirmation-title">Confirm Deactivation</h2>
+        <p class="confirmation-subtitle">
+            You are about to deactivate <strong>{{ student.user.get_full_name }}</strong>. 
+            This action will mark the student as inactive.
+        </p>
+
+        <!-- Student Information -->
+        <div class="student-info-card">
+            <div class="student-info-row">
+                <span class="info-label">Full Name</span>
+                <span class="info-value">{{ student.user.get_full_name }}</span>
+            </div>
+            <div class="student-info-row">
+                <span class="info-label">Admission No</span>
+                <span class="info-value">{{ student.admission_number }}</span>
+            </div>
+            <div class="student-info-row">
+                <span class="info-label">Class & Section</span>
+                <span class="info-value">{{ student.class_enrolled.name }} - {{ student.section|default:"—" }}</span>
+            </div>
+            <div class="student-info-row">
+                <span class="info-label">Roll Number</span>
+                <span class="info-value">{{ student.roll_number }}</span>
+            </div>
+            <div class="student-info-row">
+                <span class="info-label">Admission Date</span>
+                <span class="info-value">{{ student.admission_date|date:"d M Y" }}</span>
+            </div>
+        </div>
+
+        <!-- Warning Information -->
+        <div class="warning-box">
+            <div class="warning-title">
+                <i class="fas fa-shield-alt"></i>What Happens Next
+            </div>
+            <ul class="warning-list">
+                <li>Student will be marked as inactive</li>
+                <li>All academic records will be preserved</li>
+                <li>Won't appear in active student lists</li>
+                <li>Can be reactivated later if needed</li>
+            </ul>
+        </div>
+
+        <!-- Leaving Reason -->
+        <form method="post" class="reason-section">
+            {% csrf_token %}
+            <label class="form-label" for="leaving_reason">
+                <i class="fas fa-comment-alt me-2" style="color: #dc2626;"></i>Leaving Reason (Optional)
+            </label>
+            <textarea 
+                id="leaving_reason"
+                name="leaving_reason" 
+                class="form-control" 
+                rows="3" 
+                placeholder="Enter the reason for deactivating this student..."
+                style="resize: none;"></textarea>
+
+            <!-- Action Buttons -->
+            <div class="action-buttons">
+                <a href="{% url 'student_detail' student.admission_number %}" class="btn-cancel">
+                    <i class="fas fa-times"></i>Cancel
+                </a>
+                <button type="submit" class="btn-deactivate">
+                    <i class="fas fa-user-slash"></i>Deactivate Student
+                </button>
+            </div>
+        </form>
+    </div>
+</div>
+
+{% endblock %}

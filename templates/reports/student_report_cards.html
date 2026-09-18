@@ -1,0 +1,1612 @@
+{% extends 'base.html' %}
+{% load custom_filters %}
+{% block title %}My Report Cards{% endblock %}
+{% block page_title %}Student Academic Portal{% endblock %}
+
+{% block breadcrumb %}
+<li class="breadcrumb-item"><a href="#"><i class="fas fa-home me-1"></i>Home</a></li>
+<li class="breadcrumb-item active"><i class="fas fa-file-contract me-1"></i>Report Cards</li>
+{% endblock %}
+
+{% block page_actions %}
+<button class="premium-action-btn primary-btn" onclick="printDiv('reportCardsList')">
+    <i class="fas fa-print"></i>
+    <span>Print All</span>
+</button>
+{% endblock %}
+
+{% block content %}
+<div class="premium-student-portal">
+    <!-- Background Animation -->
+    <div class="portal-bg-animation"></div>
+
+    <!-- Premium Layout Container -->
+    <div class="portal-container">
+        <!-- Sidebar Profile Card -->
+        <div class="sidebar-section">
+            <!-- Student Profile Card -->
+            <div class="premium-profile-card">
+                <div class="profile-background"></div>
+                <div class="profile-header">
+                    {% if student.user.profile_picture %}
+                    <img src="{{ student.user.profile_picture.url }}" alt="Profile" class="profile-avatar">
+                    {% else %}
+                    <div class="profile-avatar-placeholder">
+                        <i class="fas fa-user-graduate"></i>
+                    </div>
+                    {% endif %}
+                    <div class="profile-info">
+                        <h2 class="profile-name">{{ student.user.get_full_name }}</h2>
+                        <p class="profile-admission">{{ student.admission_number }}</p>
+                    </div>
+                </div>
+                <div class="profile-details">
+                    <div class="detail-item">
+                        <span class="detail-label">Class</span>
+                        <span class="detail-value">{{ student.class_enrolled.name }}</span>
+                    </div>
+                    <div class="detail-item">
+                        <span class="detail-label">Section</span>
+                        <span class="detail-value">{{ student.section }}</span>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Academic Summary Card -->
+            {% if report_cards %}
+            {% with latest_report=report_cards.first %}
+            <div class="premium-summary-card">
+                <div class="summary-header">
+                    <h3 class="summary-title">Latest Performance</h3>
+                    <span class="summary-badge">{{ report_cards.count }} cards</span>
+                </div>
+                <div class="summary-content">
+                    <div class="summary-metric">
+                        <div class="metric-value">{{ latest_report.percentage|floatformat:1 }}%</div>
+                        <div class="metric-label">Percentage</div>
+                    </div>
+                    <div class="summary-metric">
+                        <div class="metric-badge grade-badge-lg grade-{{ latest_report.overall_grade }}">
+                            {{ latest_report.overall_grade }}
+                        </div>
+                        <div class="metric-label">Grade</div>
+                    </div>
+                    <div class="summary-metric">
+                        <div class="metric-value">{{ latest_report.grade_point_average|floatformat:2 }}</div>
+                        <div class="metric-label">GPA</div>
+                    </div>
+                    <div class="summary-metric">
+                        <div class="metric-value {% if latest_report.rank %}rank-badge-lg{% endif %} {% if latest_report.rank == 1 %}rank-1{% elif latest_report.rank <= 3 %}rank-top3{% elif latest_report.rank <= 5 %}rank-top5{% else %}rank-other{% endif %}">
+                            {% if latest_report.rank %}{{ latest_report.rank }}{% else %}N/A{% endif %}
+                        </div>
+                        <div class="metric-label">Rank</div>
+                    </div>
+                </div>
+                <div class="summary-footer">
+                    <i class="fas fa-clock"></i>
+                    <span>{{ latest_report.generated_at|date:"d M Y" }}</span>
+                </div>
+            </div>
+            {% endwith %}
+            {% else %}
+            <div class="empty-summary-card">
+                <i class="fas fa-file-pdf"></i>
+                <p>No report cards available</p>
+            </div>
+            {% endif %}
+        </div>
+
+        <!-- Main Content -->
+        <div class="main-content-section">
+            <!-- Report Cards Grid -->
+            <div id="reportCardsList" class="reports-grid">
+                <div class="grid-header">
+                    <h2 class="grid-title">
+                        <i class="fas fa-file-pdf"></i> All Report Cards
+                    </h2>
+                    <span class="card-count">{{ report_cards.count }} records</span>
+                </div>
+
+                {% if report_cards %}
+                <div class="report-cards-container">
+                    {% for report in report_cards %}
+                    <div class="premium-report-card" data-report-id="{{ report.id }}">
+                        <div class="card-header-section">
+                            <div class="card-term-info">
+                                <h3 class="term-title">{{ report.get_term_display }}</h3>
+                                <p class="year-subtitle">{{ report.academic_year }}</p>
+                            </div>
+                            <div class="card-status-badges">
+                                <span class="class-badge">{{ report.class_name.name }}</span>
+                                {% if report.is_published %}
+                                <span class="published-badge">
+                                    <i class="fas fa-check-circle"></i> Published
+                                </span>
+                                {% endif %}
+                            </div>
+                        </div>
+
+                        <div class="card-metrics">
+                            <div class="metric-box percentage">
+                                <div class="metric-icon">
+                                    <i class="fas fa-percentage"></i>
+                                </div>
+                                <div class="metric-info">
+                                    <span class="metric-label">Percentage</span>
+                                    <span class="metric-display">{{ report.percentage|floatformat:1 }}%</span>
+                                </div>
+                                <div class="metric-bar">
+                                    <div class="bar-fill" style="width: {{ report.percentage }}%"></div>
+                                </div>
+                            </div>
+
+                            <div class="metric-box grade">
+                                <div class="metric-icon">
+                                    <i class="fas fa-medal"></i>
+                                </div>
+                                <div class="metric-info">
+                                    <span class="metric-label">Grade</span>
+                                    <span class="metric-badge grade-{{ report.overall_grade }}">{{ report.overall_grade }}</span>
+                                </div>
+                            </div>
+
+                            <div class="metric-box gpa">
+                                <div class="metric-icon">
+                                    <i class="fas fa-star"></i>
+                                </div>
+                                <div class="metric-info">
+                                    <span class="metric-label">GPA</span>
+                                    <span class="metric-display">{{ report.grade_point_average|floatformat:2 }}</span>
+                                </div>
+                            </div>
+
+                            <div class="metric-box rank">
+                                <div class="metric-icon">
+                                    <i class="fas fa-trophy"></i>
+                                </div>
+                                <div class="metric-info">
+                                    <span class="metric-label">Rank</span>
+                                    {% if report.rank %}
+                                    <span class="metric-rank rank-badge-sm {% if report.rank == 1 %}rank-1{% elif report.rank <= 3 %}rank-top3{% elif report.rank <= 5 %}rank-top5{% else %}rank-other{% endif %}">{{ report.rank }}</span>
+                                    {% else %}
+                                    <span class="metric-rank">-</span>
+                                    {% endif %}
+                                </div>
+                            </div>
+                        </div>
+
+                        <div class="card-footer-info">
+                            <small class="generated-date">
+                                <i class="fas fa-calendar"></i> Generated {{ report.generated_at|date:"d M Y" }}
+                            </small>
+                        </div>
+                        <div class="card-actions">
+                            <a href="{% url 'generate_report_card' report.id %}" 
+                               class="action-btn download-btn" title="Download PDF">
+                                <i class="fas fa-download"></i>
+                            </a>
+                            <button class="action-btn preview-btn" title="Preview" 
+                                    data-bs-toggle="modal" data-bs-target="#previewModal{{ report.id }}">
+                                <i class="fas fa-eye"></i>
+                            </button>
+                        </div>
+                    </div>
+                    {% endfor %}
+                </div>
+                {% else %}
+                <div class="empty-state-full">
+                    <div class="empty-icon">
+                        <i class="fas fa-file-pdf"></i>
+                    </div>
+                    <h3 class="empty-title">No Report Cards Available</h3>
+                    <p class="empty-message">Your report cards will appear here once they are generated.</p>
+                </div>
+                {% endif %}
+            </div>
+
+            <!-- Performance Chart Section -->
+            {% if report_cards|length > 1 %}
+            <div class="performance-chart-card">
+                <div class="chart-header">
+                    <h3 class="chart-title">
+                        <i class="fas fa-chart-line"></i> Performance Trends
+                    </h3>
+                    <p class="chart-subtitle">Academic performance over time</p>
+                </div>
+                <div class="chart-body">
+                    <canvas id="performanceChart"></canvas>
+                </div>
+            </div>
+            {% endif %}
+        </div>
+    </div>
+</div>
+
+<!-- Preview Modals -->
+{% for report in report_cards %}
+<div class="modal fade" id="previewModal{{ report.id }}" tabindex="-1" aria-hidden="true">
+    <div class="modal-dialog modal-xl modal-dialog-centered premium-modal">
+        <div class="modal-content premium-modal-content">
+            <div class="modal-header-premium">
+                <div class="modal-title-section">
+                    <h5 class="modal-title">
+                        <i class="fas fa-file-contract"></i> {{ report.get_term_display }} Report Card
+                    </h5>
+                    <p class="modal-subtitle">{{ report.academic_year }} - {{ report.class_name.name }}</p>
+                </div>
+                <button type="button" class="modal-close-btn" data-bs-dismiss="modal" aria-label="Close">
+                    <i class="fas fa-times"></i>
+                </button>
+            </div>
+            <div class="modal-body-premium">
+                <div class="report-preview-wrapper">
+                    <!-- Header -->
+                    <div class="preview-header">
+                        <h2 class="school-title">MODEL PUBLIC SCHOOL</h2>
+                        <p class="school-subtitle">Affiliated to CBSE, New Delhi</p>
+                        <h3 class="report-type">REPORT CARD</h3>
+                    </div>
+
+                    <!-- Student Info -->
+                    <div class="preview-student-info">
+                        <div class="info-row">
+                            <span class="info-label">Name:</span>
+                            <span class="info-value">{{ student.user.get_full_name }}</span>
+                            <span class="info-label">Class:</span>
+                            <span class="info-value">{{ report.class_name.name }} - {{ student.section }}</span>
+                        </div>
+                        <div class="info-row">
+                            <span class="info-label">Admission:</span>
+                            <span class="info-value">{{ student.admission_number }}</span>
+                            <span class="info-label">Term:</span>
+                            <span class="info-value">{{ report.get_term_display }}</span>
+                        </div>
+                        <div class="info-row">
+                            <span class="info-label">Academic Year:</span>
+                            <span class="info-value">{{ report.academic_year }}</span>
+                            <span class="info-label">Roll No:</span>
+                            <span class="info-value">{{ student.roll_number|default:"-" }}</span>
+                        </div>
+                    </div>
+
+                    <!-- Marks Table -->
+                    <div class="preview-marks-section">
+                        <h4 class="section-heading">Academic Performance</h4>
+                        <table class="preview-marks-table">
+                            <thead>
+                                <tr>
+                                    <th>Subject</th>
+                                    <th>Max Marks</th>
+                                    <th>Obtained</th>
+                                    <th>Grade</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                {% for grade in report.grade_set.all %}
+                                <tr>
+                                    <td>{{ grade.exam.subject.name }}</td>
+                                    <td>{{ grade.exam.total_marks }}</td>
+                                    <td>{{ grade.marks_obtained }}</td>
+                                    <td>
+                                        <span class="grade-badge grade-{{ grade.grade }}">{{ grade.grade }}</span>
+                                    </td>
+                                </tr>
+                                {% empty %}
+                                <tr>
+                                    <td colspan="4" class="text-center">Subject details available in full PDF.</td>
+                                </tr>
+                                {% endfor %}
+                            </tbody>
+                            <tfoot>
+                                <tr>
+                                    <td colspan="2" class="text-end">Overall:</td>
+                                    <td>{{ report.percentage|floatformat:1 }}%</td>
+                                    <td>
+                                        <span class="grade-badge grade-{{ report.overall_grade }}">{{ report.overall_grade }}</span>
+                                    </td>
+                                </tr>
+                            </tfoot>
+                        </table>
+                    </div>
+
+                    <!-- Summary Stats -->
+                    <div class="preview-stats-grid">
+                        <div class="stat-box">
+                            <div class="stat-icon">
+                                <i class="fas fa-percentage"></i>
+                            </div>
+                            <div class="stat-value">{{ report.percentage|floatformat:1 }}%</div>
+                            <div class="stat-label">Percentage</div>
+                        </div>
+                        <div class="stat-box">
+                            <div class="stat-icon">
+                                <i class="fas fa-star"></i>
+                            </div>
+                            <div class="stat-value">{{ report.grade_point_average|floatformat:2 }}</div>
+                            <div class="stat-label">GPA</div>
+                        </div>
+                        <div class="stat-box">
+                            <div class="stat-icon">
+                                <i class="fas fa-calendar-check"></i>
+                            </div>
+                            <div class="stat-value">{{ report.attendance_percentage|floatformat:1 }}%</div>
+                            <div class="stat-label">Attendance</div>
+                        </div>
+                        <div class="stat-box">
+                            <div class="stat-icon">
+                                <i class="fas fa-trophy"></i>
+                            </div>
+                            <div class="stat-value">{% if report.rank %}{{ report.rank }}{% else %}-{% endif %}</div>
+                            <div class="stat-label">Class Rank</div>
+                        </div>
+                    </div>
+
+                    <!-- Footer -->
+                    <div class="preview-footer">
+                        <p>Generated on {{ report.generated_at|date:"d F Y" }} | Computer Generated Report</p>
+                    </div>
+                </div>
+            </div>
+            <div class="modal-footer-premium">
+                <button type="button" class="modal-btn cancel-btn" data-bs-dismiss="modal">Close</button>
+                <a href="{% url 'generate_report_card' report.id }}" 
+                   class="modal-btn download-btn" target="_blank">
+                    <i class="fas fa-download"></i> Download Full PDF
+                </a>
+            </div>
+        </div>
+    </div>
+</div>
+{% endfor %}
+
+{% endblock %}
+
+{% block extra_css %}
+<style>
+    /* ============= PREMIUM STUDENT PORTAL ============= */
+    
+    .premium-student-portal {
+        position: relative;
+        min-height: 100vh;
+        padding: 40px 20px;
+        background: linear-gradient(135deg, #f5f7fa 0%, #e9ecef 100%);
+        overflow: hidden;
+    }
+
+    [data-bs-theme="dark"] .premium-student-portal {
+        background: linear-gradient(135deg, #1a1d23 0%, #2d3142 100%);
+    }
+
+    .portal-bg-animation {
+        position: fixed;
+        top: 0;
+        left: 0;
+        width: 100%;
+        height: 100%;
+        background: linear-gradient(135deg, rgba(78, 115, 223, 0.05) 0%, rgba(28, 200, 138, 0.02) 100%);
+        z-index: -1;
+        animation: portalFlow 20s ease-in-out infinite;
+    }
+
+    @keyframes portalFlow {
+        0%, 100% { opacity: 1; transform: scale(1); }
+        50% { opacity: 0.95; transform: scale(1.02); }
+    }
+
+    .portal-container {
+        max-width: 1400px;
+        margin: 0 auto;
+        display: grid;
+        grid-template-columns: 320px 1fr;
+        gap: 30px;
+        position: relative;
+    }
+
+    /* Action Buttons */
+    .premium-action-btn {
+        padding: 12px 24px;
+        border: none;
+        border-radius: 10px;
+        font-weight: 700;
+        font-size: 14px;
+        cursor: pointer;
+        transition: all 0.3s ease;
+        display: flex;
+        align-items: center;
+        gap: 8px;
+    }
+
+    .primary-btn {
+        background: linear-gradient(135deg, #4e73df 0%, #224abe 100%);
+        color: white;
+        box-shadow: 0 4px 15px rgba(78, 115, 223, 0.3);
+    }
+
+    .primary-btn:hover {
+        transform: translateY(-3px);
+        box-shadow: 0 6px 20px rgba(78, 115, 223, 0.4);
+    }
+
+    /* ============= PROFILE CARD ============= */
+    .premium-profile-card {
+        background: white;
+        border-radius: 20px;
+        box-shadow: 0 20px 60px rgba(78, 115, 223, 0.1);
+        overflow: hidden;
+        animation: cardSlideUp 0.8s ease-out;
+    }
+
+    [data-bs-theme="dark"] .premium-profile-card {
+        background: linear-gradient(135deg, #2d3142 0%, #1a1d23 100%);
+    }
+
+    @keyframes cardSlideUp {
+        from { opacity: 0; transform: translateY(30px); }
+        to { opacity: 1; transform: translateY(0); }
+    }
+
+    .profile-background {
+        height: 120px;
+        background: linear-gradient(135deg, #4e73df 0%, #1cc88a 100%);
+        position: relative;
+    }
+
+    .profile-header {
+        padding: 0 24px 24px;
+        position: relative;
+        display: flex;
+        align-items: flex-start;
+        gap: 16px;
+    }
+
+    .profile-avatar {
+        width: 100px;
+        height: 100px;
+        border-radius: 16px;
+        border: 5px solid white;
+        object-fit: cover;
+        margin-top: -50px;
+        box-shadow: 0 10px 30px rgba(78, 115, 223, 0.2);
+    }
+
+    [data-bs-theme="dark"] .profile-avatar {
+        border-color: #3a3f52;
+    }
+
+    .profile-avatar-placeholder {
+        width: 100px;
+        height: 100px;
+        border-radius: 16px;
+        border: 5px solid white;
+        margin-top: -50px;
+        background: linear-gradient(135deg, #4e73df 0%, #224abe 100%);
+        color: white;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        font-size: 40px;
+        box-shadow: 0 10px 30px rgba(78, 115, 223, 0.2);
+    }
+
+    [data-bs-theme="dark"] .profile-avatar-placeholder {
+        border-color: #3a3f52;
+    }
+
+    .profile-info {
+        flex: 1;
+        margin-top: 20px;
+    }
+
+    .profile-name {
+        margin: 0;
+        font-size: 18px;
+        font-weight: 800;
+        color: #2e3440;
+    }
+
+    [data-bs-theme="dark"] .profile-name {
+        color: #e0e0e0;
+    }
+
+    .profile-admission {
+        margin: 4px 0 0;
+        font-size: 12px;
+        color: #6c757d;
+        font-weight: 600;
+    }
+
+    [data-bs-theme="dark"] .profile-admission {
+        color: #b0b0b0;
+    }
+
+    .profile-details {
+        padding: 0 24px 24px;
+        display: flex;
+        flex-direction: column;
+        gap: 12px;
+    }
+
+    .detail-item {
+        display: flex;
+        justify-content: space-between;
+        padding: 10px;
+        background: rgba(78, 115, 223, 0.04);
+        border-radius: 8px;
+    }
+
+    [data-bs-theme="dark"] .detail-item {
+        background: rgba(78, 115, 223, 0.1);
+    }
+
+    .detail-label {
+        font-size: 11px;
+        color: #6c757d;
+        font-weight: 700;
+        text-transform: uppercase;
+    }
+
+    [data-bs-theme="dark"] .detail-label {
+        color: #b0b0b0;
+    }
+
+    .detail-value {
+        font-weight: 700;
+        color: #2e3440;
+    }
+
+    [data-bs-theme="dark"] .detail-value {
+        color: #e0e0e0;
+    }
+
+    /* ============= SUMMARY CARD ============= */
+    .premium-summary-card {
+        background: white;
+        border-radius: 20px;
+        box-shadow: 0 20px 60px rgba(78, 115, 223, 0.1);
+        margin-top: 20px;
+        padding: 24px;
+        animation: cardSlideUp 0.8s ease-out 0.1s both;
+    }
+
+    [data-bs-theme="dark"] .premium-summary-card {
+        background: linear-gradient(135deg, #2d3142 0%, #1a1d23 100%);
+    }
+
+    .summary-header {
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        margin-bottom: 20px;
+        padding-bottom: 12px;
+        border-bottom: 2px solid rgba(78, 115, 223, 0.2);
+    }
+
+    .summary-title {
+        margin: 0;
+        font-size: 16px;
+        font-weight: 800;
+        color: #2e3440;
+    }
+
+    [data-bs-theme="dark"] .summary-title {
+        color: #e0e0e0;
+    }
+
+    .summary-badge {
+        background: linear-gradient(135deg, #4e73df 0%, #224abe 100%);
+        color: white;
+        padding: 4px 12px;
+        border-radius: 20px;
+        font-size: 11px;
+        font-weight: 700;
+    }
+
+    .summary-content {
+        display: grid;
+        grid-template-columns: 1fr 1fr;
+        gap: 12px;
+        margin-bottom: 16px;
+    }
+
+    .summary-metric {
+        text-align: center;
+        padding: 12px;
+        background: rgba(78, 115, 223, 0.04);
+        border-radius: 10px;
+    }
+
+    [data-bs-theme="dark"] .summary-metric {
+        background: rgba(78, 115, 223, 0.1);
+    }
+
+    .metric-value {
+        font-size: 20px;
+        font-weight: 800;
+        color: #4e73df;
+        margin-bottom: 4px;
+    }
+
+    .metric-label {
+        font-size: 11px;
+        color: #6c757d;
+        font-weight: 600;
+    }
+
+    [data-bs-theme="dark"] .metric-label {
+        color: #b0b0b0;
+    }
+
+    .summary-footer {
+        display: flex;
+        align-items: center;
+        gap: 8px;
+        font-size: 12px;
+        color: #6c757d;
+        padding-top: 12px;
+        border-top: 1px solid rgba(78, 115, 223, 0.1);
+    }
+
+    [data-bs-theme="dark"] .summary-footer {
+        color: #b0b0b0;
+    }
+
+    .empty-summary-card {
+        background: white;
+        border-radius: 20px;
+        box-shadow: 0 20px 60px rgba(78, 115, 223, 0.1);
+        padding: 40px 24px;
+        margin-top: 20px;
+        text-align: center;
+    }
+
+    [data-bs-theme="dark"] .empty-summary-card {
+        background: linear-gradient(135deg, #2d3142 0%, #1a1d23 100%);
+    }
+
+    .empty-summary-card i {
+        font-size: 48px;
+        color: rgba(78, 115, 223, 0.2);
+        display: block;
+        margin-bottom: 12px;
+    }
+
+    .empty-summary-card p {
+        margin: 0;
+        color: #6c757d;
+    }
+
+    [data-bs-theme="dark"] .empty-summary-card p {
+        color: #b0b0b0;
+    }
+
+    /* ============= MAIN CONTENT ============= */
+    .main-content-section {
+        display: flex;
+        flex-direction: column;
+        gap: 30px;
+    }
+
+    .reports-grid {
+        animation: cardSlideUp 0.8s ease-out;
+    }
+
+    .grid-header {
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        margin-bottom: 24px;
+    }
+
+    .grid-title {
+        margin: 0;
+        font-size: 22px;
+        font-weight: 800;
+        color: #2e3440;
+        display: flex;
+        align-items: center;
+        gap: 10px;
+    }
+
+    [data-bs-theme="dark"] .grid-title {
+        color: #e0e0e0;
+    }
+
+    .card-count {
+        background: linear-gradient(135deg, #4e73df 0%, #1cc88a 100%);
+        color: white;
+        padding: 6px 14px;
+        border-radius: 20px;
+        font-size: 12px;
+        font-weight: 700;
+    }
+
+    .report-cards-container {
+        display: grid;
+        grid-template-columns: repeat(auto-fill, minmax(280px, 1fr));
+        gap: 20px;
+    }
+
+    /* ============= REPORT CARD ============= */
+    .premium-report-card {
+        background: white;
+        border-radius: 16px;
+        box-shadow: 0 10px 30px rgba(78, 115, 223, 0.08);
+        padding: 20px;
+        transition: all 0.3s ease;
+        cursor: pointer;
+        overflow: hidden;
+    }
+
+    [data-bs-theme="dark"] .premium-report-card {
+        background: linear-gradient(135deg, #2d3142 0%, #1a1d23 100%);
+        box-shadow: 0 10px 30px rgba(78, 115, 223, 0.15);
+    }
+
+    .premium-report-card:hover {
+        transform: translateY(-8px);
+        box-shadow: 0 20px 50px rgba(78, 115, 223, 0.15);
+    }
+
+    .card-header-section {
+        display: flex;
+        justify-content: space-between;
+        align-items: flex-start;
+        margin-bottom: 16px;
+        padding-bottom: 12px;
+        border-bottom: 2px solid rgba(78, 115, 223, 0.1);
+    }
+
+    .card-term-info h3 {
+        margin: 0 0 4px;
+        font-size: 18px;
+        font-weight: 800;
+        color: #2e3440;
+    }
+
+    [data-bs-theme="dark"] .card-term-info h3 {
+        color: #e0e0e0;
+    }
+
+    .year-subtitle {
+        margin: 0;
+        font-size: 12px;
+        color: #6c757d;
+        font-weight: 600;
+    }
+
+    [data-bs-theme="dark"] .year-subtitle {
+        color: #b0b0b0;
+    }
+
+    .card-status-badges {
+        display: flex;
+        gap: 8px;
+        flex-wrap: wrap;
+        justify-content: flex-end;
+    }
+
+    .class-badge {
+        background: linear-gradient(135deg, rgba(78, 115, 223, 0.1) 0%, rgba(28, 200, 138, 0.05) 100%);
+        border: 1px solid rgba(78, 115, 223, 0.2);
+        color: #4e73df;
+        padding: 4px 10px;
+        border-radius: 6px;
+        font-size: 11px;
+        font-weight: 700;
+    }
+
+    [data-bs-theme="dark"] .class-badge {
+        border-color: rgba(78, 115, 223, 0.4);
+        color: #7fa3f6;
+    }
+
+    .published-badge {
+        background: linear-gradient(135deg, #1cc88a 0%, #128a5f 100%);
+        color: white;
+        padding: 4px 10px;
+        border-radius: 6px;
+        font-size: 11px;
+        font-weight: 700;
+        display: flex;
+        align-items: center;
+        gap: 4px;
+    }
+
+    .card-metrics {
+        display: grid;
+        grid-template-columns: 1fr 1fr;
+        gap: 10px;
+        margin-bottom: 16px;
+    }
+
+    .metric-box {
+        padding: 12px;
+        background: rgba(78, 115, 223, 0.04);
+        border-radius: 10px;
+        display: flex;
+        align-items: center;
+        gap: 10px;
+    }
+
+    [data-bs-theme="dark"] .metric-box {
+        background: rgba(78, 115, 223, 0.1);
+    }
+
+    .metric-icon {
+        width: 36px;
+        height: 36px;
+        border-radius: 8px;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        color: white;
+        font-size: 16px;
+        flex-shrink: 0;
+    }
+
+    .percentage .metric-icon { background: linear-gradient(135deg, #3498db 0%, #2980b9 100%); }
+    .grade .metric-icon { background: linear-gradient(135deg, #f39c12 0%, #d68910 100%); }
+    .gpa .metric-icon { background: linear-gradient(135deg, #e74c3c 0%, #c0392b 100%); }
+    .rank .metric-icon { background: linear-gradient(135deg, #1cc88a 0%, #128a5f 100%); }
+
+    .metric-info {
+        flex: 1;
+        display: flex;
+        flex-direction: column;
+        gap: 2px;
+    }
+
+    .metric-label {
+        font-size: 10px;
+        color: #6c757d;
+        font-weight: 600;
+        text-transform: uppercase;
+    }
+
+    [data-bs-theme="dark"] .metric-label {
+        color: #b0b0b0;
+    }
+
+    .metric-display {
+        font-size: 16px;
+        font-weight: 800;
+        color: #2e3440;
+    }
+
+    [data-bs-theme="dark"] .metric-display {
+        color: #e0e0e0;
+    }
+
+    .metric-bar {
+        width: 100%;
+        height: 4px;
+        background: rgba(78, 115, 223, 0.2);
+        border-radius: 2px;
+        margin-top: 4px;
+        overflow: hidden;
+    }
+
+    .bar-fill {
+        height: 100%;
+        background: linear-gradient(90deg, #3498db 0%, #2980b9 100%);
+        border-radius: 2px;
+        transition: width 0.6s ease;
+    }
+
+    .metric-badge {
+        display: inline-block;
+        padding: 4px 10px;
+        border-radius: 6px;
+        font-weight: 700;
+        font-size: 12px;
+        color: white;
+    }
+
+    .metric-rank {
+        display: inline-block;
+        padding: 4px 10px;
+        border-radius: 6px;
+        font-weight: 700;
+        font-size: 12px;
+        color: white;
+    }
+
+    .rank-badge-sm.rank-1 { background: linear-gradient(135deg, #FFD700 0%, #FFA500 100%); }
+    .rank-badge-sm.rank-top3 { background: linear-gradient(135deg, #C0C0C0 0%, #A9A9A9 100%); }
+    .rank-badge-sm.rank-top5 { background: linear-gradient(135deg, #CD7F32 0%, #8B4513 100%); }
+    .rank-badge-sm.rank-other { background: linear-gradient(135deg, #95a5a6 0%, #7f8c8d 100%); }
+
+    .card-footer-info {
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        padding-top: 12px;
+        border-top: 1px solid rgba(78, 115, 223, 0.1);
+    }
+
+    .generated-date {
+        color: #6c757d;
+        display: flex;
+        align-items: center;
+        gap: 6px;
+    }
+
+    [data-bs-theme="dark"] .generated-date {
+        color: #b0b0b0;
+    }
+
+    .card-actions {
+        display: flex;
+        gap: 8px;
+    }
+
+    .action-btn {
+        width: 32px;
+        height: 32px;
+        border-radius: 8px;
+        border: none;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        cursor: pointer;
+        font-size: 14px;
+        transition: all 0.3s ease;
+        color: white;
+    }
+
+    .download-btn {
+        background: linear-gradient(135deg, #4e73df 0%, #224abe 100%);
+    }
+
+    .download-btn:hover {
+        transform: translateY(-2px);
+        box-shadow: 0 4px 12px rgba(78, 115, 223, 0.3);
+    }
+
+    .preview-btn {
+        background: linear-gradient(135deg, #1cc88a 0%, #128a5f 100%);
+    }
+
+    .preview-btn:hover {
+        transform: translateY(-2px);
+        box-shadow: 0 4px 12px rgba(28, 200, 138, 0.3);
+    }
+
+    /* ============= EMPTY STATE ============= */
+    .empty-state-full {
+        grid-column: 1 / -1;
+        text-align: center;
+        padding: 80px 40px;
+        background: white;
+        border-radius: 20px;
+        box-shadow: 0 10px 30px rgba(78, 115, 223, 0.08);
+    }
+
+    [data-bs-theme="dark"] .empty-state-full {
+        background: linear-gradient(135deg, #2d3142 0%, #1a1d23 100%);
+    }
+
+    .empty-icon {
+        font-size: 80px;
+        color: rgba(78, 115, 223, 0.15);
+        margin-bottom: 20px;
+    }
+
+    .empty-title {
+        margin: 0 0 12px;
+        font-size: 24px;
+        font-weight: 800;
+        color: #2e3440;
+    }
+
+    [data-bs-theme="dark"] .empty-title {
+        color: #e0e0e0;
+    }
+
+    .empty-message {
+        margin: 0;
+        color: #6c757d;
+        font-size: 14px;
+    }
+
+    [data-bs-theme="dark"] .empty-message {
+        color: #b0b0b0;
+    }
+
+    /* ============= PERFORMANCE CHART ============= */
+    .performance-chart-card {
+        background: white;
+        border-radius: 20px;
+        box-shadow: 0 20px 60px rgba(78, 115, 223, 0.1);
+        padding: 30px;
+        animation: cardSlideUp 0.8s ease-out 0.2s both;
+    }
+
+    [data-bs-theme="dark"] .performance-chart-card {
+        background: linear-gradient(135deg, #2d3142 0%, #1a1d23 100%);
+    }
+
+    .chart-header {
+        margin-bottom: 24px;
+        padding-bottom: 16px;
+        border-bottom: 2px solid rgba(78, 115, 223, 0.2);
+    }
+
+    .chart-title {
+        margin: 0 0 6px;
+        font-size: 20px;
+        font-weight: 800;
+        color: #2e3440;
+        display: flex;
+        align-items: center;
+        gap: 10px;
+    }
+
+    [data-bs-theme="dark"] .chart-title {
+        color: #e0e0e0;
+    }
+
+    .chart-subtitle {
+        margin: 0;
+        font-size: 12px;
+        color: #6c757d;
+    }
+
+    [data-bs-theme="dark"] .chart-subtitle {
+        color: #b0b0b0;
+    }
+
+    .chart-body {
+        position: relative;
+        height: 300px;
+    }
+
+    /* ============= PREMIUM MODAL ============= */
+    .premium-modal {
+        --bs-modal-border-radius: 20px;
+    }
+
+    .premium-modal-content {
+        background: white;
+        border: none;
+        box-shadow: 0 20px 60px rgba(78, 115, 223, 0.2);
+    }
+
+    [data-bs-theme="dark"] .premium-modal-content {
+        background: linear-gradient(135deg, #2d3142 0%, #1a1d23 100%);
+    }
+
+    .modal-header-premium {
+        padding: 28px;
+        background: linear-gradient(135deg, rgba(78, 115, 223, 0.1) 0%, rgba(28, 200, 138, 0.05) 100%);
+        border-bottom: 2px solid rgba(78, 115, 223, 0.1);
+        border-radius: 20px 20px 0 0;
+        display: flex;
+        justify-content: space-between;
+        align-items: flex-start;
+    }
+
+    [data-bs-theme="dark"] .modal-header-premium {
+        border-bottom-color: rgba(78, 115, 223, 0.2);
+    }
+
+    .modal-title-section {
+        flex: 1;
+    }
+
+    .modal-title {
+        margin: 0 0 6px;
+        font-size: 20px;
+        font-weight: 800;
+        color: #2e3440;
+        display: flex;
+        align-items: center;
+        gap: 10px;
+    }
+
+    [data-bs-theme="dark"] .modal-title {
+        color: #e0e0e0;
+    }
+
+    .modal-subtitle {
+        margin: 0;
+        font-size: 12px;
+        color: #6c757d;
+    }
+
+    [data-bs-theme="dark"] .modal-subtitle {
+        color: #b0b0b0;
+    }
+
+    .modal-close-btn {
+        width: 36px;
+        height: 36px;
+        border: none;
+        background: white;
+        border-radius: 10px;
+        color: #2e3440;
+        cursor: pointer;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        transition: all 0.3s ease;
+    }
+
+    [data-bs-theme="dark"] .modal-close-btn {
+        background: #3a3f52;
+        color: #e0e0e0;
+    }
+
+    .modal-close-btn:hover {
+        transform: rotate(90deg);
+    }
+
+    .modal-body-premium {
+        padding: 30px;
+    }
+
+    .report-preview-wrapper {
+        background: white;
+        border-radius: 12px;
+        padding: 24px;
+        border: 1px solid rgba(78, 115, 223, 0.1);
+    }
+
+    [data-bs-theme="dark"] .report-preview-wrapper {
+        background: #3a3f52;
+        border-color: rgba(78, 115, 223, 0.2);
+    }
+
+    .preview-header {
+        text-align: center;
+        margin-bottom: 24px;
+        padding-bottom: 16px;
+        border-bottom: 2px solid rgba(78, 115, 223, 0.2);
+    }
+
+    .school-title {
+        margin: 0 0 6px;
+        font-size: 24px;
+        font-weight: 800;
+        background: linear-gradient(135deg, #4e73df 0%, #1cc88a 100%);
+        -webkit-background-clip: text;
+        -webkit-text-fill-color: transparent;
+    }
+
+    .school-subtitle {
+        margin: 0 0 12px;
+        font-size: 12px;
+        color: #6c757d;
+    }
+
+    [data-bs-theme="dark"] .school-subtitle {
+        color: #b0b0b0;
+    }
+
+    .report-type {
+        margin: 0;
+        font-size: 18px;
+        font-weight: 800;
+        color: #2e3440;
+        text-transform: uppercase;
+        letter-spacing: 2px;
+    }
+
+    [data-bs-theme="dark"] .report-type {
+        color: #e0e0e0;
+    }
+
+    .preview-student-info {
+        margin-bottom: 24px;
+    }
+
+    .info-row {
+        display: grid;
+        grid-template-columns: 80px 1fr 80px 1fr;
+        gap: 16px;
+        margin-bottom: 12px;
+        padding: 10px;
+        background: rgba(78, 115, 223, 0.04);
+        border-radius: 8px;
+    }
+
+    [data-bs-theme="dark"] .info-row {
+        background: rgba(78, 115, 223, 0.1);
+    }
+
+    .info-label {
+        font-size: 11px;
+        font-weight: 700;
+        color: #6c757d;
+        text-transform: uppercase;
+    }
+
+    [data-bs-theme="dark"] .info-label {
+        color: #b0b0b0;
+    }
+
+    .info-value {
+        font-size: 13px;
+        font-weight: 600;
+        color: #2e3440;
+    }
+
+    [data-bs-theme="dark"] .info-value {
+        color: #e0e0e0;
+    }
+
+    .preview-marks-section {
+        margin-bottom: 24px;
+    }
+
+    .section-heading {
+        margin: 0 0 12px;
+        font-size: 14px;
+        font-weight: 800;
+        color: #2e3440;
+        text-transform: uppercase;
+    }
+
+    [data-bs-theme="dark"] .section-heading {
+        color: #e0e0e0;
+    }
+
+    .preview-marks-table {
+        width: 100%;
+        border-collapse: collapse;
+        font-size: 13px;
+    }
+
+    .preview-marks-table th {
+        background: linear-gradient(135deg, rgba(78, 115, 223, 0.1) 0%, rgba(28, 200, 138, 0.05) 100%);
+        padding: 12px;
+        text-align: left;
+        font-weight: 700;
+        border-bottom: 2px solid rgba(78, 115, 223, 0.2);
+        color: #2e3440;
+    }
+
+    [data-bs-theme="dark"] .preview-marks-table th {
+        color: #e0e0e0;
+    }
+
+    .preview-marks-table td {
+        padding: 10px 12px;
+        border-bottom: 1px solid rgba(78, 115, 223, 0.1);
+        color: #2e3440;
+    }
+
+    [data-bs-theme="dark"] .preview-marks-table td {
+        color: #e0e0e0;
+    }
+
+    .preview-marks-table tfoot tr {
+        background: linear-gradient(135deg, rgba(78, 115, 223, 0.08) 0%, rgba(28, 200, 138, 0.04) 100%);
+        font-weight: 700;
+    }
+
+    .preview-stats-grid {
+        display: grid;
+        grid-template-columns: repeat(4, 1fr);
+        gap: 12px;
+        margin-bottom: 24px;
+    }
+
+    .stat-box {
+        text-align: center;
+        padding: 16px;
+        background: linear-gradient(135deg, rgba(78, 115, 223, 0.08) 0%, rgba(28, 200, 138, 0.04) 100%);
+        border-radius: 10px;
+        border: 1px solid rgba(78, 115, 223, 0.1);
+    }
+
+    [data-bs-theme="dark"] .stat-box {
+        border-color: rgba(78, 115, 223, 0.2);
+    }
+
+    .stat-icon {
+        font-size: 24px;
+        color: #4e73df;
+        margin-bottom: 6px;
+    }
+
+    .stat-value {
+        font-size: 18px;
+        font-weight: 800;
+        color: #2e3440;
+        margin-bottom: 4px;
+    }
+
+    [data-bs-theme="dark"] .stat-value {
+        color: #e0e0e0;
+    }
+
+    .stat-label {
+        font-size: 11px;
+        color: #6c757d;
+        font-weight: 600;
+    }
+
+    [data-bs-theme="dark"] .stat-label {
+        color: #b0b0b0;
+    }
+
+    .preview-footer {
+        text-align: center;
+        padding-top: 16px;
+        border-top: 1px solid rgba(78, 115, 223, 0.1);
+        font-size: 11px;
+        color: #6c757d;
+    }
+
+    [data-bs-theme="dark"] .preview-footer {
+        color: #b0b0b0;
+    }
+
+    .modal-footer-premium {
+        padding: 20px 28px;
+        background: linear-gradient(135deg, rgba(78, 115, 223, 0.04) 0%, transparent 100%);
+        border-top: 2px solid rgba(78, 115, 223, 0.1);
+        border-radius: 0 0 20px 20px;
+        display: flex;
+        gap: 12px;
+        justify-content: flex-end;
+    }
+
+    [data-bs-theme="dark"] .modal-footer-premium {
+        border-top-color: rgba(78, 115, 223, 0.2);
+    }
+
+    .modal-btn {
+        padding: 10px 20px;
+        border: none;
+        border-radius: 8px;
+        font-weight: 700;
+        font-size: 13px;
+        cursor: pointer;
+        transition: all 0.3s ease;
+        display: inline-flex;
+        align-items: center;
+        gap: 6px;
+    }
+
+    .cancel-btn {
+        background: #e9ecef;
+        color: #2e3440;
+    }
+
+    [data-bs-theme="dark"] .cancel-btn {
+        background: #4a5568;
+        color: #e0e0e0;
+    }
+
+    .cancel-btn:hover {
+        background: #dee2e6;
+    }
+
+    [data-bs-theme="dark"] .cancel-btn:hover {
+        background: #5a6778;
+    }
+
+    .modal-btn.download-btn {
+        background: linear-gradient(135deg, #4e73df 0%, #224abe 100%);
+        color: white;
+        box-shadow: 0 4px 12px rgba(78, 115, 223, 0.3);
+    }
+
+    .modal-btn.download-btn:hover {
+        transform: translateY(-2px);
+        box-shadow: 0 6px 16px rgba(78, 115, 223, 0.4);
+    }
+
+    /* Grade Badges */
+    .grade-badge-lg {
+        display: inline-block;
+        padding: 8px 14px;
+        border-radius: 8px;
+        font-weight: 700;
+        font-size: 14px;
+        color: white;
+    }
+
+    .grade-A { background: linear-gradient(135deg, #27ae60 0%, #1e8449 100%); }
+    .grade-Aplus { background: linear-gradient(135deg, #2ecc71 0%, #27ae60 100%); }
+    .grade-B { background: linear-gradient(135deg, #e67e22 0%, #ca6f1e 100%); }
+    .grade-Bplus { background: linear-gradient(135deg, #f39c12 0%, #d68910 100%); }
+    .grade-C { background: linear-gradient(135deg, #2980b9 0%, #1f618d 100%); }
+    .grade-Cplus { background: linear-gradient(135deg, #3498db 0%, #2980b9 100%); }
+    .grade-D { background: linear-gradient(135deg, #95a5a6 0%, #7f8c8d 100%); }
+
+    .rank-badge-lg {
+        display: inline-block;
+        padding: 6px 12px;
+        border-radius: 6px;
+        font-weight: 700;
+        font-size: 12px;
+        color: white;
+    }
+
+    .rank-1 { background: linear-gradient(135deg, #FFD700 0%, #FFA500 100%); }
+    .rank-top3 { background: linear-gradient(135deg, #C0C0C0 0%, #A9A9A9 100%); }
+    .rank-top5 { background: linear-gradient(135deg, #CD7F32 0%, #8B4513 100%); }
+    .rank-other { background: linear-gradient(135deg, #95a5a6 0%, #7f8c8d 100%); }
+
+    /* ============= RESPONSIVE ============= */
+    @media (max-width: 1024px) {
+        .portal-container {
+            grid-template-columns: 1fr;
+        }
+
+        .sidebar-section {
+            display: grid;
+            grid-template-columns: repeat(2, 1fr);
+            gap: 20px;
+        }
+
+        .report-cards-container {
+            grid-template-columns: repeat(auto-fill, minmax(240px, 1fr));
+        }
+
+        .preview-stats-grid {
+            grid-template-columns: repeat(2, 1fr);
+        }
+    }
+
+    @media (max-width: 768px) {
+        .premium-student-portal {
+            padding: 20px 16px;
+        }
+
+        .sidebar-section {
+            display: flex;
+            flex-direction: column;
+        }
+
+        .summary-content {
+            grid-template-columns: 1fr 1fr;
+        }
+
+        .report-cards-container {
+            grid-template-columns: 1fr;
+        }
+
+        .card-metrics {
+            grid-template-columns: 1fr;
+        }
+
+        .grid-header {
+            flex-direction: column;
+            align-items: flex-start;
+            gap: 12px;
+        }
+
+        .info-row {
+            grid-template-columns: 70px 1fr;
+        }
+
+        .preview-stats-grid {
+            grid-template-columns: repeat(2, 1fr);
+            gap: 8px;
+        }
+
+        .stat-box {
+            padding: 12px;
+        }
+
+        .chart-body {
+            height: 250px;
+        }
+    }
+</style>
+{% endblock %}
+
+{% block extra_js %}
+
+<script>
+    function printDiv(divName) {
+        var printContents = document.getElementById(divName).innerHTML;
+        var originalContents = document.body.innerHTML;
+
+        document.body.innerHTML = printContents;
+        window.print();
+        document.body.innerHTML = originalContents;
+        window.location.reload();
+    }
+
+    // Performance Chart
+    {% if report_cards|length > 1 %}
+    var ctx = document.getElementById('performanceChart').getContext('2d');
+    var performanceChart = new Chart(ctx, {
+        type: 'line',
+        data: {
+            labels: [
+                {% for report in report_cards reversed %}
+                    "{{ report.academic_year }} {{ report.get_term_display }}"{% if not forloop.last %},{% endif %}
+                {% endfor %}
+            ],
+            datasets: [{
+                label: 'Percentage (%)',
+                data: [
+                    {% for report in report_cards reversed %}
+                        {{ report.percentage|floatformat:1 }}{% if not forloop.last %},{% endif %}
+                    {% endfor %}
+                ],
+                borderColor: '#4e73df',
+                backgroundColor: 'rgba(78, 115, 223, 0.1)',
+                borderWidth: 3,
+                fill: true,
+                tension: 0.4,
+                pointRadius: 6,
+                pointHoverRadius: 8,
+                pointBackgroundColor: '#4e73df',
+                pointBorderColor: '#fff',
+                pointBorderWidth: 2
+            }, {
+                label: 'GPA',
+                data: [
+                    {% for report in report_cards reversed %}
+                        {{ report.grade_point_average|floatformat:2 }}{% if not forloop.last %},{% endif %}
+                    {% endfor %}
+                ],
+                borderColor: '#1cc88a',
+                backgroundColor: 'rgba(28, 200, 138, 0.1)',
+                borderWidth: 3,
+                fill: true,
+                tension: 0.4,
+                pointRadius: 6,
+                pointHoverRadius: 8,
+                pointBackgroundColor: '#1cc88a',
+                pointBorderColor: '#fff',
+                pointBorderWidth: 2
+            }]
+        },
+        options: {
+            responsive: true,
+            maintainAspectRatio: false,
+            interaction: {
+                intersect: false,
+                mode: 'index'
+            },
+            plugins: {
+                legend: {
+                    labels: {
+                        usePointStyle: true,
+                        padding: 15,
+                        font: {
+                            weight: '700',
+                            size: 12
+                        }
+                    }
+                }
+            },
+            scales: {
+                y: {
+                    beginAtZero: true,
+                    max: 100,
+                    ticks: {
+                        font: {
+                            weight: '600',
+                            size: 11
+                        }
+                    },
+                    grid: {
+                        color: 'rgba(78, 115, 223, 0.1)'
+                    }
+                },
+                x: {
+                    ticks: {
+                        font: {
+                            weight: '600',
+                            size: 11
+                        }
+                    },
+                    grid: {
+                        display: false
+                    }
+                }
+            }
+        }
+    });
+    {% endif %}
+</script>
+{% endblock %}

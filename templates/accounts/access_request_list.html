@@ -1,0 +1,412 @@
+{% extends 'base.html' %}
+{% load static %}
+
+{% block title %}Manage Access Requests - Admin{% endblock %}
+
+{% block extra_css %}
+<style>
+    :root {
+        --primary-color: #6366f1;
+        --secondary-color: #8b5cf6;
+        --accent-color: #ec4899;
+        --success-color: #10b981;
+        --danger-color: #ef4444;
+        --warning-color: #f59e0b;
+        --dark-bg: #0f172a;
+        --glass-bg: rgba(15, 23, 42, 0.7);
+    }
+
+    body {
+        background: linear-gradient(135deg, var(--dark-bg) 0%, #1e293b 100%);
+        color: #e2e8f0;
+    }
+
+    .orb {
+        position: fixed;
+        border-radius: 50%;
+        opacity: 0.1;
+        pointer-events: none;
+        animation: float 20s infinite ease-in-out;
+        z-index: -1;
+    }
+
+    .orb-1 {
+        width: 300px;
+        height: 300px;
+        background: var(--primary-color);
+        top: 10%;
+        right: 10%;
+        animation-delay: 0s;
+    }
+
+    .orb-2 {
+        width: 200px;
+        height: 200px;
+        background: var(--accent-color);
+        bottom: 20%;
+        left: 5%;
+        animation-delay: 2s;
+    }
+
+    @keyframes float {
+        0%, 100% { transform: translate(0, 0); }
+        25% { transform: translate(30px, -30px); }
+        50% { transform: translate(-20px, 20px); }
+        75% { transform: translate(10px, -10px); }
+    }
+
+    .glass-container {
+        background: var(--glass-bg);
+        backdrop-filter: blur(20px);
+        border: 1px solid rgba(255, 255, 255, 0.1);
+        border-radius: 15px;
+        padding: 30px;
+        margin-bottom: 30px;
+    }
+
+    .page-title {
+        font-size: 32px;
+        font-weight: 700;
+        color: #f1f5f9;
+        margin-bottom: 10px;
+    }
+
+    .page-subtitle {
+        font-size: 14px;
+        color: #94a3b8;
+        margin-bottom: 30px;
+    }
+
+    .stats-grid {
+        display: grid;
+        grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+        gap: 15px;
+        margin-bottom: 30px;
+    }
+
+    .stat-card {
+        background: linear-gradient(135deg, rgba(99, 102, 241, 0.1), rgba(139, 92, 246, 0.1));
+        border: 1px solid rgba(99, 102, 241, 0.3);
+        border-radius: 10px;
+        padding: 20px;
+        text-align: center;
+    }
+
+    .stat-number {
+        font-size: 28px;
+        font-weight: 700;
+        color: var(--primary-color);
+        display: block;
+        margin-bottom: 5px;
+    }
+
+    .stat-label {
+        font-size: 12px;
+        color: #94a3b8;
+        text-transform: uppercase;
+        letter-spacing: 0.5px;
+    }
+
+    .filters-container {
+        display: flex;
+        gap: 15px;
+        flex-wrap: wrap;
+        margin-bottom: 25px;
+        align-items: center;
+    }
+
+    .form-control, .form-select {
+        background: rgba(30, 41, 59, 0.5);
+        border: 1px solid rgba(255, 255, 255, 0.1);
+        color: #e2e8f0;
+        border-radius: 8px;
+        padding: 10px 15px;
+        font-size: 13px;
+    }
+
+    .form-control:focus, .form-select:focus {
+        background: rgba(30, 41, 59, 0.8);
+        border-color: var(--primary-color);
+        box-shadow: 0 0 0 3px rgba(99, 102, 241, 0.1);
+        color: #e2e8f0;
+    }
+
+    .btn-primary, .btn-success, .btn-danger {
+        padding: 8px 16px;
+        border: none;
+        border-radius: 8px;
+        font-weight: 600;
+        cursor: pointer;
+        transition: all 0.3s ease;
+        text-decoration: none;
+        display: inline-block;
+        font-size: 12px;
+        text-transform: uppercase;
+        letter-spacing: 0.5px;
+    }
+
+    .btn-primary {
+        background: linear-gradient(135deg, var(--primary-color), var(--secondary-color));
+        color: white;
+    }
+
+    .btn-primary:hover {
+        transform: translateY(-2px);
+        box-shadow: 0 4px 15px rgba(99, 102, 241, 0.4);
+    }
+
+    .btn-success {
+        background: linear-gradient(135deg, var(--success-color), #059669);
+        color: white;
+    }
+
+    .btn-success:hover {
+        transform: translateY(-2px);
+        box-shadow: 0 4px 15px rgba(16, 185, 129, 0.4);
+    }
+
+    .btn-danger {
+        background: linear-gradient(135deg, var(--danger-color), #dc2626);
+        color: white;
+    }
+
+    .btn-danger:hover {
+        transform: translateY(-2px);
+        box-shadow: 0 4px 15px rgba(239, 68, 68, 0.4);
+    }
+
+    .table-container {
+        overflow-x: auto;
+    }
+
+    table {
+        width: 100%;
+        border-collapse: collapse;
+    }
+
+    th {
+        background: rgba(99, 102, 241, 0.1);
+        border-bottom: 1px solid rgba(255, 255, 255, 0.1);
+        padding: 15px 12px;
+        text-align: left;
+        font-size: 12px;
+        font-weight: 600;
+        color: #cbd5e1;
+        text-transform: uppercase;
+        letter-spacing: 0.5px;
+    }
+
+    td {
+        padding: 15px 12px;
+        border-bottom: 1px solid rgba(255, 255, 255, 0.05);
+        font-size: 13px;
+        color: #e2e8f0;
+    }
+
+    tr:hover {
+        background: rgba(99, 102, 241, 0.05);
+    }
+
+    .status-badge {
+        display: inline-block;
+        padding: 4px 12px;
+        border-radius: 6px;
+        font-size: 11px;
+        font-weight: 600;
+        text-transform: uppercase;
+        letter-spacing: 0.3px;
+    }
+
+    .status-pending {
+        background: rgba(245, 158, 11, 0.2);
+        color: var(--warning-color);
+        border: 1px solid rgba(245, 158, 11, 0.3);
+    }
+
+    .status-approved {
+        background: rgba(16, 185, 129, 0.2);
+        color: var(--success-color);
+        border: 1px solid rgba(16, 185, 129, 0.3);
+    }
+
+    .status-rejected {
+        background: rgba(239, 68, 68, 0.2);
+        color: var(--danger-color);
+        border: 1px solid rgba(239, 68, 68, 0.3);
+    }
+
+    .action-buttons {
+        display: flex;
+        gap: 8px;
+    }
+
+    .empty-state {
+        text-align: center;
+        padding: 60px 20px;
+        color: #94a3b8;
+    }
+
+    .empty-state-icon {
+        font-size: 48px;
+        margin-bottom: 15px;
+        opacity: 0.5;
+    }
+
+    .empty-state p {
+        margin: 0;
+    }
+
+    .filter-button {
+        padding: 8px 16px;
+        border-radius: 8px;
+        border: 1px solid rgba(255, 255, 255, 0.2);
+        background: transparent;
+        color: #e2e8f0;
+        cursor: pointer;
+        font-size: 12px;
+        font-weight: 600;
+        transition: all 0.3s ease;
+        text-decoration: none;
+        display: inline-block;
+    }
+
+    .filter-button:hover,
+    .filter-button.active {
+        border-color: var(--primary-color);
+        color: var(--primary-color);
+        background: rgba(99, 102, 241, 0.1);
+    }
+
+    @media (max-width: 768px) {
+        .glass-container {
+            padding: 20px;
+        }
+
+        .page-title {
+            font-size: 24px;
+        }
+
+        .stats-grid {
+            grid-template-columns: repeat(2, 1fr);
+        }
+
+        .filters-container {
+            flex-direction: column;
+        }
+
+        .filters-container > * {
+            width: 100%;
+        }
+
+        table {
+            font-size: 12px;
+        }
+
+        td, th {
+            padding: 12px 8px;
+        }
+    }
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="orb orb-1"></div>
+<div class="orb orb-2"></div>
+
+<div class="container mt-5 mb-5">
+    <div class="glass-container">
+        <h1 class="page-title">Access Requests</h1>
+        <p class="page-subtitle">Manage and review user access requests</p>
+
+        <!-- Statistics Cards -->
+        <div class="stats-grid">
+            <div class="stat-card">
+                <span class="stat-number">{{ pending_count }}</span>
+                <span class="stat-label">Pending Requests</span>
+            </div>
+            <div class="stat-card">
+                <span class="stat-number">{{ approved_count }}</span>
+                <span class="stat-label">Approved</span>
+            </div>
+            <div class="stat-card">
+                <span class="stat-number">{{ rejected_count }}</span>
+                <span class="stat-label">Rejected</span>
+            </div>
+        </div>
+
+        <!-- Messages -->
+        {% if messages %}
+            {% for message in messages %}
+                <div style="background: rgba(16, 185, 129, 0.1); border: 1px solid rgba(16, 185, 129, 0.3); color: var(--success-color); padding: 12px 16px; border-radius: 8px; margin-bottom: 20px; font-size: 13px;">
+                    {{ message }}
+                </div>
+            {% endfor %}
+        {% endif %}
+
+        <!-- Filters -->
+        <div class="filters-container">
+            <div style="display: flex; gap: 10px; flex-wrap: wrap;">
+                <a href="?status=all" class="filter-button {% if current_filter == 'all' %}active{% endif %}">All</a>
+                <a href="?status=pending" class="filter-button {% if current_filter == 'pending' %}active{% endif %}">Pending</a>
+                <a href="?status=approved" class="filter-button {% if current_filter == 'approved' %}active{% endif %}">Approved</a>
+                <a href="?status=rejected" class="filter-button {% if current_filter == 'rejected' %}active{% endif %}">Rejected</a>
+            </div>
+
+            <input type="text" class="form-control" placeholder="Search by email or name..." value="{{ search_query }}" 
+                   style="max-width: 250px;" 
+                   onchange="window.location.href = '?status={{ current_filter }}&search=' + this.value;">
+        </div>
+
+        <!-- Requests Table -->
+        {% if requests %}
+            <div class="table-container">
+                <table>
+                    <thead>
+                        <tr>
+                            <th>Name</th>
+                            <th>Email</th>
+                            <th>Type</th>
+                            <th>Phone</th>
+                            <th>Requested Date</th>
+                            <th>Status</th>
+                            <th>Actions</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        {% for request in requests %}
+                            <tr>
+                                <td><strong>{{ request.first_name }} {{ request.last_name }}</strong></td>
+                                <td>{{ request.email }}</td>
+                                <td>{{ request.get_user_type_display }}</td>
+                                <td>{{ request.phone|default:"—" }}</td>
+                                <td>{{ request.created_at|date:"M d, Y" }}</td>
+                                <td>
+                                    <span class="status-badge status-{{ request.status }}">
+                                        {{ request.get_status_display }}
+                                    </span>
+                                </td>
+                                <td>
+                                    <div class="action-buttons">
+                                        <a href="{% url 'access_request_detail' request.pk %}" class="btn-primary">View</a>
+                                        {% if request.status == 'pending' %}
+                                            <a href="{% url 'approve_access_request' request.pk %}" class="btn-success" onclick="return confirm('Approve this request?');">Approve</a>
+                                            <a href="{% url 'reject_access_request' request.pk %}" class="btn-danger" onclick="return confirm('Reject this request?');">Reject</a>
+                                        {% endif %}
+                                    </div>
+                                </td>
+                            </tr>
+                        {% endfor %}
+                    </tbody>
+                </table>
+            </div>
+        {% else %}
+            <div class="empty-state">
+                <div class="empty-state-icon">📭</div>
+                <p><strong>No access requests found</strong></p>
+                <p style="font-size: 12px; margin-top: 5px;">No requests match your filters</p>
+            </div>
+        {% endif %}
+    </div>
+</div>
+
+{% endblock %}

@@ -1,0 +1,863 @@
+{% extends 'base.html' %}
+
+{% block title %}{{ teacher.user.get_full_name }} - Teacher Details{% endblock %}
+{% block page_title %}Teacher Details{% endblock %}
+
+{% block breadcrumb %}
+<li class="breadcrumb-item"><a href="{% url 'teacher_list' %}">Teachers</a></li>
+<li class="breadcrumb-item active">{{ teacher.user.get_full_name }}</li>
+{% endblock %}
+
+{% block page_actions %}
+<div class="action-buttons">
+    <a href="{% url 'teacher_update' teacher.employee_id %}" class="btn-icon-action" title="Edit Profile">
+        <i class="fas fa-edit"></i>Edit
+    </a>
+    <div class="dropdown-menu-custom">
+        <button class="btn-icon-action dropdown-toggle" data-bs-toggle="dropdown" title="More Options">
+            <i class="fas fa-ellipsis-v"></i>
+        </button>
+        <ul class="dropdown-menu-items">
+            <li><a href="#"><i class="fas fa-print me-2"></i>Print Profile</a></li>
+            <li><a href="#"><i class="fas fa-calendar-alt me-2"></i>View Schedule</a></li>
+            <li><hr style="margin: 0.5rem 0; border: none; border-top: 1px solid rgba(78, 115, 223, 0.1);"></li>
+            <li><a href="{% url 'teacher_delete' teacher.employee_id %}" class="danger-link" onclick="return confirm('Deactivate this teacher?')"><i class="fas fa-trash me-2"></i>Deactivate</a></li>
+        </ul>
+    </div>
+</div>
+{% endblock %}
+
+{% block content %}
+<div class="detail-container">
+<div class="detail-container">
+    <!-- Profile Header Card -->
+    <div class="profile-header-card">
+        <div class="profile-content">
+            <div class="profile-image-container">
+                {% if teacher.user.profile_picture %}
+                    <img src="{{ teacher.user.profile_picture.url }}" alt="{{ teacher.user.get_full_name }}" class="profile-image-lg">
+                {% else %}
+                    <div class="profile-placeholder-lg">
+                        <i class="fas fa-user-tie"></i>
+                    </div>
+                {% endif %}
+                <div class="status-indicator {% if teacher.is_active %}active{% else %}inactive{% endif %}">
+                    {% if teacher.is_active %}<i class="fas fa-check"></i>{% else %}<i class="fas fa-times"></i>{% endif %}
+                </div>
+            </div>
+            <div class="profile-info">
+                <h1 class="profile-name">{{ teacher.user.get_full_name }}</h1>
+                <p class="profile-designation">
+                    <span class="badge-designation {% if teacher.designation == 'Principal' %}badge-principal
+                                                   {% elif teacher.designation == 'Vice Principal' %}badge-viceprincipal
+                                                   {% elif teacher.designation == 'Head Teacher' %}badge-headteacher
+                                                   {% else %}badge-teacher{% endif %}">
+                        {{ teacher.designation }}
+                    </span>
+                </p>
+                <p class="profile-emp-id"><i class="fas fa-id-badge"></i> {{ teacher.employee_id }}</p>
+            </div>
+        </div>
+    </div>
+
+    <!-- Stats Row -->
+    <div class="stats-grid">
+        <div class="stat-card-mini">
+            <div class="stat-icon" style="background: linear-gradient(135deg, rgba(78, 115, 223, 0.2), rgba(28, 200, 138, 0.1));">
+                <i class="fas fa-users"></i>
+            </div>
+            <div class="stat-content">
+                <h3>{{ teacher.total_students }}</h3>
+                <p>Total Students</p>
+            </div>
+        </div>
+        <div class="stat-card-mini">
+            <div class="stat-icon" style="background: linear-gradient(135deg, rgba(78, 115, 223, 0.2), rgba(28, 200, 138, 0.1));">
+                <i class="fas fa-book"></i>
+            </div>
+            <div class="stat-content">
+                <h3>{{ teacher.subjects.count }}</h3>
+                <p>Subjects</p>
+            </div>
+        </div>
+        <div class="stat-card-mini">
+            <div class="stat-icon" style="background: linear-gradient(135deg, rgba(78, 115, 223, 0.2), rgba(28, 200, 138, 0.1));">
+                <i class="fas fa-school"></i>
+            </div>
+            <div class="stat-content">
+                <h3>{{ teacher.classes_taught.count }}</h3>
+                <p>Classes</p>
+            </div>
+        </div>
+        <div class="stat-card-mini">
+            <div class="stat-icon" style="background: linear-gradient(135deg, rgba(78, 115, 223, 0.2), rgba(28, 200, 138, 0.1));">
+                <i class="fas fa-calendar-check"></i>
+            </div>
+            <div class="stat-content">
+                <h3>{{ teacher.joining_date|date:"Y" }}</h3>
+                <p>Joining Year</p>
+            </div>
+        </div>
+    </div>
+
+    <!-- Main Content Grid -->
+    <div class="detail-grid">
+        <!-- Contact & Personal Information -->
+        <div class="detail-card">
+            <div class="card-header-detail">
+                <i class="fas fa-address-book"></i>
+                <h5>Contact Information</h5>
+            </div>
+            <div class="card-body-detail">
+                <div class="info-row">
+                    <span class="info-label"><i class="fas fa-envelope"></i>Email</span>
+                    <span class="info-value">{{ teacher.user.email|default:"—" }}</span>
+                </div>
+                <div class="info-row">
+                    <span class="info-label"><i class="fas fa-phone"></i>Phone</span>
+                    <span class="info-value">{{ teacher.user.phone|default:"—" }}</span>
+                </div>
+                <div class="info-row">
+                    <span class="info-label"><i class="fas fa-home"></i>Address</span>
+                    <span class="info-value">{{ teacher.user.address|default:"—" }}</span>
+                </div>
+                <div class="info-row">
+                    <span class="info-label"><i class="fas fa-birthday-cake"></i>DOB</span>
+                    <span class="info-value">{{ teacher.user.date_of_birth|date:"d M Y"|default:"—" }}</span>
+                </div>
+                <div class="info-row">
+                    <span class="info-label"><i class="fas fa-venus-mars"></i>Gender</span>
+                    <span class="info-value">{{ teacher.user.gender|default:"—" }}</span>
+                </div>
+            </div>
+        </div>
+
+        <!-- Professional Information -->
+        <div class="detail-card">
+            <div class="card-header-detail">
+                <i class="fas fa-briefcase"></i>
+                <h5>Professional Details</h5>
+            </div>
+            <div class="card-body-detail">
+                <div class="info-row">
+                    <span class="info-label"><i class="fas fa-id-badge"></i>Employee ID</span>
+                    <span class="info-value">{{ teacher.employee_id }}</span>
+                </div>
+                <div class="info-row">
+                    <span class="info-label"><i class="fas fa-graduation-cap"></i>Qualification</span>
+                    <span class="info-value">{{ teacher.qualification }}</span>
+                </div>
+                <div class="info-row">
+                    <span class="info-label"><i class="fas fa-star"></i>Specialization</span>
+                    <span class="info-value">{{ teacher.specialization }}</span>
+                </div>
+                <div class="info-row">
+                    <span class="info-label"><i class="fas fa-clock"></i>Joining Date</span>
+                    <span class="info-value">{{ teacher.joining_date|date:"d M Y" }}</span>
+                </div>
+                <div class="info-row">
+                    <span class="info-label"><i class="fas fa-chart-line"></i>Experience</span>
+                    <span class="info-value">{{ teacher.total_experience }}</span>
+                </div>
+                <div class="info-row">
+                    <span class="info-label"><i class="fas fa-school"></i>Previous School</span>
+                    <span class="info-value">{{ teacher.previous_school|default:"—" }}</span>
+                </div>
+            </div>
+        </div>
+
+        <!-- Financial Information -->
+        <div class="detail-card">
+            <div class="card-header-detail">
+                <i class="fas fa-wallet"></i>
+                <h5>Financial Details</h5>
+            </div>
+            <div class="card-body-detail">
+                <div class="info-row">
+                    <span class="info-label"><i class="fas fa-dollar-sign"></i>Salary</span>
+                    <span class="info-value">₹{{ teacher.salary|default:"—" }}</span>
+                </div>
+                <div class="info-row">
+                    <span class="info-label"><i class="fas fa-calendar"></i>Salary Type</span>
+                    <span class="info-value">{{ teacher.salary_type }}</span>
+                </div>
+                <div class="info-row">
+                    <span class="info-label"><i class="fas fa-bank"></i>Bank Name</span>
+                    <span class="info-value">{{ teacher.bank_name|default:"—" }}</span>
+                </div>
+                <div class="info-row">
+                    <span class="info-label"><i class="fas fa-credit-card"></i>Account Number</span>
+                    <span class="info-value">{{ teacher.bank_account|default:"—" }}</span>
+                </div>
+                <div class="info-row">
+                    <span class="info-label"><i class="fas fa-code"></i>IFSC Code</span>
+                    <span class="info-value">{{ teacher.ifsc_code|default:"—" }}</span>
+                </div>
+                <div class="info-row">
+                    <span class="info-label"><i class="fas fa-map-marker-alt"></i>Branch</span>
+                    <span class="info-value">{{ teacher.bank_branch|default:"—" }}</span>
+                </div>
+            </div>
+        </div>
+
+        <!-- Subjects Taught -->
+        <div class="detail-card full-width">
+            <div class="card-header-detail">
+                <i class="fas fa-book-open"></i>
+                <h5>Subjects Taught</h5>
+            </div>
+            <div class="card-body-detail">
+                {% if teacher.subjects.all %}
+                    <div class="badges-grid">
+                        {% for subject in teacher.subjects.all %}
+                        <span class="subject-badge">
+                            <i class="fas fa-book me-1"></i>{{ subject.name }} <span class="code-badge">{{ subject.code }}</span>
+                        </span>
+                        {% endfor %}
+                    </div>
+                {% else %}
+                    <p class="text-muted" style="text-align: center; padding: 2rem;">No subjects assigned yet</p>
+                {% endif %}
+            </div>
+        </div>
+
+        <!-- Classes Taught -->
+        <div class="detail-card full-width">
+            <div class="card-header-detail">
+                <i class="fas fa-chalkboard"></i>
+                <h5>Classes Taught</h5>
+            </div>
+            <div class="card-body-detail">
+                {% if teacher.classes_taught %}
+                    <div class="badges-grid">
+                        {% for class in teacher.classes_taught %}
+                        <span class="class-badge">
+                            <i class="fas fa-users me-1"></i>{{ class.name }} <span class="section-label">Section {{ class.section }}</span>
+                        </span>
+                        {% empty %}
+                        {% endfor %}
+                    </div>
+                {% else %}
+                    <p class="text-muted" style="text-align: center; padding: 2rem;">No classes assigned yet</p>
+                {% endif %}
+            </div>
+        </div>
+    </div>
+
+    <!-- Action Buttons -->
+    <div class="action-buttons-row">
+        <a href="{% url 'teacher_update' teacher.employee_id %}" class="btn-action-primary">
+            <i class="fas fa-edit me-2"></i>Edit Teacher
+        </a>
+        <a href="{% url 'timetable' %}" class="btn-action-secondary">
+            <i class="fas fa-calendar-alt me-2"></i>View Timetable
+        </a>
+        <a href="{% url 'student_list' %}" class="btn-action-secondary">
+            <i class="fas fa-users me-2"></i>View Students
+        </a>
+        <a href="{% url 'teacher_list' %}" class="btn-action-cancel">
+            <i class="fas fa-arrow-left me-2"></i>Back to List
+        </a>
+    </div>
+</div>
+
+{% endblock %}
+
+{% block extra_css %}
+<style>
+    /* ====== Detail Container ====== */
+    .detail-container {
+        max-width: 1200px;
+        margin: 0 auto;
+        animation: slideDown 0.6s ease;
+    }
+
+    /* ====== Profile Header Card ====== */
+    .profile-header-card {
+        background: linear-gradient(135deg, rgba(255, 255, 255, 0.08) 0%, rgba(255, 255, 255, 0.02) 100%);
+        border: 1px solid rgba(78, 115, 223, 0.12);
+        border-radius: 24px;
+        backdrop-filter: blur(10px);
+        padding: 2.5rem;
+        margin-bottom: 2rem;
+        animation: fadeInUp 0.7s ease;
+    }
+
+    .profile-content {
+        display: flex;
+        align-items: flex-start;
+        gap: 2.5rem;
+    }
+
+    .profile-image-container {
+        position: relative;
+        flex-shrink: 0;
+        animation: popIn 0.6s cubic-bezier(0.34, 1.56, 0.64, 1);
+    }
+
+    .profile-image-lg {
+        width: 140px;
+        height: 140px;
+        border-radius: 16px;
+        object-fit: cover;
+        box-shadow: 0 20px 40px rgba(78, 115, 223, 0.2);
+        border: 2px solid rgba(78, 115, 223, 0.2);
+    }
+
+    .profile-placeholder-lg {
+        width: 140px;
+        height: 140px;
+        border-radius: 16px;
+        background: linear-gradient(135deg, rgba(78, 115, 223, 0.15), rgba(28, 200, 138, 0.1));
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        font-size: 3.5rem;
+        color: rgba(78, 115, 223, 0.4);
+        border: 2px solid rgba(78, 115, 223, 0.2);
+    }
+
+    .status-indicator {
+        position: absolute;
+        bottom: 0;
+        right: 0;
+        width: 40px;
+        height: 40px;
+        border-radius: 50%;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        font-size: 0.9rem;
+        color: white;
+        border: 3px solid white;
+        box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
+    }
+
+    .status-indicator.active {
+        background: linear-gradient(135deg, #1cc88a, #1abc9c);
+    }
+
+    .status-indicator.inactive {
+        background: linear-gradient(135deg, #ff6b6b, #ff5252);
+    }
+
+    .profile-info {
+        flex: 1;
+        padding-top: 0.5rem;
+    }
+
+    .profile-name {
+        font-size: 2rem;
+        font-weight: 700;
+        background: linear-gradient(135deg, #4e73df 0%, #1cc88a 100%);
+        background-clip: text;
+        -webkit-background-clip: text;
+        -webkit-text-fill-color: transparent;
+        margin: 0 0 0.5rem 0;
+        letter-spacing: -0.5px;
+    }
+
+    .profile-designation {
+        margin: 0.5rem 0 1rem 0;
+    }
+
+    .badge-designation {
+        display: inline-block;
+        padding: 0.6rem 1.2rem;
+        border-radius: 20px;
+        font-weight: 600;
+        font-size: 0.85rem;
+        color: white;
+    }
+
+    .badge-principal {
+        background: linear-gradient(135deg, #ff6b6b, #ff5252);
+    }
+
+    .badge-viceprincipal {
+        background: linear-gradient(135deg, #ffa94d, #ff922b);
+    }
+
+    .badge-headteacher {
+        background: linear-gradient(135deg, #4e73df, #3f51b5);
+    }
+
+    .badge-teacher {
+        background: linear-gradient(135deg, #1cc88a, #1abc9c);
+    }
+
+    .profile-emp-id {
+        color: rgba(0, 0, 0, 0.6);
+        font-size: 0.95rem;
+        margin: 0;
+    }
+
+    [data-bs-theme="dark"] .profile-emp-id {
+        color: rgba(255, 255, 255, 0.7);
+    }
+
+    /* ====== Stats Grid ====== */
+    .stats-grid {
+        display: grid;
+        grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+        gap: 1.5rem;
+        margin-bottom: 2rem;
+    }
+
+    .stat-card-mini {
+        background: linear-gradient(135deg, rgba(255, 255, 255, 0.06) 0%, rgba(255, 255, 255, 0.02) 100%);
+        border: 1px solid rgba(78, 115, 223, 0.12);
+        border-radius: 16px;
+        backdrop-filter: blur(10px);
+        padding: 1.5rem;
+        display: flex;
+        align-items: center;
+        gap: 1.5rem;
+        animation: fadeInUp 0.6s ease forwards;
+        opacity: 0;
+    }
+
+    .stat-card-mini:nth-child(1) { animation-delay: 0.1s; }
+    .stat-card-mini:nth-child(2) { animation-delay: 0.15s; }
+    .stat-card-mini:nth-child(3) { animation-delay: 0.2s; }
+    .stat-card-mini:nth-child(4) { animation-delay: 0.25s; }
+
+    .stat-icon {
+        width: 60px;
+        height: 60px;
+        border-radius: 12px;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        font-size: 1.5rem;
+        color: #4e73df;
+        flex-shrink: 0;
+    }
+
+    .stat-content h3 {
+        font-size: 1.5rem;
+        font-weight: 700;
+        margin: 0;
+        background: linear-gradient(135deg, #4e73df, #1cc88a);
+        background-clip: text;
+        -webkit-background-clip: text;
+        -webkit-text-fill-color: transparent;
+    }
+
+    .stat-content p {
+        font-size: 0.8rem;
+        color: rgba(0, 0, 0, 0.5);
+        margin: 0.25rem 0 0 0;
+    }
+
+    [data-bs-theme="dark"] .stat-content p {
+        color: rgba(255, 255, 255, 0.5);
+    }
+
+    /* ====== Detail Grid ====== */
+    .detail-grid {
+        display: grid;
+        grid-template-columns: repeat(auto-fit, minmax(320px, 1fr));
+        gap: 1.5rem;
+        margin-bottom: 2rem;
+    }
+
+    .detail-card {
+        background: linear-gradient(135deg, rgba(78, 115, 223, 0.06) 0%, rgba(28, 200, 138, 0.03) 100%);
+        border: 1px solid rgba(78, 115, 223, 0.1);
+        border-radius: 16px;
+        backdrop-filter: blur(10px);
+        overflow: hidden;
+        animation: fadeInUp 0.6s ease forwards;
+        opacity: 0;
+    }
+
+    .detail-card:nth-child(1) { animation-delay: 0.1s; }
+    .detail-card:nth-child(2) { animation-delay: 0.15s; }
+    .detail-card:nth-child(3) { animation-delay: 0.2s; }
+    .detail-card:nth-child(4) { animation-delay: 0.25s; }
+    .detail-card:nth-child(5) { animation-delay: 0.3s; }
+    .detail-card:nth-child(6) { animation-delay: 0.35s; }
+
+    .detail-card.full-width {
+        grid-column: 1 / -1;
+    }
+
+    .card-header-detail {
+        background: linear-gradient(135deg, rgba(78, 115, 223, 0.08) 0%, rgba(28, 200, 138, 0.04) 100%);
+        border-bottom: 1px solid rgba(78, 115, 223, 0.1);
+        padding: 1.25rem 1.5rem;
+        display: flex;
+        align-items: center;
+        gap: 0.75rem;
+    }
+
+    .card-header-detail i {
+        color: #4e73df;
+        font-size: 1.1rem;
+    }
+
+    .card-header-detail h5 {
+        margin: 0;
+        font-weight: 600;
+        color: rgba(0, 0, 0, 0.8);
+        font-size: 1rem;
+    }
+
+    [data-bs-theme="dark"] .card-header-detail h5 {
+        color: rgba(255, 255, 255, 0.9);
+    }
+
+    .card-body-detail {
+        padding: 1.5rem;
+    }
+
+    .info-row {
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        padding: 0.75rem 0;
+        border-bottom: 1px solid rgba(78, 115, 223, 0.06);
+    }
+
+    .info-row:last-child {
+        border-bottom: none;
+    }
+
+    .info-label {
+        color: rgba(0, 0, 0, 0.5);
+        font-size: 0.9rem;
+        font-weight: 500;
+        display: flex;
+        align-items: center;
+        gap: 0.5rem;
+    }
+
+    [data-bs-theme="dark"] .info-label {
+        color: rgba(255, 255, 255, 0.6);
+    }
+
+    .info-label i {
+        color: #4e73df;
+        width: 20px;
+    }
+
+    .info-value {
+        color: rgba(0, 0, 0, 0.7);
+        font-weight: 500;
+        word-break: break-word;
+        text-align: right;
+        max-width: 60%;
+    }
+
+    [data-bs-theme="dark"] .info-value {
+        color: rgba(255, 255, 255, 0.8);
+    }
+
+    /* ====== Badges Grid ====== */
+    .badges-grid {
+        display: flex;
+        flex-wrap: wrap;
+        gap: 1rem;
+    }
+
+    .subject-badge, .class-badge {
+        display: inline-flex;
+        align-items: center;
+        padding: 0.6rem 1.2rem;
+        background: linear-gradient(135deg, rgba(78, 115, 223, 0.12) 0%, rgba(28, 200, 138, 0.08) 100%);
+        border: 1px solid rgba(78, 115, 223, 0.15);
+        border-radius: 20px;
+        font-size: 0.9rem;
+        color: rgba(0, 0, 0, 0.7);
+        font-weight: 500;
+        transition: all 0.3s ease;
+    }
+
+    [data-bs-theme="dark"] .subject-badge,
+    [data-bs-theme="dark"] .class-badge {
+        color: rgba(255, 255, 255, 0.8);
+        background: linear-gradient(135deg, rgba(78, 115, 223, 0.15) 0%, rgba(28, 200, 138, 0.1) 100%);
+    }
+
+    .subject-badge:hover, .class-badge:hover {
+        background: linear-gradient(135deg, rgba(78, 115, 223, 0.2) 0%, rgba(28, 200, 138, 0.15) 100%);
+        border-color: rgba(78, 115, 223, 0.25);
+        transform: translateY(-2px);
+        box-shadow: 0 6px 16px rgba(78, 115, 223, 0.12);
+    }
+
+    .code-badge, .section-label {
+        background: rgba(78, 115, 223, 0.15);
+        padding: 0.2rem 0.6rem;
+        border-radius: 4px;
+        font-size: 0.8rem;
+        margin-left: 0.5rem;
+    }
+
+    /* ====== Action Buttons Row ====== */
+    .action-buttons-row {
+        display: flex;
+        flex-wrap: wrap;
+        gap: 1rem;
+        justify-content: flex-end;
+        padding: 2rem 1.5rem;
+        background: linear-gradient(135deg, rgba(255, 255, 255, 0.04) 0%, rgba(255, 255, 255, 0.01) 100%);
+        border: 1px solid rgba(78, 115, 223, 0.1);
+        border-radius: 16px;
+        animation: fadeInUp 0.6s ease 0.4s forwards;
+        opacity: 0;
+    }
+
+    .btn-action-primary, .btn-action-secondary, .btn-action-cancel {
+        padding: 0.75rem 1.5rem;
+        border-radius: 12px;
+        font-weight: 600;
+        font-size: 0.95rem;
+        border: none;
+        cursor: pointer;
+        transition: all 0.3s ease;
+        display: inline-flex;
+        align-items: center;
+        justify-content: center;
+        text-decoration: none;
+    }
+
+    .btn-action-primary {
+        background: linear-gradient(135deg, #4e73df, #1cc88a);
+        color: white;
+        box-shadow: 0 8px 20px rgba(78, 115, 223, 0.25);
+    }
+
+    .btn-action-primary:hover {
+        transform: translateY(-2px);
+        box-shadow: 0 12px 28px rgba(78, 115, 223, 0.35);
+    }
+
+    .btn-action-secondary {
+        background: linear-gradient(135deg, rgba(78, 115, 223, 0.1), rgba(28, 200, 138, 0.08));
+        color: #4e73df;
+        border: 1px solid rgba(78, 115, 223, 0.15);
+    }
+
+    .btn-action-secondary:hover {
+        background: linear-gradient(135deg, rgba(78, 115, 223, 0.15), rgba(28, 200, 138, 0.12));
+        border-color: rgba(78, 115, 223, 0.25);
+        color: #3f51b5;
+        transform: translateY(-2px);
+    }
+
+    .btn-action-cancel {
+        background: transparent;
+        color: rgba(0, 0, 0, 0.6);
+        border: 1px solid rgba(0, 0, 0, 0.12);
+    }
+
+    [data-bs-theme="dark"] .btn-action-cancel {
+        color: rgba(255, 255, 255, 0.7);
+        border-color: rgba(255, 255, 255, 0.12);
+    }
+
+    .btn-action-cancel:hover {
+        background: rgba(78, 115, 223, 0.08);
+        border-color: rgba(78, 115, 223, 0.2);
+        color: #4e73df;
+        transform: translateY(-2px);
+    }
+
+    /* ====== Page Action Buttons ====== */
+    .action-buttons {
+        display: flex;
+        gap: 0.5rem;
+    }
+
+    .btn-icon-action {
+        width: 40px;
+        height: 40px;
+        border-radius: 10px;
+        background: linear-gradient(135deg, rgba(78, 115, 223, 0.1), rgba(28, 200, 138, 0.08));
+        border: 1px solid rgba(78, 115, 223, 0.15);
+        color: #4e73df;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        cursor: pointer;
+        transition: all 0.3s ease;
+        font-size: 1rem;
+    }
+
+    .btn-icon-action:hover {
+        background: linear-gradient(135deg, rgba(78, 115, 223, 0.15), rgba(28, 200, 138, 0.12));
+        border-color: rgba(78, 115, 223, 0.25);
+        transform: translateY(-2px);
+    }
+
+    .dropdown-menu-custom {
+        position: relative;
+    }
+
+    .dropdown-menu-items {
+        position: absolute;
+        top: 100%;
+        right: 0;
+        background: linear-gradient(135deg, rgba(255, 255, 255, 0.95), rgba(255, 255, 255, 0.9));
+        border: 1px solid rgba(78, 115, 223, 0.1);
+        border-radius: 12px;
+        backdrop-filter: blur(10px);
+        box-shadow: 0 10px 32px rgba(0, 0, 0, 0.12);
+        list-style: none;
+        padding: 0.5rem 0;
+        margin: 0.5rem 0 0 0;
+        min-width: 180px;
+        display: none;
+        z-index: 1000;
+    }
+
+    [data-bs-theme="dark"] .dropdown-menu-items {
+        background: linear-gradient(135deg, rgba(30, 30, 30, 0.95), rgba(25, 25, 25, 0.9));
+    }
+
+    .dropdown-menu-custom.show .dropdown-menu-items {
+        display: block;
+    }
+
+    .dropdown-menu-items li a {
+        display: flex;
+        align-items: center;
+        padding: 0.75rem 1rem;
+        color: rgba(0, 0, 0, 0.7);
+        text-decoration: none;
+        transition: all 0.2s ease;
+        cursor: pointer;
+    }
+
+    [data-bs-theme="dark"] .dropdown-menu-items li a {
+        color: rgba(255, 255, 255, 0.7);
+    }
+
+    .dropdown-menu-items li a:hover {
+        background: rgba(78, 115, 223, 0.08);
+        color: #4e73df;
+    }
+
+    .dropdown-menu-items li a.danger-link {
+        color: #ff6b6b;
+    }
+
+    .dropdown-menu-items li a.danger-link:hover {
+        background: rgba(255, 107, 107, 0.1);
+        color: #ff5252;
+    }
+
+    /* ====== Animations ====== */
+    @keyframes slideDown {
+        from {
+            opacity: 0;
+            transform: translateY(-20px);
+        }
+        to {
+            opacity: 1;
+            transform: translateY(0);
+        }
+    }
+
+    @keyframes fadeInUp {
+        from {
+            opacity: 0;
+            transform: translateY(20px);
+        }
+        to {
+            opacity: 1;
+            transform: translateY(0);
+        }
+    }
+
+    @keyframes popIn {
+        0% {
+            opacity: 0;
+            transform: scale(0.8) translateY(10px);
+        }
+        100% {
+            opacity: 1;
+            transform: scale(1) translateY(0);
+        }
+    }
+
+    /* ====== Responsive Design ====== */
+    @media (max-width: 768px) {
+        .profile-content {
+            flex-direction: column;
+            align-items: center;
+            text-align: center;
+        }
+
+        .profile-info {
+            width: 100%;
+        }
+
+        .profile-name {
+            font-size: 1.5rem;
+        }
+
+        .stats-grid {
+            grid-template-columns: 1fr 1fr;
+        }
+
+        .detail-grid {
+            grid-template-columns: 1fr;
+        }
+
+        .action-buttons-row {
+            flex-direction: column;
+            justify-content: center;
+        }
+
+        .btn-action-primary, .btn-action-secondary, .btn-action-cancel {
+            width: 100%;
+        }
+
+        .info-row {
+            flex-direction: column;
+            align-items: flex-start;
+        }
+
+        .info-value {
+            text-align: left;
+            max-width: 100%;
+            margin-top: 0.5rem;
+        }
+    }
+
+    @media (max-width: 480px) {
+        .profile-header-card {
+            padding: 1.5rem;
+        }
+
+        .profile-image-lg {
+            width: 100px;
+            height: 100px;
+        }
+
+        .profile-placeholder-lg {
+            width: 100px;
+            height: 100px;
+        }
+
+        .profile-name {
+            font-size: 1.25rem;
+        }
+
+        .stats-grid {
+            grid-template-columns: 1fr;
+        }
+
+        .stat-card-mini {
+            padding: 1rem;
+        }
+
+        .badges-grid {
+            gap: 0.75rem;
+        }
+    }
+</style>
+{% endblock %}

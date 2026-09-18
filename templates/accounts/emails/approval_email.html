@@ -1,0 +1,176 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <style>
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background: #f5f5f5;
+            margin: 0;
+            padding: 20px;
+        }
+        .email-container {
+            max-width: 600px;
+            margin: 0 auto;
+            background: white;
+            border-radius: 8px;
+            box-shadow: 0 2px 8px rgba(0,0,0,0.1);
+            overflow: hidden;
+        }
+        .header {
+            background: linear-gradient(135deg, #6366f1 0%, #8b5cf6 100%);
+            color: white;
+            padding: 30px;
+            text-align: center;
+        }
+        .header h1 {
+            margin: 0;
+            font-size: 24px;
+            font-weight: 700;
+        }
+        .content {
+            padding: 30px;
+        }
+        .greeting {
+            font-size: 16px;
+            color: #333;
+            margin-bottom: 20px;
+        }
+        .message {
+            color: #666;
+            line-height: 1.6;
+            margin-bottom: 20px;
+        }
+        .details-box {
+            background: #f9f9f9;
+            border-left: 4px solid #6366f1;
+            padding: 15px;
+            margin: 20px 0;
+            border-radius: 4px;
+        }
+        .detail-item {
+            display: flex;
+            justify-content: space-between;
+            padding: 10px 0;
+            border-bottom: 1px solid #eee;
+        }
+        .detail-item:last-child {
+            border-bottom: none;
+        }
+        .detail-label {
+            font-weight: 600;
+            color: #333;
+        }
+        .detail-value {
+            color: #666;
+            word-break: break-all;
+        }
+        .cta-button {
+            display: inline-block;
+            background: linear-gradient(135deg, #6366f1 0%, #8b5cf6 100%);
+            color: white;
+            text-decoration: none;
+            padding: 12px 30px;
+            border-radius: 6px;
+            font-weight: 600;
+            margin: 20px 0;
+        }
+        .footer {
+            background: #f9f9f9;
+            padding: 20px;
+            text-align: center;
+            color: #999;
+            font-size: 12px;
+            border-top: 1px solid #eee;
+        }
+        .warning {
+            background: #fff3cd;
+            border: 1px solid #ffc107;
+            color: #856404;
+            padding: 15px;
+            border-radius: 4px;
+            margin: 20px 0;
+        }
+        .success {
+            background: #d4edda;
+            border: 1px solid #28a745;
+            color: #155724;
+            padding: 15px;
+            border-radius: 4px;
+            margin: 20px 0;
+        }
+    </style>
+</head>
+<body>
+    <div class="email-container">
+        <div class="header">
+            <h1>🎉 Account Approved!</h1>
+        </div>
+        
+        <div class="content">
+            <p class="greeting">Dear {{ first_name }} {{ last_name }},</p>
+            
+            <p class="message">
+                Congratulations! Your access request to the School System has been <strong>APPROVED</strong>.
+            </p>
+            
+            <div class="success">
+                ✓ Your account is ready to use. Login credentials have been sent separately.
+            </div>
+            
+            <h3 style="margin-top: 30px; color: #333;">Account Information</h3>
+            <div class="details-box">
+                <div class="detail-item">
+                    <span class="detail-label">Name:</span>
+                    <span class="detail-value">{{ first_name }} {{ last_name }}</span>
+                </div>
+                <div class="detail-item">
+                    <span class="detail-label">Email:</span>
+                    <span class="detail-value">{{ email }}</span>
+                </div>
+                <div class="detail-item">
+                    <span class="detail-label">User Type:</span>
+                    <span class="detail-value">{{ user_type }}</span>
+                </div>
+                <div class="detail-item">
+                    <span class="detail-label">Approved By:</span>
+                    <span class="detail-value">{{ approved_by }}</span>
+                </div>
+            </div>
+            
+            <div class="warning">
+                <strong>⚠️ Important:</strong> A separate email with your login credentials (username and temporary password) has been sent to this email address. Check your spam folder if you don't see it within a few minutes.
+            </div>
+            
+            <p class="message">
+                <strong>Next Steps:</strong>
+                <ol style="color: #666; line-height: 1.8;">
+                    <li>Check your email for your login credentials</li>
+                    <li>Visit the login page using the button below</li>
+                    <li>Enter your username and temporary password</li>
+                    <li>Change your password immediately for security</li>
+                </ol>
+            </p>
+            
+            <center>
+                <a href="{{ login_url }}" class="cta-button">Login to School System</a>
+            </center>
+            
+            <p class="message" style="margin-top: 30px;">
+                If you have any questions or encounter any issues, please contact the school administration.
+            </p>
+            
+            <p style="color: #666;">
+                Best regards,<br>
+                <strong>{{ school_name }} Administration</strong>
+            </p>
+        </div>
+        
+        <div class="footer">
+            <p>This is an automated message. Please do not reply to this email.</p>
+            <p>&copy; 2024 School System. All rights reserved.</p>
+        </div>
+    </div>
+</body>
+</html>

@@ -1,0 +1,2038 @@
+{% extends 'base.html' %}
+{% block title %}{{ exam.name }} - Analysis Portal{% endblock %}
+{% block page_title %}Examination Analysis & Performance{% endblock %}
+
+{% block breadcrumb %}
+<li class="breadcrumb-item"><a href="{% url 'exam_list' %}"><i class="fas fa-list-check me-1"></i>Exams Portal</a></li>
+<li class="breadcrumb-item active">Performance Analytics</li>
+{% endblock %}
+
+{% block page_actions %}
+<div class="premium-actions-group">
+    <a href="{% url 'grade_exam' exam.id %}" class="premium-action-btn primary-btn">
+        <i class="fas fa-pencil-alt"></i>
+        <span>Enter Grades</span>
+    </a>
+    <a href="{% url 'exam_update' exam.id %}" class="premium-action-btn secondary-btn">
+        <i class="fas fa-cog"></i>
+        <span>Configure</span>
+    </a>
+    <button type="button" class="premium-action-btn menu-btn" id="moreActionsBtn">
+        <i class="fas fa-ellipsis-v"></i>
+        <span>More</span>
+    </button>
+    <div class="premium-dropdown-menu" id="dropdownMenu">
+        <a href="#" class="dropdown-item">
+            <i class="fas fa-print"></i> Print Results
+        </a>
+        <a href="#" class="dropdown-item">
+            <i class="fas fa-download"></i> Export Data
+        </a>
+        <div class="dropdown-divider"></div>
+        <a href="{% url 'exam_delete' exam.id %}" class="dropdown-item danger-item"
+           onclick="return confirm('Are you sure? This cannot be undone.')">
+            <i class="fas fa-trash-alt"></i> Delete Exam
+        </a>
+    </div>
+</div>
+{% endblock %}
+
+
+{% block content %}
+<div class="exam-analytics-portal">
+    <!-- Animated Background -->
+    <div class="analytics-bg"></div>
+
+    <!-- Header Section with Exam Overview -->
+    <div class="analytics-header">
+        <div class="exam-title-section">
+            <h1 class="exam-main-title">{{ exam.name }}</h1>
+            <div class="exam-badges-row">
+                <span class="exam-badge type-badge">
+                    {% if exam.exam_type == 'Final' %}
+                        <i class="fas fa-crown"></i> Final Exam
+                    {% elif exam.exam_type == 'Midterm' %}
+                        <i class="fas fa-star"></i> Midterm Exam
+                    {% elif exam.exam_type == 'Unit Test' %}
+                        <i class="fas fa-check-circle"></i> Unit Test
+                    {% else %}
+                        <i class="fas fa-quiz"></i> {{ exam.exam_type }}
+                    {% endif %}
+                </span>
+                <span class="exam-badge term-badge">{{ exam.get_term_display }}</span>
+                <span class="exam-badge subject-badge">{{ exam.subject.name }}</span>
+            </div>
+        </div>
+
+        <!-- Quick Stats Row -->
+        <div class="quick-stats-grid">
+            <div class="quick-stat-card">
+                <div class="stat-value">{{ exam.total_marks }}</div>
+                <div class="stat-label">Total Marks</div>
+            </div>
+            <div class="quick-stat-card">
+                <div class="stat-value">{{ exam.pass_marks }}</div>
+                <div class="stat-label">Pass Marks</div>
+            </div>
+            <div class="quick-stat-card">
+                <div class="stat-value">{{ exam.total_students }}</div>
+                <div class="stat-label">Total Students</div>
+            </div>
+            <div class="quick-stat-card">
+                <div class="stat-value">{{ exam.pass_percentage|floatformat:1 }}%</div>
+                <div class="stat-label">Pass Rate</div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Main Analytics Grid -->
+    <div class="analytics-grid">
+        <!-- Left Column: Key Metrics -->
+        <div class="analytics-left-column">
+            <!-- Exam Details Card -->
+            <div class="analytics-card">
+                <div class="card-header-premium">
+                    <h3><i class="fas fa-info-circle"></i> Examination Details</h3>
+                </div>
+                <div class="card-body-premium">
+                    <div class="detail-item">
+                        <span class="detail-icon"><i class="fas fa-calendar-alt"></i></span>
+                        <div>
+                            <span class="detail-label">Date Conducted</span>
+                            <span class="detail-value">{{ exam.date_conducted|date:"l, d F Y" }}</span>
+                        </div>
+                    </div>
+                    <div class="detail-item">
+                        <span class="detail-icon"><i class="fas fa-clock"></i></span>
+                        <div>
+                            <span class="detail-label">Exam Time</span>
+                            <span class="detail-value">{{ exam.exam_time|time:"H:i" }}</span>
+                        </div>
+                    </div>
+                    <div class="detail-item">
+                        <span class="detail-icon"><i class="fas fa-building"></i></span>
+                        <div>
+                            <span class="detail-label">Class/Section</span>
+                            <span class="detail-value">{{ exam.class_name.name }}</span>
+                        </div>
+                    </div>
+                    <div class="detail-item">
+                        <span class="detail-icon"><i class="fas fa-percentage"></i></span>
+                        <div>
+                            <span class="detail-label">Weightage Factor</span>
+                            <span class="detail-value">{{ exam.weightage }}</span>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Performance Overview Card -->
+            <div class="analytics-card">
+                <div class="card-header-premium">
+                    <h3><i class="fas fa-chart-line"></i> Performance Overview</h3>
+                </div>
+                <div class="card-body-premium">
+                    <div class="performance-metric">
+                        <div class="metric-label">Grading Progress</div>
+                        <div class="progress-bar-large">
+                            <div class="progress-fill" style="width: {% widthratio exam.students_graded exam.total_students 100 %}%"></div>
+                        </div>
+                        <div class="progress-text">{{ exam.students_graded }} of {{ exam.total_students }} students graded</div>
+                    </div>
+
+                    <div class="performance-metric mt-3">
+                        <div class="metric-label">Average Performance</div>
+                        <div class="metric-box">
+                            <div class="metric-percentage">{{ exam.pass_percentage|floatformat:1 }}%</div>
+                            <div class="metric-sublabel">
+                                {% if exam.pass_percentage >= 75 %}
+                                    <i class="fas fa-thumbs-up"></i> Excellent
+                                {% elif exam.pass_percentage >= 60 %}
+                                    <i class="fas fa-chart-line"></i> Good
+                                {% elif exam.pass_percentage >= 40 %}
+                                    <i class="fas fa-exclamation-circle"></i> Moderate
+                                {% else %}
+                                    <i class="fas fa-arrow-trending-down"></i> Needs Improvement
+                                {% endif %}
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Statistics Cards -->
+            <div class="analytics-card">
+                <div class="card-header-premium">
+                    <h3><i class="fas fa-chart-bar"></i> Key Statistics</h3>
+                </div>
+                <div class="card-body-premium">
+                    <div class="stats-grid-mini">
+                        <div class="stat-mini-card">
+                            <div class="stat-icon passed"><i class="fas fa-check-circle"></i></div>
+                            <div>
+                                <div class="stat-count">{{ passed_count }}</div>
+                                <div class="stat-name">Passed</div>
+                            </div>
+                        </div>
+                        <div class="stat-mini-card">
+                            <div class="stat-icon failed"><i class="fas fa-times-circle"></i></div>
+                            <div>
+                                <div class="stat-count">{{ failed_count }}</div>
+                                <div class="stat-name">Failed</div>
+                            </div>
+                        </div>
+                        <div class="stat-mini-card">
+                            <div class="stat-icon absent"><i class="fas fa-user-slash"></i></div>
+                            <div>
+                                <div class="stat-count">{{ absent_count }}</div>
+                                <div class="stat-name">Absent</div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Right Column: Grade Distribution & Results -->
+        <div class="analytics-right-column">
+            <!-- Grade Distribution Card -->
+            <div class="analytics-card">
+                <div class="card-header-premium">
+                    <h3><i class="fas fa-chart-pie"></i> Grade Distribution</h3>
+                </div>
+                <div class="card-body-premium">
+                    <div class="grade-distribution-chart">
+                        <canvas id="gradeDistributionChart" style="max-height: 300px;"></canvas>
+                    </div>
+                    <div class="grade-distribution-table">
+                        {% for item in grade_distribution %}
+                        <div class="grade-row">
+                            <span class="grade-badge {% if item.grade in 'A+,A' %}grade-excellent{% elif item.grade in 'B+,B' %}grade-good{% else %}grade-fair{% endif %}">
+                                {{ item.grade }}
+                            </span>
+                            <div class="grade-bar">
+                                <div class="bar-fill" style="width: {{ item.percentage }}%"></div>
+                            </div>
+                            <span class="grade-count">{{ item.count }} ({{ item.percentage|floatformat:1 }}%)</span>
+                        </div>
+                        {% empty %}
+                        <div class="empty-message">
+                            <i class="fas fa-chart-line"></i>
+                            <p>No grades entered yet</p>
+                        </div>
+                        {% endfor %}
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Results Table Section -->
+    <div class="results-section">
+        <div class="results-header">
+            <div class="results-title">
+                <h2><i class="fas fa-list-check"></i> Student Results & Performance</h2>
+                <span class="result-count">{{ grades.count }} of {{ exam.total_students }} Results</span>
+            </div>
+            <div class="results-controls">
+                <input type="text" id="searchStudents" class="search-input" placeholder="Search students...">
+                <button class="sort-btn" id="sortBtn">
+                    <i class="fas fa-sort-amount-down"></i>
+                </button>
+            </div>
+        </div>
+
+        <div class="results-container">
+            {% if grades %}
+            <div class="results-grid">
+                {% for grade in grades %}
+                <div class="result-card">
+                    <div class="result-card-header">
+                        <div class="student-info">
+                            {% if grade.student.user.profile_picture %}
+                                <img src="{{ grade.student.user.profile_picture.url }}" alt="{{ grade.student.user.get_full_name }}" class="student-avatar">
+                            {% else %}
+                                <div class="student-avatar-initials">
+                                    {{ grade.student.user.first_name|first }}{{ grade.student.user.last_name|first }}
+                                </div>
+                            {% endif %}
+                            <div>
+                                <h4 class="student-name">{{ grade.student.user.get_full_name }}</h4>
+                                <span class="student-meta">Roll: {{ grade.student.roll_number }}</span>
+                            </div>
+                        </div>
+                        <div class="result-status-badge">
+                            {% if grade.is_absent %}
+                                <span class="badge absent-badge">ABSENT</span>
+                            {% elif grade.marks_obtained >= exam.pass_marks %}
+                                <span class="badge pass-badge">PASS</span>
+                            {% else %}
+                                <span class="badge fail-badge">FAIL</span>
+                            {% endif %}
+                        </div>
+                    </div>
+
+                    <div class="result-card-body">
+                        <div class="marks-display">
+                            <div class="marks-value">{{ grade.marks_obtained }}</div>
+                            <div class="marks-total">/ {{ exam.total_marks }}</div>
+                        </div>
+
+                        <div class="result-metrics">
+                            <div class="metric-row">
+                                <span class="metric-name">Percentage</span>
+                                <span class="metric-val percentage-val">{{ grade.percentage|floatformat:1 }}%</span>
+                            </div>
+                            <div class="metric-row">
+                                <span class="metric-name">Grade</span>
+                                <span class="metric-val grade-val {% if grade.grade in 'A+,A' %}excellent{% elif grade.grade in 'B+,B' %}good{% else %}fair{% endif %}">{{ grade.grade }}</span>
+                            </div>
+                            <div class="metric-row">
+                                <span class="metric-name">Grade Point</span>
+                                <span class="metric-val">{{ grade.grade_point }}</span>
+                            </div>
+                        </div>
+
+                        {% if grade.remarks %}
+                        <div class="remarks-box">
+                            <i class="fas fa-quote-left"></i>
+                            <span>{{ grade.remarks }}</span>
+                        </div>
+                        {% endif %}
+                    </div>
+
+                    <div class="result-card-footer">
+                        <button class="edit-result-btn" type="button" onclick="openEditModal({{ grade.id }}); return false;">
+                            <i class="fas fa-edit"></i> Edit
+                        </button>
+                    </div>
+                </div>
+                {% endfor %}
+            </div>
+            {% else %}
+            <div class="empty-state">
+                <div class="empty-icon">
+                    <i class="fas fa-inbox"></i>
+                </div>
+                <h3>No Grades Entered</h3>
+                <p>Start entering student grades to see the results here</p>
+                <a href="{% url 'grade_exam' exam.id %}" class="btn-empty-action">
+                    <i class="fas fa-pencil-alt"></i> Enter Grades Now
+                </a>
+            </div>
+            {% endif %}
+        </div>
+    </div>
+</div>
+
+<!-- Edit Grade Modals -->
+{% for grade in grades %}
+<div class="custom-modal" id="editGradeModal{{ grade.id }}">
+    <div class="modal-overlay"></div>
+    <div class="modal-dialog modal-dialog-centered">
+        <div class="modal-content premium-modal">
+            <div class="modal-header premium-modal-header">
+                <h5 class="modal-title">
+                    <i class="fas fa-edit me-2"></i>Update Grade
+                </h5>
+                <button type="button" class="btn-close btn-close-white" onclick="closeEditModal({{ grade.id }})" aria-label="Close"></button>
+            </div>
+            <form method="post" action="{% url 'grade_update' grade.id %}">
+                {% csrf_token %}
+                <div class="modal-body premium-modal-body">
+                    <!-- Student Info Context -->
+                    <div class="student-context-card">
+                        {% if grade.student.user.profile_picture %}
+                            <img src="{{ grade.student.user.profile_picture.url }}" alt="{{ grade.student.user.get_full_name }}" class="context-avatar">
+                        {% else %}
+                            <div class="context-avatar-initials">
+                                {{ grade.student.user.first_name|first }}{{ grade.student.user.last_name|first }}
+                            </div>
+                        {% endif %}
+                        <div class="context-info">
+                            <h6 class="context-name">{{ grade.student.user.get_full_name }}</h6>
+                            <span class="context-meta">Roll No: {{ grade.student.roll_number }}</span>
+                        </div>
+                    </div>
+
+                    <div class="modal-form-group">
+                        <label class="modal-form-label">Marks Obtained</label>
+                        <input type="number" name="marks_obtained" class="modal-form-input" 
+                               value="{{ grade.marks_obtained }}" min="0" max="{{ exam.total_marks }}" step="0.01" required
+                               id="marksInput{{ grade.id }}" {% if grade.is_absent %}readonly{% endif %}>
+                        <span class="input-unit">/ {{ exam.total_marks }} marks</span>
+                    </div>
+
+                    <div class="modal-form-group">
+                        <label class="modal-form-label">Remarks</label>
+                        <textarea name="remarks" class="modal-form-input textarea-style" rows="3" placeholder="Add optional remarks...">{{ grade.remarks }}</textarea>
+                    </div>
+
+                    <div class="modal-checkbox-group">
+                        <input type="checkbox" class="modal-checkbox" name="is_absent" 
+                               id="absent{{ grade.id }}" {% if grade.is_absent %}checked{% endif %}
+                               onchange="toggleMarksInput({{ grade.id }}, this.checked)">
+                        <label for="absent{{ grade.id }}" class="modal-checkbox-label">
+                            <i class="fas fa-user-slash"></i> Mark as Absent
+                        </label>
+                    </div>
+                </div>
+                <div class="modal-footer premium-modal-footer">
+                    <button type="button" class="btn-modal cancel-btn" onclick="closeEditModal({{ grade.id }})">Cancel</button>
+                    <button type="submit" class="btn-modal submit-btn">
+                        <i class="fas fa-save"></i> Save Changes
+                    </button>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>
+{% endfor %}
+{% endblock %}
+
+
+{% block extra_css %}
+<style>
+    /* ============= PREMIUM EXAM DETAIL STYLING ============= */
+    
+    :root {
+        --primary: #4e73df;
+        --secondary: #1cc88a;
+        --danger: #dc3545;
+        --warning: #f6c23e;
+        --dark: #2e3440;
+        --light: #f8f9fa;
+    }
+
+    [data-bs-theme="dark"] {
+        --dark: #e0e0e0;
+        --light: #1a1d23;
+    }
+
+    /* Container */
+    .exam-analytics-portal {
+        position: relative;
+        min-height: 100vh;
+        overflow: hidden;
+    }
+
+    .analytics-bg {
+        position: fixed;
+        top: 0;
+        left: 0;
+        width: 100%;
+        height: 100%;
+        background: linear-gradient(135deg, rgba(78, 115, 223, 0.03) 0%, rgba(28, 200, 138, 0.02) 100%);
+        z-index: -1;
+        animation: bgFlow 12s ease-in-out infinite;
+    }
+
+    @keyframes bgFlow {
+        0%, 100% { opacity: 1; }
+        50% { opacity: 0.8; }
+    }
+
+    /* Header Section */
+    .analytics-header {
+        background: linear-gradient(135deg, #ffffff 0%, #f8f9fa 100%);
+        border-radius: 20px;
+        padding: 40px;
+        margin-bottom: 32px;
+        box-shadow: 0 10px 40px rgba(78, 115, 223, 0.12);
+        margin: 20px;
+        margin-bottom: 32px;
+    }
+
+    [data-bs-theme="dark"] .analytics-header {
+        background: linear-gradient(135deg, #2d3142 0%, #1a1d23 100%);
+    }
+
+    .exam-title-section {
+        margin-bottom: 24px;
+    }
+
+    .exam-main-title {
+        font-size: 32px;
+        font-weight: 800;
+        color: var(--dark);
+        margin: 0 0 12px;
+    }
+
+    [data-bs-theme="dark"] .exam-main-title {
+        color: #e0e0e0;
+    }
+
+    .exam-badges-row {
+        display: flex;
+        gap: 10px;
+        flex-wrap: wrap;
+    }
+
+    .exam-badge {
+        display: inline-flex;
+        align-items: center;
+        gap: 6px;
+        padding: 8px 16px;
+        border-radius: 20px;
+        font-size: 12px;
+        font-weight: 700;
+        text-transform: uppercase;
+        letter-spacing: 0.5px;
+    }
+
+    .type-badge {
+        background: linear-gradient(135deg, #dc3545 0%, #a71d2a 100%);
+        color: white;
+    }
+
+    .term-badge {
+        background: linear-gradient(135deg, #4e73df 0%, #224abe 100%);
+        color: white;
+    }
+
+    .subject-badge {
+        background: linear-gradient(135deg, #1cc88a 0%, #128a5f 100%);
+        color: white;
+    }
+
+    .quick-stats-grid {
+        display: grid;
+        grid-template-columns: repeat(auto-fit, minmax(150px, 1fr));
+        gap: 16px;
+    }
+
+    .quick-stat-card {
+        background: linear-gradient(135deg, rgba(78, 115, 223, 0.1) 0%, rgba(28, 200, 138, 0.05) 100%);
+        border: 2px solid #e9ecef;
+        border-radius: 12px;
+        padding: 16px;
+        text-align: center;
+    }
+
+    [data-bs-theme="dark"] .quick-stat-card {
+        background: linear-gradient(135deg, rgba(78, 115, 223, 0.15) 0%, rgba(28, 200, 138, 0.08) 100%);
+        border-color: #4a5568;
+    }
+
+    .stat-value {
+        font-size: 24px;
+        font-weight: 800;
+        color: #4e73df;
+        margin-bottom: 4px;
+    }
+
+    .stat-label {
+        font-size: 11px;
+        font-weight: 700;
+        color: #6c757d;
+        text-transform: uppercase;
+    }
+
+    [data-bs-theme="dark"] .stat-label {
+        color: #b0b0b0;
+    }
+
+    /* Analytics Grid */
+    .analytics-grid {
+        display: grid;
+        grid-template-columns: repeat(auto-fit, minmax(350px, 1fr));
+        gap: 24px;
+        padding: 0 20px;
+        margin-bottom: 32px;
+    }
+
+    /* Analytics Cards */
+    .analytics-card {
+        background: linear-gradient(135deg, #ffffff 0%, #f8f9fa 100%);
+        border-radius: 16px;
+        overflow: hidden;
+        box-shadow: 0 8px 24px rgba(78, 115, 223, 0.1);
+        transition: all 0.3s ease;
+    }
+
+    [data-bs-theme="dark"] .analytics-card {
+        background: linear-gradient(135deg, #2d3142 0%, #1a1d23 100%);
+    }
+
+    .analytics-card:hover {
+        transform: translateY(-4px);
+        box-shadow: 0 16px 48px rgba(78, 115, 223, 0.15);
+    }
+
+    .card-header-premium {
+        padding: 20px;
+        border-bottom: 2px solid #e9ecef;
+        background: linear-gradient(135deg, rgba(78, 115, 223, 0.05) 0%, rgba(28, 200, 138, 0.02) 100%);
+    }
+
+    [data-bs-theme="dark"] .card-header-premium {
+        border-bottom-color: #4a5568;
+    }
+
+    .card-header-premium h3 {
+        margin: 0;
+        font-size: 16px;
+        font-weight: 800;
+        color: var(--dark);
+        display: flex;
+        align-items: center;
+        gap: 8px;
+    }
+
+    [data-bs-theme="dark"] .card-header-premium h3 {
+        color: #e0e0e0;
+    }
+
+    .card-body-premium {
+        padding: 20px;
+    }
+
+    /* Detail Items */
+    .detail-item {
+        display: flex;
+        align-items: center;
+        gap: 16px;
+        padding: 14px;
+        margin-bottom: 12px;
+        background: #f8f9fa;
+        border-radius: 10px;
+        transition: all 0.3s ease;
+    }
+
+    [data-bs-theme="dark"] .detail-item {
+        background: #3a3f52;
+    }
+
+    .detail-item:hover {
+        background: #e9ecef;
+    }
+
+    [data-bs-theme="dark"] .detail-item:hover {
+        background: #4a5568;
+    }
+
+    .detail-icon {
+        font-size: 18px;
+        color: #4e73df;
+        flex-shrink: 0;
+    }
+
+    .detail-label {
+        display: block;
+        font-size: 11px;
+        font-weight: 700;
+        color: #6c757d;
+        text-transform: uppercase;
+        margin-bottom: 2px;
+    }
+
+    [data-bs-theme="dark"] .detail-label {
+        color: #b0b0b0;
+    }
+
+    .detail-value {
+        display: block;
+        font-size: 14px;
+        font-weight: 700;
+        color: var(--dark);
+    }
+
+    [data-bs-theme="dark"] .detail-value {
+        color: #e0e0e0;
+    }
+
+    /* Performance Metrics */
+    .performance-metric {
+        padding: 12px;
+        background: #f8f9fa;
+        border-radius: 10px;
+    }
+
+    [data-bs-theme="dark"] .performance-metric {
+        background: #3a3f52;
+    }
+
+    .metric-label {
+        font-size: 12px;
+        font-weight: 700;
+        color: #6c757d;
+        text-transform: uppercase;
+        margin-bottom: 8px;
+    }
+
+    [data-bs-theme="dark"] .metric-label {
+        color: #b0b0b0;
+    }
+
+    .progress-bar-large {
+        height: 12px;
+        background: #e9ecef;
+        border-radius: 6px;
+        overflow: hidden;
+        margin-bottom: 8px;
+    }
+
+    [data-bs-theme="dark"] .progress-bar-large {
+        background: #4a5568;
+    }
+
+    .progress-fill {
+        height: 100%;
+        background: linear-gradient(90deg, #1cc88a 0%, #128a5f 100%);
+        border-radius: 6px;
+        transition: width 0.4s ease;
+    }
+
+    .progress-text {
+        font-size: 11px;
+        color: #6c757d;
+        font-weight: 600;
+    }
+
+    [data-bs-theme="dark"] .progress-text {
+        color: #b0b0b0;
+    }
+
+    .metric-box {
+        text-align: center;
+        padding: 16px;
+        background: linear-gradient(135deg, rgba(78, 115, 223, 0.1) 0%, rgba(28, 200, 138, 0.05) 100%);
+        border-radius: 10px;
+    }
+
+    [data-bs-theme="dark"] .metric-box {
+        background: linear-gradient(135deg, rgba(78, 115, 223, 0.15) 0%, rgba(28, 200, 138, 0.08) 100%);
+    }
+
+    .metric-percentage {
+        font-size: 28px;
+        font-weight: 800;
+        color: #4e73df;
+        margin-bottom: 4px;
+    }
+
+    .metric-sublabel {
+        font-size: 12px;
+        color: #6c757d;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        gap: 4px;
+    }
+
+    [data-bs-theme="dark"] .metric-sublabel {
+        color: #b0b0b0;
+    }
+
+    /* Stats Grid Mini */
+    .stats-grid-mini {
+        display: grid;
+        grid-template-columns: repeat(3, 1fr);
+        gap: 12px;
+    }
+
+    .stat-mini-card {
+        display: flex;
+        align-items: center;
+        gap: 12px;
+        padding: 12px;
+        background: #f8f9fa;
+        border-radius: 10px;
+    }
+
+    [data-bs-theme="dark"] .stat-mini-card {
+        background: #3a3f52;
+    }
+
+    .stat-icon {
+        width: 40px;
+        height: 40px;
+        border-radius: 8px;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        font-size: 18px;
+        color: white;
+    }
+
+    .stat-icon.passed {
+        background: #1cc88a;
+    }
+
+    .stat-icon.failed {
+        background: #dc3545;
+    }
+
+    .stat-icon.absent {
+        background: #6c757d;
+    }
+
+    .stat-count {
+        font-size: 18px;
+        font-weight: 800;
+        color: var(--dark);
+    }
+
+    [data-bs-theme="dark"] .stat-count {
+        color: #e0e0e0;
+    }
+
+    .stat-name {
+        font-size: 10px;
+        font-weight: 700;
+        color: #6c757d;
+        text-transform: uppercase;
+    }
+
+    [data-bs-theme="dark"] .stat-name {
+        color: #b0b0b0;
+    }
+
+    /* Grade Distribution */
+    .grade-distribution-chart {
+        margin-bottom: 20px;
+    }
+
+    .grade-distribution-table {
+        display: flex;
+        flex-direction: column;
+        gap: 12px;
+    }
+
+    .grade-row {
+        display: grid;
+        grid-template-columns: 40px 1fr 100px;
+        align-items: center;
+        gap: 12px;
+    }
+
+    .grade-badge {
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        padding: 8px;
+        border-radius: 6px;
+        font-weight: 800;
+        color: white;
+    }
+
+    .grade-excellent {
+        background: linear-gradient(135deg, #1cc88a 0%, #128a5f 100%);
+    }
+
+    .grade-good {
+        background: linear-gradient(135deg, #f6c23e 0%, #d4a017 100%);
+    }
+
+    .grade-fair {
+        background: linear-gradient(135deg, #dc3545 0%, #a71d2a 100%);
+    }
+
+    .grade-bar {
+        height: 8px;
+        background: #e9ecef;
+        border-radius: 4px;
+        overflow: hidden;
+    }
+
+    [data-bs-theme="dark"] .grade-bar {
+        background: #4a5568;
+    }
+
+    .bar-fill {
+        height: 100%;
+        background: linear-gradient(90deg, #4e73df 0%, #224abe 100%);
+        border-radius: 4px;
+        transition: width 0.3s ease;
+    }
+
+    .grade-count {
+        font-size: 12px;
+        font-weight: 700;
+        color: #6c757d;
+        text-align: right;
+    }
+
+    [data-bs-theme="dark"] .grade-count {
+        color: #b0b0b0;
+    }
+
+    .empty-message {
+        text-align: center;
+        padding: 32px 20px;
+        color: #6c757d;
+    }
+
+    [data-bs-theme="dark"] .empty-message {
+        color: #b0b0b0;
+    }
+
+    .empty-message i {
+        font-size: 32px;
+        margin-bottom: 12px;
+        display: block;
+        opacity: 0.5;
+    }
+
+    /* Results Section */
+    .results-section {
+        padding: 20px;
+        margin-top: 32px;
+    }
+
+    .results-header {
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        margin-bottom: 24px;
+        flex-wrap: wrap;
+        gap: 16px;
+    }
+
+    .results-title {
+        display: flex;
+        align-items: center;
+        gap: 16px;
+    }
+
+    .results-title h2 {
+        margin: 0;
+        font-size: 20px;
+        font-weight: 800;
+        color: var(--dark);
+        display: flex;
+        align-items: center;
+        gap: 8px;
+    }
+
+    [data-bs-theme="dark"] .results-title h2 {
+        color: #e0e0e0;
+    }
+
+    .result-count {
+        font-size: 12px;
+        font-weight: 700;
+        background: #e7f0ff;
+        color: #4e73df;
+        padding: 6px 12px;
+        border-radius: 20px;
+        text-transform: uppercase;
+    }
+
+    [data-bs-theme="dark"] .result-count {
+        background: #3a4a6b;
+        color: #a8c5ff;
+    }
+
+    .results-controls {
+        display: flex;
+        gap: 12px;
+    }
+
+    .search-input {
+        padding: 10px 14px;
+        border: 2px solid #e9ecef;
+        border-radius: 8px;
+        background: white;
+        color: var(--dark);
+        font-size: 13px;
+        min-width: 200px;
+        transition: all 0.3s ease;
+    }
+
+    [data-bs-theme="dark"] .search-input {
+        background: #3a3f52;
+        border-color: #4a5568;
+        color: #e0e0e0;
+    }
+
+    .search-input:focus {
+        border-color: #4e73df;
+        box-shadow: 0 0 0 3px rgba(78, 115, 223, 0.1);
+        outline: none;
+    }
+
+    .sort-btn {
+        padding: 10px 14px;
+        background: #e9ecef;
+        border: none;
+        border-radius: 8px;
+        cursor: pointer;
+        color: var(--dark);
+        transition: all 0.3s ease;
+    }
+
+    [data-bs-theme="dark"] .sort-btn {
+        background: #3a3f52;
+        color: #e0e0e0;
+    }
+
+    .sort-btn:hover {
+        background: #4e73df;
+        color: white;
+    }
+
+    /* Results Container */
+    .results-container {
+        margin-bottom: 32px;
+    }
+
+    .results-grid {
+        display: grid;
+        grid-template-columns: repeat(auto-fill, minmax(300px, 1fr));
+        gap: 20px;
+    }
+
+    .result-card {
+        background: linear-gradient(135deg, #ffffff 0%, #f8f9fa 100%);
+        border-radius: 16px;
+        overflow: hidden;
+        box-shadow: 0 8px 24px rgba(78, 115, 223, 0.1);
+        transition: all 0.3s ease;
+        display: flex;
+        flex-direction: column;
+    }
+
+    [data-bs-theme="dark"] .result-card {
+        background: linear-gradient(135deg, #2d3142 0%, #1a1d23 100%);
+    }
+
+    .result-card:hover {
+        transform: translateY(-6px);
+        box-shadow: 0 16px 48px rgba(78, 115, 223, 0.2);
+    }
+
+    .result-card-header {
+        padding: 16px;
+        background: linear-gradient(135deg, rgba(78, 115, 223, 0.05) 0%, rgba(28, 200, 138, 0.02) 100%);
+        border-bottom: 2px solid #e9ecef;
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+    }
+
+    [data-bs-theme="dark"] .result-card-header {
+        border-bottom-color: #4a5568;
+    }
+
+    .student-info {
+        display: flex;
+        align-items: center;
+        gap: 12px;
+        flex: 1;
+    }
+
+    .student-avatar {
+        width: 44px;
+        height: 44px;
+        border-radius: 10px;
+        object-fit: cover;
+        border: 2px solid #e9ecef;
+    }
+
+    .student-avatar-initials {
+        width: 44px;
+        height: 44px;
+        border-radius: 10px;
+        background: linear-gradient(135deg, #4e73df 0%, #224abe 100%);
+        color: white;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        font-weight: 800;
+        font-size: 16px;
+    }
+
+    .student-name {
+        font-size: 14px;
+        font-weight: 800;
+        color: var(--dark);
+        margin: 0 0 2px;
+    }
+
+    [data-bs-theme="dark"] .student-name {
+        color: #e0e0e0;
+    }
+
+    .student-meta {
+        font-size: 11px;
+        color: #6c757d;
+    }
+
+    [data-bs-theme="dark"] .student-meta {
+        color: #b0b0b0;
+    }
+
+    .result-status-badge {
+        display: flex;
+        gap: 4px;
+    }
+
+    .badge {
+        padding: 6px 12px;
+        border-radius: 6px;
+        font-size: 10px;
+        font-weight: 800;
+        text-transform: uppercase;
+    }
+
+    .pass-badge {
+        background: #1cc88a;
+        color: white;
+    }
+
+    .fail-badge {
+        background: #dc3545;
+        color: white;
+    }
+
+    .absent-badge {
+        background: #6c757d;
+        color: white;
+    }
+
+    .result-card-body {
+        padding: 20px;
+        flex: 1;
+    }
+
+    .marks-display {
+        display: flex;
+        align-items: baseline;
+        justify-content: center;
+        margin-bottom: 16px;
+    }
+
+    .marks-value {
+        font-size: 32px;
+        font-weight: 800;
+        color: #4e73df;
+        line-height: 1;
+    }
+
+    .marks-total {
+        font-size: 14px;
+        color: #6c757d;
+        margin-left: 4px;
+    }
+
+    [data-bs-theme="dark"] .marks-total {
+        color: #b0b0b0;
+    }
+
+    .result-metrics {
+        display: grid;
+        grid-template-columns: 1fr 1fr;
+        gap: 12px;
+        margin-bottom: 16px;
+    }
+
+    .metric-row {
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        padding: 10px;
+        background: #f8f9fa;
+        border-radius: 8px;
+    }
+
+    [data-bs-theme="dark"] .metric-row {
+        background: #3a3f52;
+    }
+
+    .metric-name {
+        font-size: 11px;
+        font-weight: 700;
+        color: #6c757d;
+        text-transform: uppercase;
+    }
+
+    [data-bs-theme="dark"] .metric-name {
+        color: #b0b0b0;
+    }
+
+    .metric-val {
+        font-weight: 800;
+        color: var(--dark);
+    }
+
+    [data-bs-theme="dark"] .metric-val {
+        color: #e0e0e0;
+    }
+
+    .metric-val.percentage-val {
+        color: #4e73df;
+    }
+
+    .metric-val.grade-val.excellent {
+        color: #1cc88a;
+    }
+
+    .metric-val.grade-val.good {
+        color: #f6c23e;
+    }
+
+    .metric-val.grade-val.fair {
+        color: #dc3545;
+    }
+
+    .remarks-box {
+        padding: 12px;
+        background: linear-gradient(135deg, #e7f0ff 0%, #f0f5ff 100%);
+        border-left: 4px solid #4e73df;
+        border-radius: 6px;
+        font-size: 12px;
+        color: #4e73df;
+        font-style: italic;
+    }
+
+    [data-bs-theme="dark"] .remarks-box {
+        background: linear-gradient(135deg, #3a4a6b 0%, #2d3a54 100%);
+        color: #a8c5ff;
+    }
+
+    .result-card-footer {
+        padding: 12px 16px;
+        background: #f8f9fa;
+        border-top: 2px solid #e9ecef;
+        text-align: center;
+    }
+
+    [data-bs-theme="dark"] .result-card-footer {
+        background: #3a3f52;
+        border-top-color: #4a5568;
+    }
+
+    .edit-result-btn {
+        padding: 8px 16px;
+        background: #4e73df;
+        color: white;
+        border: none;
+        border-radius: 6px;
+        font-size: 12px;
+        font-weight: 700;
+        cursor: pointer;
+        transition: all 0.3s ease;
+        display: inline-flex;
+        align-items: center;
+        gap: 6px;
+    }
+
+    .edit-result-btn:hover {
+        background: #224abe;
+        transform: translateY(-2px);
+    }
+
+    .edit-result-btn:active {
+        transform: translateY(0);
+    }
+
+    .edit-result-btn:focus {
+        outline: 2px solid #4e73df;
+        outline-offset: 2px;
+    }
+
+    /* Empty State */
+    .empty-state {
+        text-align: center;
+        padding: 60px 20px;
+        background: linear-gradient(135deg, #ffffff 0%, #f8f9fa 100%);
+        border-radius: 16px;
+        border: 2px dashed #e9ecef;
+    }
+
+    [data-bs-theme="dark"] .empty-state {
+        background: linear-gradient(135deg, #2d3142 0%, #1a1d23 100%);
+        border-color: #4a5568;
+    }
+
+    .empty-icon {
+        font-size: 64px;
+        color: #c4c4c4;
+        margin-bottom: 16px;
+    }
+
+    [data-bs-theme="dark"] .empty-icon {
+        color: #5a5a5a;
+    }
+
+    .empty-state h3 {
+        font-size: 18px;
+        font-weight: 800;
+        color: var(--dark);
+        margin-bottom: 8px;
+    }
+
+    [data-bs-theme="dark"] .empty-state h3 {
+        color: #e0e0e0;
+    }
+
+    .empty-state p {
+        color: #6c757d;
+        margin-bottom: 20px;
+    }
+
+    [data-bs-theme="dark"] .empty-state p {
+        color: #b0b0b0;
+    }
+
+    .btn-empty-action {
+        display: inline-flex;
+        align-items: center;
+        gap: 8px;
+        padding: 12px 24px;
+        background: linear-gradient(135deg, #4e73df 0%, #224abe 100%);
+        color: white;
+        border: none;
+        border-radius: 8px;
+        text-decoration: none;
+        font-weight: 700;
+        transition: all 0.3s ease;
+        cursor: pointer;
+    }
+
+    .btn-empty-action:hover {
+        transform: translateY(-2px);
+        box-shadow: 0 8px 20px rgba(78, 115, 223, 0.3);
+    }
+
+    /* Premium Actions */
+    .premium-actions-group {
+        display: flex;
+        gap: 12px;
+        flex-wrap: wrap;
+        position: relative;
+    }
+
+    .premium-action-btn {
+        display: inline-flex;
+        align-items: center;
+        gap: 8px;
+        padding: 10px 16px;
+        border: none;
+        border-radius: 8px;
+        cursor: pointer;
+        font-weight: 700;
+        font-size: 12px;
+        text-decoration: none;
+        transition: all 0.3s ease;
+    }
+
+    .primary-btn {
+        background: linear-gradient(135deg, #4e73df 0%, #224abe 100%);
+        color: white;
+    }
+
+    .primary-btn:hover {
+        transform: translateY(-2px);
+        box-shadow: 0 8px 20px rgba(78, 115, 223, 0.3);
+    }
+
+    .secondary-btn {
+        background: #e9ecef;
+        color: var(--dark);
+    }
+
+    [data-bs-theme="dark"] .secondary-btn {
+        background: #3a3f52;
+        color: #e0e0e0;
+    }
+
+    .secondary-btn:hover {
+        background: #dee2e6;
+    }
+
+    [data-bs-theme="dark"] .secondary-btn:hover {
+        background: #4a5568;
+    }
+
+    .menu-btn {
+        background: #e9ecef;
+        color: var(--dark);
+    }
+
+    [data-bs-theme="dark"] .menu-btn {
+        background: #3a3f52;
+        color: #e0e0e0;
+    }
+
+    .premium-dropdown-menu {
+        position: absolute;
+        top: 100%;
+        right: 0;
+        background: white;
+        border-radius: 10px;
+        box-shadow: 0 10px 30px rgba(0, 0, 0, 0.15);
+        min-width: 180px;
+        margin-top: 8px;
+        display: none;
+        z-index: 1000;
+    }
+
+    [data-bs-theme="dark"] .premium-dropdown-menu {
+        background: #2d3142;
+    }
+
+    .premium-dropdown-menu.show {
+        display: block;
+    }
+
+    .dropdown-item {
+        padding: 12px 16px;
+        display: flex;
+        align-items: center;
+        gap: 10px;
+        color: var(--dark);
+        text-decoration: none;
+        transition: all 0.2s ease;
+        border-bottom: 1px solid #e9ecef;
+    }
+
+    [data-bs-theme="dark"] .dropdown-item {
+        color: #e0e0e0;
+        border-bottom-color: #4a5568;
+    }
+
+    .dropdown-item:hover {
+        background: #f8f9fa;
+    }
+
+    [data-bs-theme="dark"] .dropdown-item:hover {
+        background: #3a3f52;
+    }
+
+    .dropdown-item.danger-item {
+        color: #dc3545;
+    }
+
+    .dropdown-divider {
+        border: none;
+        height: 1px;
+        background: #e9ecef;
+        margin: 0;
+    }
+
+    [data-bs-theme="dark"] .dropdown-divider {
+        background: #4a5568;
+    }
+
+    /* Custom Modal System */
+    .custom-modal {
+        display: none;
+        position: fixed;
+        z-index: 1050;
+        left: 0;
+        top: 0;
+        width: 100%;
+        height: 100%;
+    }
+
+    .custom-modal.show {
+        display: flex;
+        align-items: center;
+        justify-content: center;
+    }
+
+    .custom-modal .modal-overlay {
+        position: absolute;
+        width: 100%;
+        height: 100%;
+        background: rgba(0, 0, 0, 0.7);
+        backdrop-filter: blur(4px);
+        z-index: 0;
+    }
+
+    .custom-modal .modal-dialog-centered {
+        position: relative;
+        width: 100%;
+        margin: auto;
+        max-width: 550px;
+        z-index: 1;
+        animation: modalSlideIn 0.4s cubic-bezier(0.34, 1.56, 0.64, 1);
+        padding: 20px;
+    }
+
+    @keyframes modalSlideIn {
+        from {
+            opacity: 0;
+            transform: scale(0.85) translateY(-50px);
+        }
+        to {
+            opacity: 1;
+            transform: scale(1) translateY(0);
+        }
+    }
+
+    .premium-modal {
+        border: none;
+        border-radius: 24px;
+        overflow: hidden;
+        background: linear-gradient(135deg, #ffffff 0%, #f8f9fa 100%);
+        box-shadow: 
+            0 20px 60px rgba(0, 0, 0, 0.3),
+            inset 0 1px 0 rgba(255, 255, 255, 0.6);
+        backdrop-filter: blur(10px);
+    }
+
+    [data-bs-theme="dark"] .premium-modal {
+        background: linear-gradient(135deg, #2d3142 0%, #1a1d23 100%);
+    }
+
+    .premium-modal-header {
+        background: linear-gradient(135deg, #4e73df 0%, #1cc88a 100%);
+        color: white;
+        border: none;
+        padding: 32px 28px;
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        position: relative;
+        overflow: hidden;
+    }
+
+    .premium-modal-header::before {
+        content: '';
+        position: absolute;
+        top: -50%;
+        right: -50%;
+        width: 300px;
+        height: 300px;
+        background: radial-gradient(circle, rgba(255, 255, 255, 0.2) 0%, transparent 70%);
+        animation: headerGlow 3s ease-in-out infinite;
+    }
+
+    @keyframes headerGlow {
+        0%, 100% { transform: translate(0, 0); }
+        50% { transform: translate(20px, -20px); }
+    }
+
+    .premium-modal-header .modal-title {
+        position: relative;
+        z-index: 1;
+        font-size: 20px;
+        font-weight: 800;
+        margin: 0;
+        display: flex;
+        align-items: center;
+        gap: 12px;
+    }
+
+    .premium-modal-header .btn-close {
+        position: relative;
+        z-index: 2;
+        filter: brightness(1.2);
+    }
+
+    .premium-modal-body {
+        padding: 32px;
+        background: linear-gradient(to bottom, rgba(248, 249, 250, 0.5) 0%, rgba(255, 255, 255, 0) 100%);
+    }
+
+    [data-bs-theme="dark"] .premium-modal-body {
+        background: linear-gradient(to bottom, rgba(45, 49, 66, 0.5) 0%, rgba(26, 29, 35, 0) 100%);
+    }
+
+    .student-context-card {
+        display: flex;
+        align-items: center;
+        gap: 16px;
+        padding: 20px;
+        background: linear-gradient(135deg, #e7f0ff 0%, #f0f5ff 100%);
+        border: 2px solid rgba(78, 115, 223, 0.2);
+        border-radius: 16px;
+        margin-bottom: 28px;
+        box-shadow: 0 4px 20px rgba(78, 115, 223, 0.1);
+    }
+
+    [data-bs-theme="dark"] .student-context-card {
+        background: linear-gradient(135deg, #3a4a6b 0%, #2d3a54 100%);
+        border-color: rgba(78, 115, 223, 0.3);
+    }
+
+    .context-avatar {
+        width: 56px;
+        height: 56px;
+        border-radius: 12px;
+        object-fit: cover;
+        border: 3px solid white;
+        box-shadow: 0 4px 12px rgba(78, 115, 223, 0.2);
+    }
+
+    .context-avatar-initials {
+        width: 56px;
+        height: 56px;
+        border-radius: 12px;
+        background: linear-gradient(135deg, #4e73df 0%, #224abe 100%);
+        color: white;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        font-weight: 800;
+        font-size: 20px;
+        box-shadow: 0 4px 12px rgba(78, 115, 223, 0.3);
+    }
+
+    .context-info {
+        flex: 1;
+    }
+
+    .context-name {
+        font-size: 15px;
+        font-weight: 800;
+        color: #4e73df;
+        margin: 0;
+        display: block;
+    }
+
+    [data-bs-theme="dark"] .context-name {
+        color: #a8c5ff;
+    }
+
+    .context-meta {
+        font-size: 12px;
+        color: #6c757d;
+        display: block;
+        margin-top: 2px;
+    }
+
+    [data-bs-theme="dark"] .context-meta {
+        color: #b0b0b0;
+    }
+
+    .modal-form-group {
+        margin-bottom: 24px;
+    }
+
+    .modal-form-label {
+        display: block;
+        font-weight: 700;
+        font-size: 12px;
+        color: var(--dark);
+        text-transform: uppercase;
+        letter-spacing: 0.5px;
+        margin-bottom: 10px;
+    }
+
+    [data-bs-theme="dark"] .modal-form-label {
+        color: #e0e0e0;
+    }
+
+    .modal-form-input,
+    .textarea-style {
+        width: 100%;
+        padding: 14px 16px;
+        border: 2px solid #e9ecef;
+        border-radius: 12px;
+        background: white;
+        color: var(--dark);
+        font-size: 14px;
+        font-family: inherit;
+        transition: all 0.3s ease;
+    }
+
+    [data-bs-theme="dark"] .modal-form-input,
+    [data-bs-theme="dark"] .textarea-style {
+        background: #3a3f52;
+        border-color: #4a5568;
+        color: #e0e0e0;
+    }
+
+    .modal-form-input:focus,
+    .textarea-style:focus {
+        border-color: #4e73df;
+        box-shadow: 0 0 0 4px rgba(78, 115, 223, 0.15);
+        outline: none;
+        transform: translateY(-2px);
+    }
+
+    .input-unit {
+        display: block;
+        font-size: 11px;
+        color: #6c757d;
+        margin-top: 6px;
+        font-weight: 600;
+    }
+
+    [data-bs-theme="dark"] .input-unit {
+        color: #b0b0b0;
+    }
+
+    .modal-checkbox-group {
+        padding: 18px;
+        background: linear-gradient(135deg, rgba(78, 115, 223, 0.08) 0%, rgba(28, 200, 138, 0.05) 100%);
+        border: 2px solid rgba(78, 115, 223, 0.15);
+        border-radius: 12px;
+        display: flex;
+        align-items: center;
+        gap: 14px;
+        transition: all 0.3s ease;
+        cursor: pointer;
+    }
+
+    [data-bs-theme="dark"] .modal-checkbox-group {
+        background: linear-gradient(135deg, rgba(78, 115, 223, 0.12) 0%, rgba(28, 200, 138, 0.08) 100%);
+        border-color: rgba(78, 115, 223, 0.25);
+    }
+
+    .modal-checkbox-group:hover {
+        border-color: rgba(78, 115, 223, 0.3);
+        background: linear-gradient(135deg, rgba(78, 115, 223, 0.12) 0%, rgba(28, 200, 138, 0.08) 100%);
+    }
+
+    .modal-checkbox {
+        width: 22px;
+        height: 22px;
+        cursor: pointer;
+        accent-color: #4e73df;
+    }
+
+    .modal-checkbox-label {
+        margin: 0;
+        cursor: pointer;
+        font-weight: 700;
+        color: var(--dark);
+        display: flex;
+        align-items: center;
+        gap: 8px;
+        font-size: 14px;
+    }
+
+    [data-bs-theme="dark"] .modal-checkbox-label {
+        color: #e0e0e0;
+    }
+
+    .premium-modal-footer {
+        background: linear-gradient(to top, rgba(248, 249, 250, 0.5) 0%, rgba(255, 255, 255, 0) 100%);
+        border: none;
+        padding: 24px 32px;
+        display: flex;
+        gap: 12px;
+        justify-content: flex-end;
+        border-top: 1px solid rgba(0, 0, 0, 0.05);
+    }
+
+    [data-bs-theme="dark"] .premium-modal-footer {
+        background: linear-gradient(to top, rgba(58, 63, 82, 0.5) 0%, rgba(26, 29, 35, 0) 100%);
+        border-top-color: rgba(255, 255, 255, 0.05);
+    }
+
+    .btn-modal {
+        padding: 12px 24px;
+        border: none;
+        border-radius: 10px;
+        font-weight: 700;
+        font-size: 13px;
+        cursor: pointer;
+        transition: all 0.3s ease;
+        display: inline-flex;
+        align-items: center;
+        gap: 8px;
+    }
+
+    .cancel-btn {
+        background: #e9ecef;
+        color: var(--dark);
+    }
+
+    [data-bs-theme="dark"] .cancel-btn {
+        background: #4a5568;
+        color: #e0e0e0;
+    }
+
+    .cancel-btn:hover {
+        background: #dee2e6;
+        transform: translateY(-2px);
+        box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
+    }
+
+    [data-bs-theme="dark"] .cancel-btn:hover {
+        background: #5a6578;
+    }
+
+    .submit-btn {
+        background: linear-gradient(135deg, #1cc88a 0%, #128a5f 100%);
+        color: white;
+        box-shadow: 0 4px 16px rgba(28, 200, 138, 0.3);
+    }
+
+    .submit-btn:hover {
+        transform: translateY(-3px);
+        box-shadow: 0 8px 24px rgba(28, 200, 138, 0.4);
+    }
+
+    .submit-btn:active {
+        transform: translateY(-1px);
+    }
+
+    /* Responsive */
+    @media (max-width: 1200px) {
+        .analytics-grid {
+            grid-template-columns: 1fr;
+        }
+
+        .results-grid {
+            grid-template-columns: repeat(auto-fill, minmax(280px, 1fr));
+        }
+    }
+
+    @media (max-width: 768px) {
+        .analytics-header {
+            padding: 24px;
+        }
+
+        .quick-stats-grid {
+            grid-template-columns: repeat(2, 1fr);
+        }
+
+        .results-header {
+            flex-direction: column;
+            align-items: flex-start;
+        }
+
+        .results-controls {
+            width: 100%;
+            flex-direction: column;
+        }
+
+        .search-input {
+            min-width: auto;
+            width: 100%;
+        }
+
+        .sort-btn {
+            width: 100%;
+        }
+
+        .result-card {
+            margin: 0;
+        }
+
+        .result-metrics {
+            grid-template-columns: 1fr;
+        }
+
+        .stats-grid-mini {
+            grid-template-columns: 1fr;
+        }
+    }
+
+    @media (max-width: 576px) {
+        .exam-main-title {
+            font-size: 24px;
+        }
+
+        .exam-badges-row {
+            flex-direction: column;
+            gap: 8px;
+        }
+
+        .exam-badge {
+            width: 100%;
+            justify-content: center;
+        }
+
+        .results-grid {
+            grid-template-columns: 1fr;
+        }
+
+        .marks-display {
+            flex-direction: column;
+            gap: 4px;
+        }
+
+        .marks-value {
+            font-size: 24px;
+        }
+
+        .marks-total {
+            margin-left: 0;
+        }
+
+        .student-info {
+            gap: 10px;
+        }
+    }
+</style>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+    // Grade Distribution Chart
+    const chartCtx = document.getElementById('gradeDistributionChart');
+    if (chartCtx) {
+        const gradeChart = new Chart(chartCtx, {
+            type: 'doughnut',
+            data: {
+                labels: [
+                    {% for item in grade_distribution %}
+                        '{{ item.grade }}'{% if not forloop.last %},{% endif %}
+                    {% endfor %}
+                ],
+                datasets: [{
+                    data: [
+                        {% for item in grade_distribution %}
+                            {{ item.count }}{% if not forloop.last %},{% endif %}
+                        {% endfor %}
+                    ],
+                    backgroundColor: [
+                        '#1cc88a', '#128a5f', '#f6c23e', '#d4a017', '#dc3545', '#a71d2a', '#6c757d'
+                    ],
+                    borderWidth: 2,
+                    borderColor: '#ffffff'
+                }]
+            },
+            options: {
+                responsive: true,
+                maintainAspectRatio: true,
+                plugins: {
+                    legend: {
+                        display: false
+                    }
+                }
+            }
+        });
+    }
+
+    // Search students
+    const searchInput = document.getElementById('searchStudents');
+    if (searchInput) {
+        searchInput.addEventListener('keyup', function() {
+            const searchTerm = this.value.toLowerCase();
+            const cards = document.querySelectorAll('.result-card');
+            
+            cards.forEach(card => {
+                const studentName = card.querySelector('.student-name').textContent.toLowerCase();
+                const rollNo = card.querySelector('.student-meta').textContent.toLowerCase();
+                const isVisible = studentName.includes(searchTerm) || rollNo.includes(searchTerm);
+                card.style.display = isVisible ? '' : 'none';
+            });
+        });
+    }
+
+    // Sort by marks
+    let sortAscending = true;
+    const sortBtn = document.getElementById('sortBtn');
+    if (sortBtn) {
+        sortBtn.addEventListener('click', function() {
+            const grid = document.querySelector('.results-grid');
+            if (!grid) return;
+            
+            const cards = Array.from(grid.querySelectorAll('.result-card'));
+            
+            cards.sort((a, b) => {
+                const marksA = parseFloat(a.querySelector('.marks-value').textContent);
+                const marksB = parseFloat(b.querySelector('.marks-value').textContent);
+                
+                return sortAscending ? marksB - marksA : marksA - marksB;
+            });
+            
+            sortAscending = !sortAscending;
+            
+            // Reorder cards
+            cards.forEach(card => grid.appendChild(card));
+        });
+    }
+
+    // Dropdown menu
+    const moreActionsBtn = document.getElementById('moreActionsBtn');
+    const dropdownMenu = document.getElementById('dropdownMenu');
+    
+    if (moreActionsBtn && dropdownMenu) {
+        moreActionsBtn.addEventListener('click', function() {
+            dropdownMenu.classList.toggle('show');
+        });
+
+        document.addEventListener('click', function(event) {
+            if (!event.target.closest('.premium-actions-group')) {
+                dropdownMenu.classList.remove('show');
+            }
+        });
+    }
+
+    // Toggle marks input based on absent checkbox
+    function toggleMarksInput(gradeId, isAbsent) {
+        const input = document.getElementById('marksInput' + gradeId);
+        if (input) {
+            if (isAbsent) {
+                input.value = 0;
+                input.readOnly = true;
+                input.style.opacity = '0.5';
+            } else {
+                input.readOnly = false;
+                input.style.opacity = '1';
+            }
+        }
+    }
+
+    // Open modal function
+    function openEditModal(gradeId) {
+        console.log('Opening modal for grade:', gradeId);
+        const modalId = 'editGradeModal' + gradeId;
+        const modal = document.getElementById(modalId);
+        console.log('Modal element:', modal);
+        
+        if (modal) {
+            modal.classList.add('show');
+            document.body.style.overflow = 'hidden';
+            console.log('Modal opened successfully');
+        } else {
+            console.error('Modal not found:', modalId);
+        }
+    }
+
+    // Close modal function
+    function closeEditModal(gradeId) {
+        const modalId = 'editGradeModal' + gradeId;
+        const modal = document.getElementById(modalId);
+        if (modal) {
+            modal.classList.remove('show');
+            document.body.style.overflow = 'auto';
+        }
+    }
+
+    // Close modal when clicking overlay
+    document.addEventListener('click', function(event) {
+        if (event.target && event.target.classList && event.target.classList.contains('modal-overlay')) {
+            const customModal = event.target.closest('.custom-modal');
+            if (customModal) {
+                customModal.classList.remove('show');
+                document.body.style.overflow = 'auto';
+            }
+        }
+    });
+
+    // Close modal on Escape key
+    document.addEventListener('keydown', function(event) {
+        if (event.key === 'Escape') {
+            document.querySelectorAll('.custom-modal.show').forEach(modal => {
+                modal.classList.remove('show');
+            });
+            document.body.style.overflow = 'auto';
+        }
+    });
+
+    // Animate cards on load
+    window.addEventListener('DOMContentLoaded', function() {
+        const cards = document.querySelectorAll('.result-card, .analytics-card, .quick-stat-card');
+        cards.forEach((card, index) => {
+            card.style.animation = `slideInUp 0.6s ease-out ${index * 0.05}s both`;
+        });
+    });
+
+    // Add animations
+    const style = document.createElement('style');
+    style.textContent = `
+        @keyframes slideInUp {
+            from {
+                opacity: 0;
+                transform: translateY(20px);
+            }
+            to {
+                opacity: 1;
+                transform: translateY(0);
+            }
+        }
+    `;
+    document.head.appendChild(style);
+</script>
+{% endblock %}

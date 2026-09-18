@@ -1,0 +1,912 @@
+{% extends 'base.html' %}
+{% load static %}
+
+{% block title %}{{ subject.name }} - Subject Details{% endblock %}
+{% block page_title %}Subject Details{% endblock %}
+
+{% block breadcrumb %}
+<li class="breadcrumb-item"><a href="{% url 'subject_list' %}">Subjects</a></li>
+<li class="breadcrumb-item active">{{ subject.name }}</li>
+{% endblock %}
+
+{% block page_actions %}
+<a href="{% url 'subject_update' subject.id %}" class="btn-action-primary">
+    <i class="fas fa-edit me-2"></i>Edit Subject
+</a>
+{% endblock %}
+
+{% block content %}
+<div class="subject-detail-container">
+    <!-- Hero Section -->
+    <div class="hero-section">
+        <div class="hero-gradient"></div>
+        <div class="hero-content">
+            <div class="subject-badge-primary">
+                {% if subject.is_elective %}
+                <i class="fas fa-star"></i> ELECTIVE
+                {% else %}
+                <i class="fas fa-check-circle"></i> CORE
+                {% endif %}
+            </div>
+            <h1 class="subject-title">{{ subject.name }}</h1>
+            <div class="subject-code-display">{{ subject.code }}</div>
+            <p class="hero-subtitle">{{ subject.description|truncatechars:150 }}</p>
+            
+            <div class="hero-actions">
+                {% if subject.syllabus %}
+                <a href="{{ subject.syllabus.url }}" class="action-btn download-btn" target="_blank">
+                    <i class="fas fa-download"></i>
+                    <span>Syllabus</span>
+                </a>
+                {% endif %}
+                <a href="{% url 'subject_delete' subject.id %}" class="action-btn delete-btn">
+                    <i class="fas fa-trash"></i>
+                    <span>Delete</span>
+                </a>
+            </div>
+        </div>
+    </div>
+
+    <!-- Main Content Grid -->
+    <div class="content-grid">
+        <!-- Left Column: Key Info -->
+        <div class="sidebar-column">
+            <!-- Quick Stats -->
+            <div class="stats-card">
+                <div class="stats-title">
+                    <i class="fas fa-chart-pie"></i>
+                    Key Statistics
+                </div>
+                <div class="stats-grid">
+                    <div class="stat-item">
+                        <div class="stat-icon teachers">
+                            <i class="fas fa-chalkboard-user"></i>
+                        </div>
+                        <div class="stat-info">
+                            <div class="stat-value">{{ subject.teachers.count }}</div>
+                            <div class="stat-label">Teachers</div>
+                        </div>
+                    </div>
+                    <div class="stat-item">
+                        <div class="stat-icon classes">
+                            <i class="fas fa-school"></i>
+                        </div>
+                        <div class="stat-info">
+                            <div class="stat-value">{{ subject.classes.count }}</div>
+                            <div class="stat-label">Classes</div>
+                        </div>
+                    </div>
+                    <div class="stat-item">
+                        <div class="stat-icon students">
+                            <i class="fas fa-users"></i>
+                        </div>
+                        <div class="stat-info">
+                            <div class="stat-value">{{ total_students|default:0 }}</div>
+                            <div class="stat-label">Students</div>
+                        </div>
+                    </div>
+                    <div class="stat-item">
+                        <div class="stat-icon exams">
+                            <i class="fas fa-file-alt"></i>
+                        </div>
+                        <div class="stat-info">
+                            <div class="stat-value">{{ exams_count|default:0 }}</div>
+                            <div class="stat-label">Exams</div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Subject Info Card -->
+            <div class="info-card">
+                <div class="info-title">
+                    <i class="fas fa-info-circle"></i>
+                    Subject Information
+                </div>
+                <div class="info-body">
+                    <div class="info-item">
+                        <div class="info-label">Credit Hours</div>
+                        <div class="info-value">{{ subject.credit_hours }}</div>
+                    </div>
+                    <div class="info-item">
+                        <div class="info-label">Subject Code</div>
+                        <div class="info-value">{{ subject.code }}</div>
+                    </div>
+                    <div class="info-item">
+                        <div class="info-label">Type</div>
+                        <div class="info-value">
+                            {% if subject.is_elective %}
+                            <span class="badge-type elective">Elective</span>
+                            {% else %}
+                            <span class="badge-type core">Core</span>
+                            {% endif %}
+                        </div>
+                    </div>
+                    <div class="info-item">
+                        <div class="info-label">Created</div>
+                        <div class="info-value">{{ subject.created_at|date:"d M, Y" }}</div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Right Column: Main Content -->
+        <div class="main-column">
+            <!-- Full Description -->
+            <div class="content-card">
+                <div class="card-header-custom">
+                    <i class="fas fa-align-left"></i>
+                    <h3>Full Description</h3>
+                </div>
+                <div class="card-body-custom">
+                    {% if subject.description %}
+                    <p class="description-text">{{ subject.description }}</p>
+                    {% else %}
+                    <p class="text-empty">No description provided for this subject.</p>
+                    {% endif %}
+                </div>
+            </div>
+
+            <!-- Teachers Section -->
+            <div class="content-card">
+                <div class="card-header-custom">
+                    <i class="fas fa-chalkboard-user"></i>
+                    <h3>Assigned Teachers</h3>
+                    <span class="badge-count">{{ subject.teachers.count }}</span>
+                </div>
+                <div class="card-body-custom">
+                    {% if subject.teachers.all %}
+                    <div class="teachers-grid">
+                        {% for teacher in subject.teachers.all %}
+                        <div class="teacher-card">
+                            <div class="teacher-avatar">
+                                {% if teacher.user.profile_picture %}
+                                <img src="{{ teacher.user.profile_picture.url }}" alt="{{ teacher.user.get_full_name }}">
+                                {% else %}
+                                <div class="avatar-placeholder">
+                                    <i class="fas fa-user"></i>
+                                </div>
+                                {% endif %}
+                            </div>
+                            <div class="teacher-info">
+                                <h4 class="teacher-name">{{ teacher.user.get_full_name }}</h4>
+                                <p class="teacher-role">{{ teacher.designation }}</p>
+                                <p class="teacher-qualification">{{ teacher.qualification }}</p>
+                                <a href="{% url 'teacher_detail' teacher.employee_id %}" class="teacher-link">
+                                    View Profile <i class="fas fa-arrow-right"></i>
+                                </a>
+                            </div>
+                        </div>
+                        {% endfor %}
+                    </div>
+                    {% else %}
+                    <div class="empty-state">
+                        <i class="fas fa-user-times"></i>
+                        <p>No teachers assigned to this subject</p>
+                    </div>
+                    {% endif %}
+                </div>
+            </div>
+
+            <!-- Classes Section -->
+            <div class="content-card">
+                <div class="card-header-custom">
+                    <i class="fas fa-school"></i>
+                    <h3>Classes Teaching This Subject</h3>
+                    <span class="badge-count">{{ subject.classes.count }}</span>
+                </div>
+                <div class="card-body-custom">
+                    {% if subject.classes.all %}
+                    <div class="classes-grid">
+                        {% for class in subject.classes.all %}
+                        <div class="class-card">
+                            <div class="class-header">
+                                <h4 class="class-name">{{ class.name }}</h4>
+                                <span class="class-section">Section {{ class.section }}</span>
+                            </div>
+                            <div class="class-details">
+                                <div class="detail-row">
+                                    <i class="fas fa-users"></i>
+                                    <span>{{ class.total_students }} Students</span>
+                                </div>
+                                <div class="detail-row">
+                                    <i class="fas fa-door-open"></i>
+                                    <span>Room {{ class.room_number|default:"N/A" }}</span>
+                                </div>
+                                {% if class.class_teacher %}
+                                <div class="detail-row">
+                                    <i class="fas fa-chalkboard-user"></i>
+                                    <span>{{ class.class_teacher.user.get_full_name }}</span>
+                                </div>
+                                {% endif %}
+                            </div>
+                            <a href="{% url 'class_detail' class.id %}" class="class-link">
+                                View Class Details <i class="fas fa-arrow-right"></i>
+                            </a>
+                        </div>
+                        {% endfor %}
+                    </div>
+                    {% else %}
+                    <div class="empty-state">
+                        <i class="fas fa-school"></i>
+                        <p>No classes assigned this subject</p>
+                    </div>
+                    {% endif %}
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block extra_css %}
+<style>
+    /* ====== Container ====== */
+    .subject-detail-container {
+        background: linear-gradient(135deg, #f5f7fa 0%, #c3cfe2 100%);
+        min-height: 100vh;
+        padding-bottom: 3rem;
+        animation: fadeIn 0.6s ease;
+    }
+
+    /* ====== Hero Section ====== */
+    .hero-section {
+        position: relative;
+        height: 500px;
+        display: flex;
+        align-items: flex-end;
+        padding: 3rem 2rem;
+        overflow: hidden;
+        margin-bottom: 3rem;
+    }
+
+    .hero-gradient {
+        position: absolute;
+        top: 0;
+        left: 0;
+        right: 0;
+        bottom: 0;
+        background: linear-gradient(135deg, #4e73df 0%, #1cc88a 100%);
+        z-index: 0;
+    }
+
+    .hero-section::before {
+        content: '';
+        position: absolute;
+        top: 0;
+        left: 0;
+        right: 0;
+        bottom: 0;
+        background: 
+            radial-gradient(circle at 20% 50%, rgba(255,255,255,0.1) 0%, transparent 50%),
+            radial-gradient(circle at 80% 80%, rgba(255,255,255,0.1) 0%, transparent 50%);
+        z-index: 1;
+    }
+
+    .hero-content {
+        position: relative;
+        z-index: 2;
+        width: 100%;
+        max-width: 1200px;
+        margin: 0 auto;
+        padding: 0 1rem;
+    }
+
+    .subject-badge-primary {
+        display: inline-flex;
+        align-items: center;
+        gap: 0.5rem;
+        background: rgba(255, 255, 255, 0.25);
+        color: white;
+        padding: 0.5rem 1rem;
+        border-radius: 30px;
+        font-weight: 600;
+        font-size: 0.85rem;
+        margin-bottom: 1.5rem;
+        backdrop-filter: blur(10px);
+    }
+
+    .subject-title {
+        font-size: 3rem;
+        font-weight: 800;
+        color: white;
+        margin: 0 0 0.5rem 0;
+        text-shadow: 0 2px 10px rgba(0,0,0,0.2);
+        line-height: 1.2;
+    }
+
+    .subject-code-display {
+        font-size: 2rem;
+        font-weight: 700;
+        color: rgba(255, 255, 255, 0.9);
+        margin-bottom: 1rem;
+        letter-spacing: 2px;
+    }
+
+    .hero-subtitle {
+        font-size: 1.1rem;
+        color: rgba(255, 255, 255, 0.9);
+        margin-bottom: 2rem;
+        max-width: 600px;
+        line-height: 1.6;
+    }
+
+    .hero-actions {
+        display: flex;
+        gap: 1rem;
+        flex-wrap: wrap;
+    }
+
+    .action-btn {
+        display: inline-flex;
+        align-items: center;
+        gap: 0.5rem;
+        padding: 0.75rem 1.5rem;
+        background: rgba(255, 255, 255, 0.2);
+        border: 2px solid white;
+        color: white;
+        border-radius: 10px;
+        text-decoration: none;
+        font-weight: 600;
+        transition: all 0.3s ease;
+        cursor: pointer;
+        font-size: 0.95rem;
+    }
+
+    .action-btn:hover {
+        background: white;
+        color: #4e73df;
+        transform: translateY(-2px);
+        box-shadow: 0 10px 25px rgba(0,0,0,0.2);
+    }
+
+    .action-btn.delete-btn:hover {
+        background: #dc3545;
+        color: white;
+        border-color: #dc3545;
+    }
+
+    /* ====== Content Grid ====== */
+    .content-grid {
+        display: grid;
+        grid-template-columns: 300px 1fr;
+        gap: 2rem;
+        max-width: 1400px;
+        margin: 0 auto;
+        padding: 0 1rem;
+    }
+
+    /* ====== Stats Card ====== */
+    .stats-card {
+        background: linear-gradient(135deg, rgba(255, 255, 255, 0.95) 0%, rgba(255, 255, 255, 0.85) 100%);
+        border: 1px solid rgba(78, 115, 223, 0.1);
+        border-radius: 20px;
+        backdrop-filter: blur(10px);
+        padding: 2rem 1.5rem;
+        margin-bottom: 2rem;
+        box-shadow: 0 8px 32px 0 rgba(31, 38, 135, 0.07);
+        animation: slideInLeft 0.6s ease;
+    }
+
+    .stats-title {
+        display: flex;
+        align-items: center;
+        gap: 0.75rem;
+        font-size: 1.2rem;
+        font-weight: 700;
+        color: #2e3440;
+        margin-bottom: 1.5rem;
+        padding-bottom: 1rem;
+        border-bottom: 2px solid rgba(78, 115, 223, 0.15);
+    }
+
+    .stats-title i {
+        color: #4e73df;
+        font-size: 1.3rem;
+    }
+
+    .stats-grid {
+        display: grid;
+        grid-template-columns: 1fr;
+        gap: 1rem;
+    }
+
+    .stat-item {
+        display: flex;
+        align-items: center;
+        gap: 1rem;
+        padding: 1rem;
+        background: linear-gradient(135deg, rgba(78, 115, 223, 0.05) 0%, rgba(28, 200, 138, 0.05) 100%);
+        border-radius: 12px;
+        transition: all 0.3s ease;
+    }
+
+    .stat-item:hover {
+        background: linear-gradient(135deg, rgba(78, 115, 223, 0.1) 0%, rgba(28, 200, 138, 0.1) 100%);
+        transform: translateX(5px);
+    }
+
+    .stat-icon {
+        width: 50px;
+        height: 50px;
+        border-radius: 10px;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        color: white;
+        font-size: 1.3rem;
+    }
+
+    .stat-icon.teachers {
+        background: linear-gradient(135deg, #4e73df 0%, #224abe 100%);
+    }
+
+    .stat-icon.classes {
+        background: linear-gradient(135deg, #1cc88a 0%, #13a968 100%);
+    }
+
+    .stat-icon.students {
+        background: linear-gradient(135deg, #36b9cc 0%, #1f8b94 100%);
+    }
+
+    .stat-icon.exams {
+        background: linear-gradient(135deg, #f6c23e 0%, #daa520 100%);
+    }
+
+    .stat-info {
+        flex: 1;
+    }
+
+    .stat-value {
+        font-size: 1.5rem;
+        font-weight: 700;
+        color: #2e3440;
+    }
+
+    .stat-label {
+        font-size: 0.85rem;
+        color: #6c757d;
+        text-transform: uppercase;
+        letter-spacing: 0.5px;
+    }
+
+    /* ====== Info Card ====== */
+    .info-card {
+        background: linear-gradient(135deg, rgba(255, 255, 255, 0.95) 0%, rgba(255, 255, 255, 0.85) 100%);
+        border: 1px solid rgba(78, 115, 223, 0.1);
+        border-radius: 20px;
+        backdrop-filter: blur(10px);
+        padding: 2rem 1.5rem;
+        box-shadow: 0 8px 32px 0 rgba(31, 38, 135, 0.07);
+        animation: slideInLeft 0.6s ease 0.1s both;
+    }
+
+    .info-title {
+        display: flex;
+        align-items: center;
+        gap: 0.75rem;
+        font-size: 1.2rem;
+        font-weight: 700;
+        color: #2e3440;
+        margin-bottom: 1.5rem;
+        padding-bottom: 1rem;
+        border-bottom: 2px solid rgba(78, 115, 223, 0.15);
+    }
+
+    .info-title i {
+        color: #4e73df;
+    }
+
+    .info-body {
+        display: grid;
+        grid-template-columns: 1fr;
+        gap: 1.25rem;
+    }
+
+    .info-item {
+        display: flex;
+        flex-direction: column;
+        gap: 0.4rem;
+    }
+
+    .info-label {
+        font-size: 0.8rem;
+        font-weight: 600;
+        color: #6c757d;
+        text-transform: uppercase;
+        letter-spacing: 0.5px;
+    }
+
+    .info-value {
+        font-size: 1rem;
+        font-weight: 600;
+        color: #2e3440;
+    }
+
+    .badge-type {
+        display: inline-flex;
+        align-items: center;
+        padding: 0.4rem 0.8rem;
+        border-radius: 6px;
+        font-size: 0.85rem;
+        font-weight: 600;
+    }
+
+    .badge-type.core {
+        background: linear-gradient(135deg, rgba(28, 200, 138, 0.2) 0%, rgba(13, 202, 240, 0.2) 100%);
+        color: #1cc88a;
+    }
+
+    .badge-type.elective {
+        background: linear-gradient(135deg, rgba(255, 193, 7, 0.2) 0%, rgba(255, 152, 0, 0.2) 100%);
+        color: #ffc107;
+    }
+
+    /* ====== Main Column ====== */
+    .main-column {
+        display: flex;
+        flex-direction: column;
+        gap: 2rem;
+    }
+
+    /* ====== Content Card ====== */
+    .content-card {
+        background: linear-gradient(135deg, rgba(255, 255, 255, 0.95) 0%, rgba(255, 255, 255, 0.85) 100%);
+        border: 1px solid rgba(78, 115, 223, 0.1);
+        border-radius: 20px;
+        backdrop-filter: blur(10px);
+        overflow: hidden;
+        box-shadow: 0 8px 32px 0 rgba(31, 38, 135, 0.07);
+        animation: slideInRight 0.6s ease;
+    }
+
+    .content-card:nth-child(2) {
+        animation-delay: 0.1s;
+    }
+
+    .content-card:nth-child(3) {
+        animation-delay: 0.2s;
+    }
+
+    .card-header-custom {
+        display: flex;
+        align-items: center;
+        gap: 1rem;
+        background: linear-gradient(135deg, rgba(78, 115, 223, 0.08) 0%, rgba(28, 200, 138, 0.08) 100%);
+        padding: 1.5rem;
+        border-bottom: 2px solid rgba(78, 115, 223, 0.1);
+    }
+
+    .card-header-custom i {
+        font-size: 1.3rem;
+        color: #4e73df;
+    }
+
+    .card-header-custom h3 {
+        margin: 0;
+        font-size: 1.2rem;
+        color: #2e3440;
+        flex: 1;
+    }
+
+    .badge-count {
+        background: linear-gradient(135deg, #4e73df 0%, #1cc88a 100%);
+        color: white;
+        padding: 0.4rem 0.8rem;
+        border-radius: 20px;
+        font-size: 0.85rem;
+        font-weight: 700;
+    }
+
+    .card-body-custom {
+        padding: 2rem;
+    }
+
+    /* ====== Teachers Grid ====== */
+    .teachers-grid {
+        display: grid;
+        grid-template-columns: repeat(auto-fill, minmax(250px, 1fr));
+        gap: 1.5rem;
+    }
+
+    .teacher-card {
+        background: linear-gradient(135deg, rgba(78, 115, 223, 0.05) 0%, rgba(28, 200, 138, 0.05) 100%);
+        border: 1px solid rgba(78, 115, 223, 0.1);
+        border-radius: 12px;
+        padding: 1.5rem;
+        text-align: center;
+        transition: all 0.3s ease;
+    }
+
+    .teacher-card:hover {
+        transform: translateY(-5px);
+        border-color: rgba(78, 115, 223, 0.2);
+        box-shadow: 0 10px 25px rgba(78, 115, 223, 0.1);
+    }
+
+    .teacher-avatar {
+        margin-bottom: 1rem;
+    }
+
+    .teacher-avatar img,
+    .avatar-placeholder {
+        width: 100px;
+        height: 100px;
+        border-radius: 50%;
+        margin: 0 auto;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        background: linear-gradient(135deg, #4e73df 0%, #1cc88a 100%);
+        color: white;
+        font-size: 2rem;
+        object-fit: cover;
+    }
+
+    .teacher-name {
+        margin: 1rem 0 0.5rem 0;
+        font-size: 1.1rem;
+        color: #2e3440;
+    }
+
+    .teacher-role {
+        color: #4e73df;
+        font-weight: 600;
+        margin: 0.5rem 0;
+        font-size: 0.9rem;
+    }
+
+    .teacher-qualification {
+        color: #6c757d;
+        font-size: 0.85rem;
+        margin: 0.3rem 0 1rem 0;
+    }
+
+    .teacher-link {
+        display: inline-flex;
+        align-items: center;
+        gap: 0.5rem;
+        color: #4e73df;
+        text-decoration: none;
+        font-weight: 600;
+        transition: all 0.3s ease;
+    }
+
+    .teacher-link:hover {
+        color: #1cc88a;
+        gap: 1rem;
+    }
+
+    /* ====== Classes Grid ====== */
+    .classes-grid {
+        display: grid;
+        grid-template-columns: repeat(auto-fill, minmax(280px, 1fr));
+        gap: 1.5rem;
+    }
+
+    .class-card {
+        background: linear-gradient(135deg, rgba(28, 200, 138, 0.05) 0%, rgba(78, 115, 223, 0.05) 100%);
+        border: 2px solid rgba(28, 200, 138, 0.2);
+        border-radius: 12px;
+        padding: 1.5rem;
+        transition: all 0.3s ease;
+        display: flex;
+        flex-direction: column;
+    }
+
+    .class-card:hover {
+        transform: translateY(-5px);
+        border-color: rgba(28, 200, 138, 0.4);
+        box-shadow: 0 10px 25px rgba(28, 200, 138, 0.15);
+    }
+
+    .class-header {
+        margin-bottom: 1rem;
+        padding-bottom: 1rem;
+        border-bottom: 2px solid rgba(28, 200, 138, 0.2);
+    }
+
+    .class-name {
+        margin: 0 0 0.5rem 0;
+        color: #2e3440;
+        font-size: 1.15rem;
+    }
+
+    .class-section {
+        display: inline-flex;
+        background: #1cc88a;
+        color: white;
+        padding: 0.3rem 0.75rem;
+        border-radius: 20px;
+        font-size: 0.8rem;
+        font-weight: 600;
+    }
+
+    .class-details {
+        flex: 1;
+        margin-bottom: 1rem;
+    }
+
+    .detail-row {
+        display: flex;
+        align-items: center;
+        gap: 0.75rem;
+        color: #6c757d;
+        margin-bottom: 0.75rem;
+        font-size: 0.95rem;
+    }
+
+    .detail-row i {
+        color: #4e73df;
+        width: 20px;
+    }
+
+    .class-link {
+        display: inline-flex;
+        align-items: center;
+        gap: 0.5rem;
+        color: #1cc88a;
+        text-decoration: none;
+        font-weight: 600;
+        transition: all 0.3s ease;
+    }
+
+    .class-link:hover {
+        color: #4e73df;
+        gap: 1rem;
+    }
+
+    /* ====== Empty State ====== */
+    .empty-state {
+        text-align: center;
+        padding: 3rem 2rem;
+    }
+
+    .empty-state i {
+        font-size: 3rem;
+        color: rgba(78, 115, 223, 0.2);
+        margin-bottom: 1rem;
+    }
+
+    .empty-state p {
+        color: #6c757d;
+        font-size: 1rem;
+        margin: 0;
+    }
+
+    .description-text {
+        line-height: 1.8;
+        color: #495057;
+        font-size: 1rem;
+        margin: 0;
+    }
+
+    .text-empty {
+        color: #6c757d;
+        font-style: italic;
+        margin: 0;
+    }
+
+    .btn-action-primary {
+        display: inline-flex;
+        align-items: center;
+        padding: 0.75rem 1.75rem;
+        background: linear-gradient(135deg, #4e73df 0%, #1cc88a 100%);
+        color: white;
+        text-decoration: none;
+        border-radius: 12px;
+        font-weight: 600;
+        transition: all 0.3s ease;
+        box-shadow: 0 4px 15px rgba(78, 115, 223, 0.3);
+        border: none;
+        cursor: pointer;
+    }
+
+    .btn-action-primary:hover {
+        transform: translateY(-2px);
+        box-shadow: 0 8px 25px rgba(78, 115, 223, 0.4);
+        color: white;
+    }
+
+    /* ====== Animations ====== */
+    @keyframes fadeIn {
+        from { opacity: 0; }
+        to { opacity: 1; }
+    }
+
+    @keyframes slideInLeft {
+        from {
+            opacity: 0;
+            transform: translateX(-30px);
+        }
+        to {
+            opacity: 1;
+            transform: translateX(0);
+        }
+    }
+
+    @keyframes slideInRight {
+        from {
+            opacity: 0;
+            transform: translateX(30px);
+        }
+        to {
+            opacity: 1;
+            transform: translateX(0);
+        }
+    }
+
+    /* ====== Responsive Design ====== */
+    @media (max-width: 1024px) {
+        .content-grid {
+            grid-template-columns: 1fr;
+        }
+
+        .subject-title {
+            font-size: 2rem;
+        }
+
+        .subject-code-display {
+            font-size: 1.5rem;
+        }
+    }
+
+    @media (max-width: 768px) {
+        .hero-section {
+            height: auto;
+            min-height: 400px;
+            padding: 2rem 1rem 3rem;
+        }
+
+        .subject-title {
+            font-size: 1.75rem;
+        }
+
+        .subject-code-display {
+            font-size: 1.25rem;
+        }
+
+        .hero-actions {
+            flex-direction: column;
+        }
+
+        .action-btn {
+            width: 100%;
+            justify-content: center;
+        }
+
+        .teachers-grid,
+        .classes-grid {
+            grid-template-columns: 1fr;
+        }
+
+        .stats-grid {
+            grid-template-columns: repeat(2, 1fr);
+        }
+    }
+
+    /* Dark Mode Support */
+    [data-bs-theme="dark"] .subject-detail-container {
+        background: linear-gradient(135deg, #1a1f2e 0%, #2d3436 100%);
+    }
+
+    [data-bs-theme="dark"] .stats-card,
+    [data-bs-theme="dark"] .info-card,
+    [data-bs-theme="dark"] .content-card {
+        background: linear-gradient(135deg, rgba(45, 52, 64, 0.9) 0%, rgba(45, 52, 64, 0.8) 100%);
+    }
+
+    [data-bs-theme="dark"] .stats-title,
+    [data-bs-theme="dark"] .info-title,
+    [data-bs-theme="dark"] .card-header-custom h3,
+    [data-bs-theme="dark"] .subject-title,
+    [data-bs-theme="dark"] .teacher-name,
+    [data-bs-theme="dark"] .class-name {
+        color: #e0e0e0;
+    }
+
+    [data-bs-theme="dark"] .description-text {
+        color: #b0b0b0;
+    }
+</style>
+{% endblock %}

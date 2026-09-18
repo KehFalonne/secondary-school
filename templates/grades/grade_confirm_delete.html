@@ -1,0 +1,167 @@
+{% extends 'base.html' %}
+
+{% block title %}Grade Deletion Portal{% endblock %}
+{% block page_title %}Permanent Record Removal{% endblock %}
+
+{% block breadcrumb %}
+<li class="breadcrumb-item"><a href="{% url 'grade_list' %}"><i class="fas fa-list"></i> Grade Records</a></li>
+<li class="breadcrumb-item active">Deletion Request</li>
+{% endblock %}
+
+{% block content %}
+<div class="delete-confirmation-container">
+    <!-- Animated Background -->
+    <div class="animated-bg"></div>
+
+    <!-- Main Delete Card -->
+    <div class="delete-card-wrapper">
+        <!-- Header Section with Danger Theme -->
+        <div class="delete-card-header">
+            <div class="danger-icon-container">
+                <div class="danger-icon-wrapper">
+                    <i class="fas fa-exclamation-triangle"></i>
+                </div>
+            </div>
+            <h1 class="delete-title">Permanent Record Removal</h1>
+            <p class="delete-subtitle">This action cannot be reversed</p>
+        </div>
+
+        <!-- Student Information Card -->
+        <div class="deletion-target-card">
+            <div class="target-header">
+                <span class="target-label">Deletion Target</span>
+            </div>
+            <div class="target-content">
+                <div class="student-section">
+                    <div class="student-avatar-large">
+                        {% if grade.student.user.profile_picture %}
+                            <img src="{{ grade.student.user.profile_picture.url }}" alt="{{ grade.student.user.get_full_name }}">
+                        {% else %}
+                            <div class="avatar-initials-large">
+                                {{ grade.student.user.first_name|first }}{{ grade.student.user.last_name|first }}
+                            </div>
+                        {% endif %}
+                    </div>
+                    <div class="student-meta">
+                        <h3 class="student-name">{{ grade.student.user.get_full_name }}</h3>
+                        <p class="student-class">{{ grade.exam.class_name.name }} • {{ grade.student.roll_number }}</p>
+                    </div>
+                </div>
+
+                <div class="deletion-divider"></div>
+
+                <!-- Grade Information Grid -->
+                <div class="grade-info-grid">
+                    <div class="info-item">
+                        <span class="info-label">Exam</span>
+                        <span class="info-value">{{ grade.exam.name }}</span>
+                        <span class="info-type">{{ grade.exam.exam_type }}</span>
+                    </div>
+                    <div class="info-item">
+                        <span class="info-label">Subject</span>
+                        <span class="info-value">{{ grade.exam.subject.name }}</span>
+                    </div>
+                    <div class="info-item">
+                        <span class="info-label">Marks</span>
+                        <span class="info-value">{{ grade.marks_obtained }}/{{ grade.exam.total_marks }}</span>
+                        <span class="info-percentage">{{ grade.marks_obtained|add:0|multiply:100|divisibleby:grade.exam.total_marks }}%</span>
+                    </div>
+                    <div class="info-item">
+                        <span class="info-label">Grade</span>
+                        <span class="info-value grade-badge">{{ grade.grade }}</span>
+                    </div>
+                    <div class="info-item">
+                        <span class="info-label">Status</span>
+                        {% if grade.is_absent %}
+                            <span class="status-badge absent">Absent</span>
+                        {% elif grade.marks_obtained >= grade.exam.pass_marks %}
+                            <span class="status-badge pass">Pass</span>
+                        {% else %}
+                            <span class="status-badge fail">Fail</span>
+                        {% endif %}
+                    </div>
+                    <div class="info-item">
+                        <span class="info-label">Grade Point</span>
+                        <span class="info-value">{{ grade.grade_point }}</span>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Warning Section -->
+        <div class="danger-warning-section">
+            <div class="warning-icon">
+                <i class="fas fa-bolt"></i>
+            </div>
+            <div class="warning-content">
+                <h4 class="warning-title">Critical Action Warning</h4>
+                <p class="warning-text">
+                    You are about to permanently remove this grade record from the system. This action is <strong>irreversible</strong> 
+                    and will affect student records, transcripts, and performance analytics.
+                </p>
+                <div class="warning-checklist">
+                    <div class="check-item">
+                        <i class="fas fa-check-circle"></i>
+                        <span>Grade will be completely removed</span>
+                    </div>
+                    <div class="check-item">
+                        <i class="fas fa-check-circle"></i>
+                        <span>Student record will be updated</span>
+                    </div>
+                    <div class="check-item">
+                        <i class="fas fa-check-circle"></i>
+                        <span>Cannot be undone or restored</span>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Additional Details Section -->
+        <div class="additional-details">
+            <details>
+                <summary class="details-summary">
+                    <i class="fas fa-info-circle"></i> Additional Grade Details
+                </summary>
+                <div class="details-content">
+                    <div class="detail-row">
+                        <span class="detail-label">Remarks:</span>
+                        <span class="detail-value">{{ grade.remarks|default:"None" }}</span>
+                    </div>
+                    <div class="detail-row">
+                        <span class="detail-label">Created Date:</span>
+                        <span class="detail-value">{{ grade.created_at|date:"M d, Y" }}</span>
+                    </div>
+                    <div class="detail-row">
+                        <span class="detail-label">Last Modified:</span>
+                        <span class="detail-value">{{ grade.updated_at|date:"M d, Y" }}</span>
+                    </div>
+                </div>
+            </details>
+        </div>
+
+        <!-- Confirmation Section -->
+        <form method="post" class="delete-form">
+            {% csrf_token %}
+            
+            <div class="confirmation-disclaimer">
+                <label class="disclaimer-checkbox">
+                    <input type="checkbox" id="confirmCheckbox" required>
+                    <span class="checkbox-custom"></span>
+                    <span class="disclaimer-text">I understand this action is permanent and irreversible</span>
+                </label>
+            </div>
+
+            <!-- Action Buttons -->
+            <div class="action-buttons-section">
+                <a href="{% url 'grade_list' %}" class="btn-action cancel-btn">
+                    <i class="fas fa-arrow-left"></i>
+                    <span>Cancel & Go Back</span>
+                </a>
+                <button type="submit" class="btn-action danger-btn" id="deleteBtn" disabled>
+                    <i class="fas fa-trash-alt"></i>
+                    <span>Permanently Delete Grade</span>
+                </button>
+            </div>
+        </form>
+    </div>
+</div>

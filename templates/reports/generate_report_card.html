@@ -1,0 +1,1365 @@
+{% extends 'base.html' %}
+
+{% block title %}Generate Report Card{% endblock %}
+{% block page_title %}Premium Report Card Generator{% endblock %}
+
+{% block breadcrumb %}
+<li class="breadcrumb-item"><a href="{% url 'report_card_list' %}"><i class="fas fa-file-contract me-1"></i>Report Cards</a></li>
+<li class="breadcrumb-item active"><i class="fas fa-magic me-1"></i>Generator</li>
+{% endblock %}
+
+{% block page_actions %}
+<a href="{% url 'report_card_list' %}" class="btn btn-secondary">
+    <i class="fas fa-arrow-left me-1"></i>Back to List
+</a>
+{% endblock %}
+
+{% block content %}
+<div class="premium-report-generator">
+    <!-- Animated Background -->
+    <div class="report-bg-animation"></div>
+
+    <!-- Hero Header -->
+    <div class="report-hero-header">
+        <div class="hero-backdrop"></div>
+        <div class="hero-content">
+            <div class="hero-icon">
+                <i class="fas fa-certificate"></i>
+            </div>
+            <h1 class="hero-title">Report Card Generator</h1>
+            <p class="hero-subtitle">Create professional, comprehensive student report cards</p>
+        </div>
+    </div>
+
+    <div class="generator-wrapper">
+        <!-- Main Generator Card -->
+        <div class="generator-card">
+            <div class="card-header-premium">
+                <h2 class="card-title">
+                    <i class="fas fa-magic"></i> Generate Student Report Card
+                </h2>
+                <p class="card-description">Fill in the details below to generate a comprehensive report card</p>
+            </div>
+            <div class="card-body-premium">
+                <form method="post" novalidate class="premium-form">
+                    {% csrf_token %}
+                    
+                    <!-- Info Alert -->
+                    <div class="premium-alert info-alert">
+                        <div class="alert-icon">
+                            <i class="fas fa-lightbulb"></i>
+                        </div>
+                        <div class="alert-content">
+                            <strong>Pro Tip:</strong> The system will automatically calculate all grades, attendance, and performance metrics for the selected student.
+                        </div>
+                    </div>
+
+                    <!-- Form Section 1: Student & Academic Details -->
+                    <div class="form-section">
+                        <div class="section-header">
+                            <h3 class="section-title">
+                                <i class="fas fa-user-graduate"></i> Student & Academic Information
+                            </h3>
+                        </div>
+
+                        <div class="form-grid">
+                            <div class="form-group">
+                                <label class="form-label-premium">
+                                    <span>Student</span>
+                                    <span class="required">*</span>
+                                </label>
+                                <select name="student_id" class="form-select-premium" required onchange="updateStudentPreview()">
+                                    <option value="">-- Select Student --</option>
+                                    {% for student in students %}
+                                    <option value="{{ student.id }}">
+                                        {{ student.user.get_full_name }} ({{ student.admission_number }}) - {{ student.class_enrolled.name }}
+                                    </option>
+                                    {% endfor %}
+                                </select>
+                            </div>
+
+                            <div class="form-group">
+                                <label class="form-label-premium">
+                                    <span>Academic Year</span>
+                                    <span class="required">*</span>
+                                </label>
+                                <select name="academic_year" class="form-select-premium" required onchange="updateStudentPreview()">
+                                    {% for year in academic_years %}
+                                    <option value="{{ year }}" {% if year == current_year %}selected{% endif %}>{{ year }}</option>
+                                    {% endfor %}
+                                </select>
+                            </div>
+
+                            <div class="form-group">
+                                <label class="form-label-premium">
+                                    <span>Term</span>
+                                    <span class="required">*</span>
+                                </label>
+                                <select name="term" class="form-select-premium" required onchange="updateStudentPreview()">
+                                    <option value="1">First Term</option>
+                                    <option value="2">Second Term</option>
+                                    <option value="3">Third Term</option>
+                                    <option value="Annual">Annual Review</option>
+                                </select>
+                            </div>
+
+                            <div class="form-group">
+                                <label class="form-label-premium">
+                                    <span>Calculate Rank</span>
+                                </label>
+                                <select name="calculate_rank" class="form-select-premium">
+                                    <option value="yes">Yes, calculate class rank</option>
+                                    <option value="no">No, don't calculate rank</option>
+                                </select>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Form Section 2: Remarks -->
+                    <div class="form-section">
+                        <div class="section-header">
+                            <h3 class="section-title">
+                                <i class="fas fa-comment-dots"></i> Remarks & Comments
+                            </h3>
+                            <p class="section-description">Add optional remarks to enhance the report card</p>
+                        </div>
+
+                        <div class="remarks-group">
+                            <div class="remark-item">
+                                <label class="remark-label">
+                                    <i class="fas fa-chart-line"></i> General Remarks
+                                </label>
+                                <textarea name="remarks" class="form-textarea-premium" rows="3" 
+                                          placeholder="Summarize the student's overall performance..."></textarea>
+                            </div>
+
+                            <div class="remark-item">
+                                <label class="remark-label">
+                                    <i class="fas fa-chalkboard-user"></i> Class Teacher's Remarks
+                                </label>
+                                <textarea name="class_teacher_remarks" class="form-textarea-premium" rows="3" 
+                                          placeholder="Add personalized feedback from the class teacher..."></textarea>
+                            </div>
+
+                            <div class="remark-item">
+                                <label class="remark-label">
+                                    <i class="fas fa-crown"></i> Principal's Remarks
+                                </label>
+                                <textarea name="principal_remarks" class="form-textarea-premium" rows="3" 
+                                          placeholder="Add remarks from the principal or head of institution..."></textarea>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Form Section 3: Generation Options -->
+                    <div class="form-section">
+                        <div class="section-header">
+                            <h3 class="section-title">
+                                <i class="fas fa-cog"></i> Generation Options
+                            </h3>
+                        </div>
+
+                        <div class="options-grid">
+                            <div class="option-item">
+                                <input type="checkbox" name="publish_immediately" id="publish_immediately" class="option-checkbox" checked>
+                                <label for="publish_immediately" class="option-label">
+                                    <i class="fas fa-globe"></i>
+                                    <span>
+                                        <strong>Publish Immediately</strong>
+                                        <small>Make it visible to students and parents</small>
+                                    </span>
+                                </label>
+                            </div>
+
+                            <div class="option-item">
+                                <input type="checkbox" name="send_email" id="send_email" class="option-checkbox">
+                                <label for="send_email" class="option-label">
+                                    <i class="fas fa-envelope"></i>
+                                    <span>
+                                        <strong>Send Email Notification</strong>
+                                        <small>Notify parents via email</small>
+                                    </span>
+                                </label>
+                            </div>
+
+                            <div class="option-item">
+                                <input type="checkbox" name="download_pdf" id="download_pdf" class="option-checkbox" checked>
+                                <label for="download_pdf" class="option-label">
+                                    <i class="fas fa-download"></i>
+                                    <span>
+                                        <strong>Download PDF</strong>
+                                        <small>Get a copy after generation</small>
+                                    </span>
+                                </label>
+                            </div>
+
+                            <div class="option-item">
+                                <input type="checkbox" name="save_draft" id="save_draft" class="option-checkbox">
+                                <label for="save_draft" class="option-label">
+                                    <i class="fas fa-save"></i>
+                                    <span>
+                                        <strong>Save as Draft</strong>
+                                        <small>Review before publishing</small>
+                                    </span>
+                                </label>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Preview Section -->
+                    <div class="form-section">
+                        <div class="section-header">
+                            <h3 class="section-title">
+                                <i class="fas fa-eye"></i> Performance Preview
+                            </h3>
+                            <p class="section-description">Real-time estimate based on current data</p>
+                        </div>
+
+                        <div class="preview-grid">
+                            <div class="preview-card percentage-card">
+                                <div class="preview-icon">
+                                    <i class="fas fa-chart-pie"></i>
+                                </div>
+                                <div class="preview-content">
+                                    <span class="preview-label">Overall Percentage</span>
+                                    <span class="preview-value" id="previewPercentage">0.00%</span>
+                                </div>
+                                <div class="preview-bar">
+                                    <div class="preview-bar-fill" id="previewPercentageBar" style="width: 0%"></div>
+                                </div>
+                            </div>
+
+                            <div class="preview-card grade-card">
+                                <div class="preview-icon">
+                                    <i class="fas fa-star"></i>
+                                </div>
+                                <div class="preview-content">
+                                    <span class="preview-label">Estimated Grade</span>
+                                    <span class="preview-value" id="previewGrade">N/A</span>
+                                </div>
+                                <div class="preview-meta" id="previewGradeDesc">Select a student</div>
+                            </div>
+
+                            <div class="preview-card gpa-card">
+                                <div class="preview-icon">
+                                    <i class="fas fa-trophy"></i>
+                                </div>
+                                <div class="preview-content">
+                                    <span class="preview-label">Estimated GPA</span>
+                                    <span class="preview-value" id="previewGPA">0.00</span>
+                                </div>
+                                <div class="preview-meta">Grade Point Average</div>
+                            </div>
+
+                            <div class="preview-card performance-card">
+                                <div class="preview-icon">
+                                    <i class="fas fa-tachometer-alt"></i>
+                                </div>
+                                <div class="preview-content">
+                                    <span class="preview-label">Performance</span>
+                                    <span class="preview-value" id="previewPerformance">--</span>
+                                </div>
+                                <div class="preview-meta" id="previewPerformanceDesc">Awaiting data</div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Action Buttons -->
+                    <div class="form-footer">
+                        <a href="{% url 'report_card_list' %}" class="footer-btn cancel-btn">
+                            <i class="fas fa-times"></i>
+                            <span>Cancel</span>
+                        </a>
+                        <button type="submit" class="footer-btn generate-btn">
+                            <i class="fas fa-magic"></i>
+                            <span>Generate Report Card</span>
+                        </button>
+                    </div>
+                </form>
+            </div>
+        </div>
+
+        <!-- Recent Reports Section -->
+        <div class="recent-reports-card">
+            <div class="card-header-premium">
+                <h2 class="card-title">
+                    <i class="fas fa-history"></i> Recently Generated Report Cards
+                </h2>
+            </div>
+
+            <div class="recent-reports-body">
+                <div class="reports-table-wrapper">
+                    <table class="reports-table">
+                        <thead>
+                            <tr class="table-header-row">
+                                <th class="col-student">Student</th>
+                                <th class="col-class">Class</th>
+                                <th class="col-term">Term</th>
+                                <th class="col-percentage">Percentage</th>
+                                <th class="col-grade">Grade</th>
+                                <th class="col-date">Generated</th>
+                                <th class="col-status">Status</th>
+                                <th class="col-actions">Actions</th>
+                            </tr>
+                        </thead>
+                        <tbody class="table-body">
+                            {% for report in recent_reports %}
+                            <tr class="table-row">
+                                <td class="col-student">
+                                    <div class="student-info">
+                                        <strong>{{ report.student.user.get_full_name }}</strong>
+                                        <small>{{ report.student.admission_number }}</small>
+                                    </div>
+                                </td>
+                                <td class="col-class">
+                                    <span class="class-badge">{{ report.class_name.name }}</span>
+                                </td>
+                                <td class="col-term">{{ report.get_term_display }}</td>
+                                <td class="col-percentage">
+                                    <div class="percentage-display">
+                                        <span class="percentage-value">{{ report.percentage|floatformat:1 }}%</span>
+                                    </div>
+                                </td>
+                                <td class="col-grade">
+                                    <span class="grade-badge {% if report.overall_grade in 'A+,A' %}grade-excellent
+                                                             {% elif report.overall_grade in 'B+,B' %}grade-good
+                                                             {% elif report.overall_grade in 'C+,C' %}grade-average
+                                                             {% else %}grade-below{% endif %}">
+                                        {{ report.overall_grade }}
+                                    </span>
+                                </td>
+                                <td class="col-date">
+                                    <span class="date-text">{{ report.generated_at|date:"d M Y" }}</span>
+                                </td>
+                                <td class="col-status">
+                                    {% if report.is_published %}
+                                    <span class="status-badge published">
+                                        <i class="fas fa-check-circle"></i> Published
+                                    </span>
+                                    {% else %}
+                                    <span class="status-badge draft">
+                                        <i class="fas fa-file-alt"></i> Draft
+                                    </span>
+                                    {% endif %}
+                                </td>
+                                <td class="col-actions">
+                                    <div class="action-buttons">
+                                        <a href="#" class="action-btn view-btn" title="View">
+                                            <i class="fas fa-eye"></i>
+                                        </a>
+                                        <a href="#" class="action-btn download-btn" title="Download">
+                                            <i class="fas fa-download"></i>
+                                        </a>
+                                    </div>
+                                </td>
+                            </tr>
+                            {% empty %}
+                            <tr class="empty-row">
+                                <td colspan="8" class="empty-cell">
+                                    <div class="empty-state">
+                                        <i class="fas fa-file-pdf"></i>
+                                        <p>No report cards generated yet</p>
+                                    </div>
+                                </td>
+                            </tr>
+                            {% endfor %}
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+{% endblock %}
+
+{% block extra_css %}
+<style>
+    /* ============= PREMIUM REPORT CARD GENERATOR ============= */
+
+    .premium-report-generator {
+        position: relative;
+        min-height: 100vh;
+        padding: 40px 20px;
+        background: linear-gradient(135deg, #f5f7fa 0%, #e9ecef 100%);
+        overflow: hidden;
+    }
+
+    [data-bs-theme="dark"] .premium-report-generator {
+        background: linear-gradient(135deg, #1a1d23 0%, #2d3142 100%);
+    }
+
+    .report-bg-animation {
+        position: fixed;
+        top: 0;
+        left: 0;
+        width: 100%;
+        height: 100%;
+        background: linear-gradient(135deg, rgba(78, 115, 223, 0.05) 0%, rgba(28, 200, 138, 0.02) 100%);
+        z-index: -1;
+        animation: reportBgFlow 20s ease-in-out infinite;
+    }
+
+    @keyframes reportBgFlow {
+        0%, 100% { opacity: 1; transform: scale(1); }
+        50% { opacity: 0.95; transform: scale(1.02); }
+    }
+
+    /* Hero Header */
+    .report-hero-header {
+        position: relative;
+        margin-bottom: 40px;
+        padding: 50px 40px;
+        background: linear-gradient(135deg, #4e73df 0%, #224abe 50%, #1cc88a 100%);
+        border-radius: 24px;
+        color: white;
+        text-align: center;
+        overflow: hidden;
+        animation: heroSlideIn 0.8s ease-out;
+    }
+
+    @keyframes heroSlideIn {
+        from {
+            opacity: 0;
+            transform: translateY(-40px);
+        }
+        to {
+            opacity: 1;
+            transform: translateY(0);
+        }
+    }
+
+    .hero-backdrop {
+        position: absolute;
+        top: -50%;
+        right: -10%;
+        width: 500px;
+        height: 500px;
+        background: rgba(255, 255, 255, 0.1);
+        border-radius: 50%;
+        backdrop-filter: blur(40px);
+    }
+
+    .hero-content {
+        position: relative;
+        z-index: 2;
+    }
+
+    .hero-icon {
+        font-size: 56px;
+        margin-bottom: 20px;
+        animation: iconBounce 2s ease-in-out infinite;
+    }
+
+    @keyframes iconBounce {
+        0%, 100% { transform: translateY(0); }
+        50% { transform: translateY(-12px); }
+    }
+
+    .hero-title {
+        font-size: 42px;
+        font-weight: 800;
+        margin: 0 0 12px;
+        text-shadow: 0 4px 20px rgba(0, 0, 0, 0.1);
+    }
+
+    .hero-subtitle {
+        font-size: 16px;
+        margin: 0;
+        opacity: 0.95;
+    }
+
+    /* Generator Wrapper */
+    .generator-wrapper {
+        display: grid;
+        grid-template-columns: 1fr;
+        gap: 30px;
+        max-width: 900px;
+        margin: 0 auto;
+    }
+
+    /* Generator Card */
+    .generator-card,
+    .recent-reports-card {
+        background: white;
+        border-radius: 24px;
+        box-shadow: 0 20px 60px rgba(78, 115, 223, 0.1);
+        overflow: hidden;
+        animation: cardSlideUp 0.8s ease-out;
+    }
+
+    [data-bs-theme="dark"] .generator-card,
+    [data-bs-theme="dark"] .recent-reports-card {
+        background: linear-gradient(135deg, #2d3142 0%, #1a1d23 100%);
+    }
+
+    @keyframes cardSlideUp {
+        from {
+            opacity: 0;
+            transform: translateY(40px);
+        }
+        to {
+            opacity: 1;
+            transform: translateY(0);
+        }
+    }
+
+    .card-header-premium {
+        padding: 32px;
+        background: linear-gradient(135deg, rgba(78, 115, 223, 0.08) 0%, rgba(28, 200, 138, 0.04) 100%);
+        border-bottom: 2px solid rgba(78, 115, 223, 0.1);
+    }
+
+    [data-bs-theme="dark"] .card-header-premium {
+        border-bottom-color: rgba(78, 115, 223, 0.2);
+    }
+
+    .card-title {
+        margin: 0 0 6px;
+        font-size: 24px;
+        font-weight: 800;
+        color: #2e3440;
+        display: flex;
+        align-items: center;
+        gap: 12px;
+    }
+
+    [data-bs-theme="dark"] .card-title {
+        color: #e0e0e0;
+    }
+
+    .card-description {
+        margin: 0;
+        font-size: 13px;
+        color: #6c757d;
+    }
+
+    [data-bs-theme="dark"] .card-description {
+        color: #b0b0b0;
+    }
+
+    .card-body-premium {
+        padding: 32px;
+    }
+
+    /* Premium Form */
+    .premium-form {
+        display: flex;
+        flex-direction: column;
+        gap: 28px;
+    }
+
+    /* Premium Alert */
+    .premium-alert {
+        padding: 20px;
+        border-radius: 12px;
+        display: flex;
+        gap: 16px;
+        border-left: 4px solid;
+    }
+
+    .info-alert {
+        background: linear-gradient(135deg, #e7f0ff 0%, #f0f5ff 100%);
+        border-left-color: #4e73df;
+    }
+
+    [data-bs-theme="dark"] .info-alert {
+        background: linear-gradient(135deg, #3a4a6b 0%, #2d3a54 100%);
+    }
+
+    .alert-icon {
+        width: 40px;
+        height: 40px;
+        background: linear-gradient(135deg, #4e73df 0%, #224abe 100%);
+        color: white;
+        border-radius: 10px;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        font-size: 20px;
+        flex-shrink: 0;
+    }
+
+    .alert-content {
+        flex: 1;
+        color: #2e3440;
+        font-size: 13px;
+    }
+
+    [data-bs-theme="dark"] .alert-content {
+        color: #e0e0e0;
+    }
+
+    .alert-content strong {
+        font-weight: 700;
+    }
+
+    /* Form Sections */
+    .form-section {
+        padding: 24px;
+        background: linear-gradient(135deg, rgba(78, 115, 223, 0.04) 0%, transparent 100%);
+        border-radius: 14px;
+        border: 1px solid rgba(78, 115, 223, 0.1);
+    }
+
+    [data-bs-theme="dark"] .form-section {
+        border-color: rgba(78, 115, 223, 0.2);
+    }
+
+    .section-header {
+        margin-bottom: 20px;
+    }
+
+    .section-title {
+        margin: 0;
+        font-size: 16px;
+        font-weight: 800;
+        color: #2e3440;
+        display: flex;
+        align-items: center;
+        gap: 10px;
+    }
+
+    [data-bs-theme="dark"] .section-title {
+        color: #e0e0e0;
+    }
+
+    .section-description {
+        margin: 6px 0 0;
+        font-size: 12px;
+        color: #6c757d;
+    }
+
+    [data-bs-theme="dark"] .section-description {
+        color: #b0b0b0;
+    }
+
+    /* Form Grid */
+    .form-grid {
+        display: grid;
+        grid-template-columns: repeat(2, 1fr);
+        gap: 20px;
+    }
+
+    .form-group {
+        display: flex;
+        flex-direction: column;
+    }
+
+    .form-label-premium {
+        display: flex;
+        align-items: center;
+        gap: 4px;
+        font-size: 13px;
+        font-weight: 700;
+        color: #2e3440;
+        margin-bottom: 10px;
+    }
+
+    [data-bs-theme="dark"] .form-label-premium {
+        color: #e0e0e0;
+    }
+
+    .required {
+        color: #e74c3c;
+        font-weight: 800;
+    }
+
+    .form-select-premium {
+        padding: 12px 14px;
+        border: 2px solid #e9ecef;
+        border-radius: 10px;
+        background: white;
+        color: #2e3440;
+        font-size: 13px;
+        font-weight: 600;
+        cursor: pointer;
+        transition: all 0.3s ease;
+    }
+
+    [data-bs-theme="dark"] .form-select-premium {
+        background: #3a3f52;
+        border-color: #4a5568;
+        color: #e0e0e0;
+    }
+
+    .form-select-premium:focus {
+        border-color: #4e73df;
+        box-shadow: 0 0 0 3px rgba(78, 115, 223, 0.1);
+        outline: none;
+    }
+
+    /* Remarks Group */
+    .remarks-group {
+        display: grid;
+        grid-template-columns: 1fr;
+        gap: 20px;
+    }
+
+    .remark-item {
+        display: flex;
+        flex-direction: column;
+    }
+
+    .remark-label {
+        font-size: 13px;
+        font-weight: 700;
+        color: #2e3440;
+        margin-bottom: 10px;
+        display: flex;
+        align-items: center;
+        gap: 8px;
+    }
+
+    [data-bs-theme="dark"] .remark-label {
+        color: #e0e0e0;
+    }
+
+    .remark-label i {
+        color: #4e73df;
+    }
+
+    .form-textarea-premium {
+        padding: 12px 14px;
+        border: 2px solid #e9ecef;
+        border-radius: 10px;
+        background: white;
+        color: #2e3440;
+        font-size: 13px;
+        font-family: inherit;
+        resize: vertical;
+        transition: all 0.3s ease;
+    }
+
+    [data-bs-theme="dark"] .form-textarea-premium {
+        background: #3a3f52;
+        border-color: #4a5568;
+        color: #e0e0e0;
+    }
+
+    .form-textarea-premium:focus {
+        border-color: #4e73df;
+        box-shadow: 0 0 0 3px rgba(78, 115, 223, 0.1);
+        outline: none;
+    }
+
+    /* Options Grid */
+    .options-grid {
+        display: grid;
+        grid-template-columns: repeat(2, 1fr);
+        gap: 16px;
+    }
+
+    .option-item {
+        position: relative;
+        padding: 16px;
+        background: white;
+        border: 2px solid #e9ecef;
+        border-radius: 10px;
+        cursor: pointer;
+        transition: all 0.3s ease;
+    }
+
+    [data-bs-theme="dark"] .option-item {
+        background: #3a3f52;
+        border-color: #4a5568;
+    }
+
+    .option-item:hover {
+        border-color: #4e73df;
+        background: rgba(78, 115, 223, 0.02);
+    }
+
+    [data-bs-theme="dark"] .option-item:hover {
+        background: rgba(78, 115, 223, 0.1);
+    }
+
+    .option-checkbox {
+        position: absolute;
+        opacity: 0;
+        cursor: pointer;
+    }
+
+    .option-checkbox:checked + .option-label {
+        color: #4e73df;
+        font-weight: 700;
+    }
+
+    .option-label {
+        display: flex;
+        align-items: center;
+        gap: 12px;
+        cursor: pointer;
+        color: #2e3440;
+        transition: all 0.3s ease;
+    }
+
+    [data-bs-theme="dark"] .option-label {
+        color: #e0e0e0;
+    }
+
+    .option-label i {
+        font-size: 20px;
+        color: #4e73df;
+    }
+
+    .option-label strong {
+        display: block;
+        font-size: 13px;
+    }
+
+    .option-label small {
+        display: block;
+        font-size: 11px;
+        color: #6c757d;
+        margin-top: 2px;
+    }
+
+    [data-bs-theme="dark"] .option-label small {
+        color: #b0b0b0;
+    }
+
+    /* Preview Grid */
+    .preview-grid {
+        display: grid;
+        grid-template-columns: repeat(4, 1fr);
+        gap: 16px;
+    }
+
+    .preview-card {
+        padding: 20px;
+        border-radius: 12px;
+        background: white;
+        border: 2px solid #e9ecef;
+        text-align: center;
+        transition: all 0.3s ease;
+    }
+
+    [data-bs-theme="dark"] .preview-card {
+        background: #3a3f52;
+        border-color: #4a5568;
+    }
+
+    .preview-card:hover {
+        transform: translateY(-4px);
+        border-color: #4e73df;
+    }
+
+    .percentage-card { border-top: 4px solid #4e73df; }
+    .grade-card { border-top: 4px solid #1cc88a; }
+    .gpa-card { border-top: 4px solid #f6c23e; }
+    .performance-card { border-top: 4px solid #e74c3c; }
+
+    .preview-icon {
+        font-size: 28px;
+        color: #4e73df;
+        margin-bottom: 12px;
+    }
+
+    .grade-card .preview-icon { color: #1cc88a; }
+    .gpa-card .preview-icon { color: #f6c23e; }
+    .performance-card .preview-icon { color: #e74c3c; }
+
+    .preview-content {
+        display: flex;
+        flex-direction: column;
+        gap: 6px;
+        margin-bottom: 12px;
+    }
+
+    .preview-label {
+        font-size: 11px;
+        font-weight: 700;
+        color: #6c757d;
+        text-transform: uppercase;
+    }
+
+    [data-bs-theme="dark"] .preview-label {
+        color: #b0b0b0;
+    }
+
+    .preview-value {
+        font-size: 24px;
+        font-weight: 800;
+        color: #2e3440;
+    }
+
+    [data-bs-theme="dark"] .preview-value {
+        color: #e0e0e0;
+    }
+
+    .preview-bar {
+        height: 6px;
+        background: #e9ecef;
+        border-radius: 3px;
+        overflow: hidden;
+        margin-top: 8px;
+    }
+
+    [data-bs-theme="dark"] .preview-bar {
+        background: #4a5568;
+    }
+
+    .preview-bar-fill {
+        height: 100%;
+        background: linear-gradient(90deg, #4e73df 0%, #1cc88a 100%);
+        border-radius: 3px;
+        transition: width 0.6s ease;
+    }
+
+    .preview-meta {
+        font-size: 10px;
+        color: #6c757d;
+        font-weight: 600;
+    }
+
+    [data-bs-theme="dark"] .preview-meta {
+        color: #b0b0b0;
+    }
+
+    /* Form Footer */
+    .form-footer {
+        display: flex;
+        gap: 12px;
+        justify-content: flex-end;
+        padding-top: 20px;
+        border-top: 2px solid rgba(78, 115, 223, 0.1);
+    }
+
+    [data-bs-theme="dark"] .form-footer {
+        border-top-color: rgba(78, 115, 223, 0.2);
+    }
+
+    .footer-btn {
+        padding: 14px 28px;
+        border: none;
+        border-radius: 12px;
+        font-weight: 700;
+        font-size: 14px;
+        cursor: pointer;
+        transition: all 0.3s ease;
+        display: inline-flex;
+        align-items: center;
+        gap: 8px;
+    }
+
+    .cancel-btn {
+        background: #e9ecef;
+        color: #2e3440;
+    }
+
+    [data-bs-theme="dark"] .cancel-btn {
+        background: #4a5568;
+        color: #e0e0e0;
+    }
+
+    .cancel-btn:hover {
+        background: #dee2e6;
+        transform: translateY(-2px);
+    }
+
+    [data-bs-theme="dark"] .cancel-btn:hover {
+        background: #5a6778;
+    }
+
+    .generate-btn {
+        background: linear-gradient(135deg, #4e73df 0%, #224abe 100%);
+        color: white;
+        box-shadow: 0 4px 15px rgba(78, 115, 223, 0.3);
+    }
+
+    .generate-btn:hover {
+        transform: translateY(-3px);
+        box-shadow: 0 6px 20px rgba(78, 115, 223, 0.4);
+    }
+
+    /* Recent Reports Card */
+    .recent-reports-body {
+        padding: 0;
+    }
+
+    .reports-table-wrapper {
+        overflow-x: auto;
+        max-height: 500px;
+    }
+
+    .reports-table {
+        width: 100%;
+        border-collapse: collapse;
+        font-size: 13px;
+    }
+
+    .table-header-row {
+        background: linear-gradient(135deg, rgba(78, 115, 223, 0.1) 0%, rgba(28, 200, 138, 0.05) 100%);
+        position: sticky;
+        top: 0;
+        z-index: 20;
+    }
+
+    .table-header-row th {
+        padding: 16px 12px;
+        text-align: left;
+        font-weight: 700;
+        color: #2e3440;
+        border-bottom: 2px solid rgba(78, 115, 223, 0.2);
+    }
+
+    [data-bs-theme="dark"] .table-header-row th {
+        color: #e0e0e0;
+        border-bottom-color: rgba(78, 115, 223, 0.3);
+    }
+
+    .table-row {
+        border-bottom: 1px solid rgba(78, 115, 223, 0.1);
+        transition: all 0.3s ease;
+    }
+
+    [data-bs-theme="dark"] .table-row {
+        border-bottom-color: rgba(78, 115, 223, 0.2);
+    }
+
+    .table-row:hover {
+        background: rgba(78, 115, 223, 0.05);
+    }
+
+    [data-bs-theme="dark"] .table-row:hover {
+        background: rgba(78, 115, 223, 0.1);
+    }
+
+    .reports-table td {
+        padding: 14px 12px;
+        color: #2e3440;
+    }
+
+    [data-bs-theme="dark"] .reports-table td {
+        color: #e0e0e0;
+    }
+
+    .col-student {
+        width: 180px;
+    }
+
+    .col-class {
+        width: 100px;
+    }
+
+    .col-term {
+        width: 100px;
+    }
+
+    .col-percentage {
+        width: 110px;
+    }
+
+    .col-grade {
+        width: 80px;
+    }
+
+    .col-date {
+        width: 110px;
+    }
+
+    .col-status {
+        width: 100px;
+    }
+
+    .col-actions {
+        width: 80px;
+        text-align: center;
+    }
+
+    .student-info {
+        display: flex;
+        flex-direction: column;
+    }
+
+    .student-info strong {
+        font-size: 12px;
+        color: #2e3440;
+    }
+
+    [data-bs-theme="dark"] .student-info strong {
+        color: #e0e0e0;
+    }
+
+    .student-info small {
+        font-size: 11px;
+        color: #6c757d;
+    }
+
+    [data-bs-theme="dark"] .student-info small {
+        color: #b0b0b0;
+    }
+
+    .class-badge {
+        display: inline-block;
+        padding: 4px 10px;
+        background: rgba(78, 115, 223, 0.1);
+        border-radius: 6px;
+        color: #4e73df;
+        font-weight: 600;
+        font-size: 11px;
+    }
+
+    [data-bs-theme="dark"] .class-badge {
+        background: rgba(78, 115, 223, 0.2);
+        color: #7fa3f6;
+    }
+
+    .percentage-display {
+        display: flex;
+        align-items: center;
+        justify-content: center;
+    }
+
+    .percentage-value {
+        font-weight: 700;
+        color: #4e73df;
+    }
+
+    .grade-badge {
+        display: inline-block;
+        padding: 6px 12px;
+        border-radius: 8px;
+        font-weight: 700;
+        font-size: 12px;
+        color: white;
+    }
+
+    .grade-excellent {
+        background: linear-gradient(135deg, #1cc88a 0%, #128a5f 100%);
+    }
+
+    .grade-good {
+        background: linear-gradient(135deg, #f6c23e 0%, #d4a017 100%);
+    }
+
+    .grade-average {
+        background: linear-gradient(135deg, #3498db 0%, #2980b9 100%);
+    }
+
+    .grade-below {
+        background: linear-gradient(135deg, #e74c3c 0%, #c0392b 100%);
+    }
+
+    .date-text {
+        font-size: 12px;
+        color: #6c757d;
+    }
+
+    [data-bs-theme="dark"] .date-text {
+        color: #b0b0b0;
+    }
+
+    .status-badge {
+        display: inline-flex;
+        align-items: center;
+        gap: 6px;
+        padding: 6px 10px;
+        border-radius: 8px;
+        font-size: 11px;
+        font-weight: 700;
+        color: white;
+    }
+
+    .published {
+        background: linear-gradient(135deg, #1cc88a 0%, #128a5f 100%);
+    }
+
+    .draft {
+        background: linear-gradient(135deg, #f6c23e 0%, #d4a017 100%);
+    }
+
+    .action-buttons {
+        display: flex;
+        gap: 6px;
+        justify-content: center;
+    }
+
+    .action-btn {
+        width: 28px;
+        height: 28px;
+        border-radius: 6px;
+        border: none;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        cursor: pointer;
+        font-size: 12px;
+        transition: all 0.3s ease;
+        text-decoration: none;
+        color: white;
+    }
+
+    .view-btn {
+        background: linear-gradient(135deg, #4e73df 0%, #224abe 100%);
+    }
+
+    .view-btn:hover {
+        transform: translateY(-2px);
+        box-shadow: 0 4px 12px rgba(78, 115, 223, 0.3);
+    }
+
+    .download-btn {
+        background: linear-gradient(135deg, #1cc88a 0%, #128a5f 100%);
+    }
+
+    .download-btn:hover {
+        transform: translateY(-2px);
+        box-shadow: 0 4px 12px rgba(28, 200, 138, 0.3);
+    }
+
+    /* Empty State */
+    .empty-row {
+        height: 200px;
+    }
+
+    .empty-cell {
+        padding: 0 !important;
+    }
+
+    .empty-state {
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+        justify-content: center;
+        height: 100%;
+        color: #6c757d;
+    }
+
+    [data-bs-theme="dark"] .empty-state {
+        color: #b0b0b0;
+    }
+
+    .empty-state i {
+        font-size: 48px;
+        color: rgba(78, 115, 223, 0.2);
+        margin-bottom: 12px;
+    }
+
+    /* Responsive */
+    @media (max-width: 1200px) {
+        .preview-grid {
+            grid-template-columns: repeat(2, 1fr);
+        }
+
+        .options-grid {
+            grid-template-columns: 1fr;
+        }
+    }
+
+    @media (max-width: 768px) {
+        .report-hero-header {
+            padding: 40px 20px;
+        }
+
+        .hero-title {
+            font-size: 28px;
+        }
+
+        .card-body-premium {
+            padding: 20px;
+        }
+
+        .form-grid {
+            grid-template-columns: 1fr;
+        }
+
+        .preview-grid {
+            grid-template-columns: 1fr;
+        }
+
+        .form-footer {
+            flex-direction: column;
+        }
+
+        .footer-btn {
+            width: 100%;
+            justify-content: center;
+        }
+
+        .col-student {
+            width: 120px;
+        }
+
+        .col-class {
+            width: 80px;
+        }
+
+        .col-status {
+            width: 80px;
+        }
+
+        .reports-table {
+            font-size: 11px;
+        }
+
+        .reports-table td {
+            padding: 10px 8px;
+        }
+
+        .table-header-row th {
+            padding: 12px 8px;
+        }
+    }
+</style>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+    function updateStudentPreview() {
+        const studentSelect = document.querySelector('select[name="student_id"]');
+        
+        if (!studentSelect.value) {
+            resetPreview();
+            return;
+        }
+
+        // Mock preview update - In production, this would fetch actual data
+        const mockPercentage = Math.random() * 100;
+        let mockGrade = 'N/A';
+        let mockPerformance = 'Awaiting';
+        
+        if (mockPercentage >= 90) {
+            mockGrade = 'A+';
+            mockPerformance = 'Excellent';
+        } else if (mockPercentage >= 80) {
+            mockGrade = 'A';
+            mockPerformance = 'Very Good';
+        } else if (mockPercentage >= 70) {
+            mockGrade = 'B+';
+            mockPerformance = 'Good';
+        } else if (mockPercentage >= 60) {
+            mockGrade = 'B';
+            mockPerformance = 'Fair';
+        } else {
+            mockGrade = 'C';
+            mockPerformance = 'Needs Improvement';
+        }
+
+        const mockGPA = (mockPercentage / 25).toFixed(2);
+
+        document.getElementById('previewPercentage').textContent = mockPercentage.toFixed(2) + '%';
+        document.getElementById('previewPercentageBar').style.width = mockPercentage + '%';
+        document.getElementById('previewGrade').textContent = mockGrade;
+        document.getElementById('previewGradeDesc').textContent = 'Based on current marks';
+        document.getElementById('previewGPA').textContent = mockGPA;
+        document.getElementById('previewPerformance').textContent = mockPerformance;
+        document.getElementById('previewPerformanceDesc').textContent = 'Based on overall performance';
+    }
+
+    function resetPreview() {
+        document.getElementById('previewPercentage').textContent = '0.00%';
+        document.getElementById('previewPercentageBar').style.width = '0%';
+        document.getElementById('previewGrade').textContent = 'N/A';
+        document.getElementById('previewGradeDesc').textContent = 'Select a student';
+        document.getElementById('previewGPA').textContent = '0.00';
+        document.getElementById('previewPerformance').textContent = '--';
+        document.getElementById('previewPerformanceDesc').textContent = 'Awaiting data';
+    }
+
+    document.addEventListener('DOMContentLoaded', function() {
+        resetPreview();
+    });
+</script>
+{% endblock %}

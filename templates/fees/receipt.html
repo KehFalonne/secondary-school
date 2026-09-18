@@ -1,0 +1,1250 @@
+{% extends 'base.html' %}
+
+{% block title %}Payment Receipt{% endblock %}
+
+{% block content %}
+<div class="receipt-container">
+    <!-- Hero Section -->
+    <div class="hero-section">
+        <div class="hero-gradient"></div>
+        <div class="hero-content">
+            <div class="receipt-badge">
+                <i class="fas fa-check-circle"></i> PAYMENT CONFIRMED
+            </div>
+            <h1 class="receipt-title">Payment Receipt</h1>
+            <p class="hero-subtitle">Official payment acknowledgment and receipt</p>
+        </div>
+    </div>
+
+    <!-- Receipt Content -->
+    <div class="receipt-content" id="printArea">
+        <!-- School Header -->
+        <div class="receipt-card school-header">
+            <div class="school-header-content">
+                <div class="school-logo-section">
+                    {% if school_settings.school_logo %}
+                        <img src="{{ school_settings.school_logo.url }}" alt="School Logo" class="school-logo">
+                    {% endif %}
+                </div>
+                <div class="school-info">
+                    <h2 class="school-name">{{ school_settings.school_name|default:"SCHOOL NAME" }}</h2>
+                    <p class="school-address">{{ school_settings.school_address|default:"School Address" }}</p>
+                    <div class="school-contact">
+                        <span><i class="fas fa-phone-alt"></i> {{ school_settings.school_phone|default:"-" }}</span>
+                        <span><i class="fas fa-envelope"></i> {{ school_settings.school_email|default:"-" }}</span>
+                    </div>
+                    <p class="school-session">Academic Session: {{ school_settings.current_session|default:"-" }}</p>
+                </div>
+            </div>
+        </div>
+
+        <!-- Receipt Number & Date -->
+        <div class="receipt-meta">
+            <div class="meta-card">
+                <div class="meta-icon">
+                    <i class="fas fa-receipt"></i>
+                </div>
+                <div>
+                    <p class="meta-label">Receipt Number</p>
+                    <p class="meta-value">{{ payment.receipt_number }}</p>
+                </div>
+            </div>
+            <div class="meta-card">
+                <div class="meta-icon">
+                    <i class="fas fa-calendar-check"></i>
+                </div>
+                <div>
+                    <p class="meta-label">Payment Date</p>
+                    <p class="meta-value">{{ payment.date|date:"d F Y" }}</p>
+                </div>
+            </div>
+            <div class="meta-card">
+                <div class="meta-icon">
+                    <i class="fas fa-clock"></i>
+                </div>
+                <div>
+                    <p class="meta-label">Recorded At</p>
+                    <p class="meta-value">{{ payment.created_at|date:"h:i A" }}</p>
+                </div>
+            </div>
+        </div>
+
+        <!-- Student Information -->
+        <div class="receipt-card student-info-card">
+            <div class="card-header-section">
+                <div class="header-icon">
+                    <i class="fas fa-user-graduate"></i>
+                </div>
+                <h3>Student Information</h3>
+            </div>
+            <div class="info-grid">
+                <div class="info-block">
+                    <span class="info-label">Student Name</span>
+                    <span class="info-value">{{ payment.student_fee.student.user.get_full_name }}</span>
+                </div>
+                <div class="info-block">
+                    <span class="info-label">Admission Number</span>
+                    <span class="info-value">{{ payment.student_fee.student.admission_number }}</span>
+                </div>
+                <div class="info-block">
+                    <span class="info-label">Class</span>
+                    <span class="info-value">{{ payment.student_fee.student.class_enrolled.name }}</span>
+                </div>
+                <div class="info-block">
+                    <span class="info-label">Section</span>
+                    <span class="info-value">{{ payment.student_fee.student.section }}</span>
+                </div>
+            </div>
+        </div>
+
+        <!-- Payment Details Table -->
+        <div class="receipt-card payment-details-card">
+            <div class="card-header-section">
+                <div class="header-icon">
+                    <i class="fas fa-money-bill-wave"></i>
+                </div>
+                <h3>Payment Details</h3>
+            </div>
+            <div class="payment-table-wrapper">
+                <table class="payment-table">
+                    <thead>
+                        <tr>
+                            <th>Description</th>
+                            <th>Term</th>
+                            <th class="text-end">Amount</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        <tr>
+                            <td class="fee-type">{{ payment.student_fee.fee_structure.fee_type.name }}</td>
+                            <td><span class="badge-term">{{ payment.student_fee.fee_structure.get_term_display }}</span></td>
+                            <td class="amount">${{ payment.amount }}</td>
+                        </tr>
+                    </tbody>
+                </table>
+            </div>
+        </div>
+
+        <!-- Transaction Info -->
+        <div class="receipt-card transaction-card">
+            <div class="card-header-section">
+                <div class="header-icon">
+                    <i class="fas fa-exchange-alt"></i>
+                </div>
+                <h3>Transaction Information</h3>
+            </div>
+            <div class="transaction-grid">
+                <div class="transaction-item">
+                    <i class="fas fa-wallet"></i>
+                    <div>
+                        <p class="trans-label">Payment Method</p>
+                        <p class="trans-value">{{ payment.payment_method }}</p>
+                    </div>
+                </div>
+                {% if payment.transaction_id %}
+                <div class="transaction-item">
+                    <i class="fas fa-fingerprint"></i>
+                    <div>
+                        <p class="trans-label">Transaction ID</p>
+                        <p class="trans-value">{{ payment.transaction_id }}</p>
+                    </div>
+                </div>
+                {% endif %}
+                <div class="transaction-item">
+                    <i class="fas fa-user-tie"></i>
+                    <div>
+                        <p class="trans-label">Recorded By</p>
+                        <p class="trans-value">{{ payment.recorded_by.get_full_name }}</p>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Balance Summary -->
+        <div class="balance-summary">
+            <div class="balance-item paid">
+                <div class="balance-icon">
+                    <i class="fas fa-check-circle"></i>
+                </div>
+                <div class="balance-info">
+                    <p class="balance-label">Amount Paid</p>
+                    <p class="balance-amount">${{ payment.amount }}</p>
+                </div>
+            </div>
+            <div class="balance-item remaining">
+                <div class="balance-icon">
+                    <i class="fas fa-hourglass-half"></i>
+                </div>
+                <div class="balance-info">
+                    <p class="balance-label">Remaining Balance</p>
+                    <p class="balance-amount">${{ payment.student_fee.balance }}</p>
+                </div>
+            </div>
+            <div class="balance-item total">
+                <div class="balance-icon">
+                    <i class="fas fa-money-bill"></i>
+                </div>
+                <div class="balance-info">
+                    <p class="balance-label">Total Fee</p>
+                    <p class="balance-amount">${{ payment.student_fee.fee_structure.amount }}</p>
+                </div>
+            </div>
+        </div>
+
+        <!-- Receipt Footer -->
+        <div class="receipt-footer">
+            <p class="footer-text">
+                <i class="fas fa-info-circle"></i> This is a computer-generated receipt and does not require a signature.
+            </p>
+            <p class="footer-secondary">Generated on {{ payment.created_at|date:"d M Y, h:i A" }}</p>
+        </div>
+    </div>
+
+    <!-- Action Buttons -->
+    <div class="receipt-actions">
+        <button onclick="printDiv('printArea')" class="btn-print">
+            <i class="fas fa-print me-2"></i>Print Receipt
+        </button>
+        <a href="{% url 'fee_dashboard' %}" class="btn-back">
+            <i class="fas fa-arrow-left me-2"></i>Back to Dashboard
+        </a>
+    </div>
+</div>
+{% endblock %}
+
+{% block extra_css %}
+<style>
+    /* ====== Container ====== */
+    .receipt-container {
+        background: linear-gradient(135deg, #f5f7fa 0%, #c3cfe2 100%);
+        min-height: 100vh;
+        padding-bottom: 3rem;
+        animation: fadeIn 0.6s ease;
+    }
+
+    /* ====== Hero Section ====== */
+    .hero-section {
+        position: relative;
+        height: 320px;
+        display: flex;
+        align-items: flex-end;
+        padding: 3rem 2rem;
+        overflow: hidden;
+        margin-bottom: 3rem;
+    }
+
+    .hero-gradient {
+        position: absolute;
+        top: 0;
+        left: 0;
+        right: 0;
+        bottom: 0;
+        background: linear-gradient(135deg, #1cc88a 0%, #4e73df 100%);
+        z-index: 0;
+    }
+
+    .hero-section::before {
+        content: '';
+        position: absolute;
+        top: 0;
+        left: 0;
+        right: 0;
+        bottom: 0;
+        background: 
+            radial-gradient(circle at 20% 50%, rgba(255,255,255,0.1) 0%, transparent 50%),
+            radial-gradient(circle at 80% 80%, rgba(255,255,255,0.1) 0%, transparent 50%);
+        z-index: 1;
+    }
+
+    .hero-content {
+        position: relative;
+        z-index: 2;
+        width: 100%;
+        max-width: 1200px;
+        margin: 0 auto;
+        padding: 0 1rem;
+    }
+
+    .receipt-badge {
+        display: inline-flex;
+        align-items: center;
+        gap: 0.5rem;
+        background: rgba(255, 255, 255, 0.25);
+        color: white;
+        padding: 0.6rem 1.2rem;
+        border-radius: 30px;
+        font-weight: 600;
+        font-size: 0.85rem;
+        margin-bottom: 1.5rem;
+        backdrop-filter: blur(10px);
+    }
+
+    .receipt-title {
+        font-size: 2.5rem;
+        font-weight: 800;
+        color: white;
+        margin: 0 0 0.5rem 0;
+        text-shadow: 0 2px 10px rgba(0,0,0,0.2);
+    }
+
+    .hero-subtitle {
+        font-size: 1rem;
+        color: rgba(255, 255, 255, 0.9);
+        margin: 0;
+    }
+
+    /* ====== Receipt Content ====== */
+    .receipt-content {
+        max-width: 900px;
+        margin: 0 auto;
+        padding: 0 1rem;
+    }
+
+    /* ====== Receipt Cards ====== */
+    .receipt-card {
+        background: linear-gradient(135deg, rgba(255, 255, 255, 0.95) 0%, rgba(255, 255, 255, 0.85) 100%);
+        border: 1px solid rgba(78, 115, 223, 0.1);
+        border-radius: 16px;
+        backdrop-filter: blur(10px);
+        padding: 2rem;
+        box-shadow: 0 8px 32px 0 rgba(31, 38, 135, 0.07);
+        margin-bottom: 1.5rem;
+        animation: slideInUp 0.6s ease;
+    }
+
+    /* ====== School Header ====== */
+    .school-header {
+        text-align: center;
+        padding: 2.5rem;
+        border-bottom: 2px solid rgba(78, 115, 223, 0.08);
+        background: linear-gradient(135deg, rgba(78, 115, 223, 0.05) 0%, rgba(28, 200, 138, 0.05) 100%);
+        position: relative;
+        overflow: hidden;
+    }
+
+    .school-header::before {
+        content: '';
+        position: absolute;
+        top: -50%;
+        right: -50%;
+        width: 200%;
+        height: 200%;
+        background: 
+            radial-gradient(circle at 20% 50%, rgba(28, 200, 138, 0.05) 0%, transparent 50%),
+            radial-gradient(circle at 80% 20%, rgba(78, 115, 223, 0.05) 0%, transparent 50%);
+        z-index: 0;
+    }
+
+    .school-header-content {
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+        gap: 1.5rem;
+        position: relative;
+        z-index: 1;
+    }
+
+    .school-logo-section {
+        display: flex;
+        justify-content: center;
+        align-items: center;
+    }
+
+    .school-logo {
+        max-height: 120px;
+        filter: drop-shadow(0 4px 12px rgba(0,0,0,0.15));
+        animation: slideInDown 0.6s ease;
+    }
+
+    .school-name {
+        font-size: 1.8rem;
+        font-weight: 900;
+        color: #2e3440;
+        margin: 0;
+        letter-spacing: 0.5px;
+        background: linear-gradient(135deg, #1cc88a 0%, #4e73df 100%);
+        -webkit-background-clip: text;
+        -webkit-text-fill-color: transparent;
+        background-clip: text;
+        text-shadow: none;
+    }
+
+    .school-address {
+        color: #6c757d;
+        font-size: 1rem;
+        margin: 0 0 0.75rem 0;
+        font-weight: 500;
+        max-width: 600px;
+    }
+
+    .school-contact {
+        display: flex;
+        gap: 2rem;
+        justify-content: center;
+        margin: 1rem 0;
+        font-size: 0.95rem;
+        color: #6c757d;
+        flex-wrap: wrap;
+    }
+
+    .school-contact span {
+        display: flex;
+        align-items: center;
+        gap: 0.5rem;
+        font-weight: 500;
+    }
+
+    .school-contact i {
+        color: #4e73df;
+        font-size: 1.1rem;
+    }
+
+    .school-session {
+        margin: 1rem 0 0 0;
+        color: #2e3440;
+        font-size: 0.95rem;
+        font-weight: 600;
+        background: rgba(78, 115, 223, 0.1);
+        padding: 0.6rem 1.25rem;
+        border-radius: 25px;
+        display: inline-block;
+    }
+
+    /* ====== Receipt Meta ====== */
+    .receipt-meta {
+        display: grid;
+        grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
+        gap: 1.5rem;
+        margin-bottom: 2rem;
+        animation: slideInUp 0.6s ease 0.1s both;
+    }
+
+    .meta-card {
+        background: linear-gradient(135deg, rgba(255, 255, 255, 0.95) 0%, rgba(255, 255, 255, 0.85) 100%);
+        border: 1px solid rgba(78, 115, 223, 0.1);
+        border-radius: 12px;
+        padding: 1.5rem;
+        display: flex;
+        gap: 1rem;
+        align-items: flex-start;
+        backdrop-filter: blur(10px);
+        box-shadow: 0 4px 15px rgba(31, 38, 135, 0.05);
+    }
+
+    .meta-icon {
+        width: 50px;
+        height: 50px;
+        border-radius: 10px;
+        background: linear-gradient(135deg, #4e73df 0%, #1cc88a 100%);
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        color: white;
+        font-size: 1.25rem;
+        flex-shrink: 0;
+    }
+
+    .meta-label {
+        font-size: 0.75rem;
+        color: #6c757d;
+        font-weight: 600;
+        text-transform: uppercase;
+        letter-spacing: 0.5px;
+        margin: 0;
+    }
+
+    .meta-value {
+        font-size: 1.1rem;
+        font-weight: 700;
+        color: #2e3440;
+        margin: 0;
+    }
+
+    /* ====== Student Info Card ====== */
+    .student-info-card {
+        animation-delay: 0.2s;
+    }
+
+    .card-header-section {
+        display: flex;
+        align-items: center;
+        gap: 1rem;
+        margin-bottom: 1.75rem;
+        padding-bottom: 1.5rem;
+        border-bottom: 2px solid rgba(78, 115, 223, 0.08);
+    }
+
+    .header-icon {
+        width: 50px;
+        height: 50px;
+        border-radius: 10px;
+        background: linear-gradient(135deg, #1cc88a 0%, #13a968 100%);
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        color: white;
+        font-size: 1.25rem;
+        flex-shrink: 0;
+    }
+
+    .card-header-section h3 {
+        margin: 0;
+        font-size: 1.2rem;
+        font-weight: 700;
+        color: #2e3440;
+    }
+
+    .info-grid {
+        display: grid;
+        grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+        gap: 1.5rem;
+    }
+
+    .info-block {
+        display: flex;
+        flex-direction: column;
+        gap: 0.4rem;
+    }
+
+    .info-label {
+        font-size: 0.8rem;
+        color: #6c757d;
+        font-weight: 600;
+        text-transform: uppercase;
+        letter-spacing: 0.5px;
+    }
+
+    .info-value {
+        font-size: 1rem;
+        font-weight: 700;
+        color: #2e3440;
+    }
+
+    /* ====== Payment Details Card ====== */
+    .payment-details-card {
+        animation-delay: 0.3s;
+    }
+
+    .payment-table-wrapper {
+        overflow-x: auto;
+    }
+
+    .payment-table {
+        width: 100%;
+        border-collapse: collapse;
+    }
+
+    .payment-table thead th {
+        padding: 1rem;
+        text-align: left;
+        color: #2e3440;
+        font-weight: 700;
+        font-size: 0.95rem;
+        border-bottom: 2px solid rgba(78, 115, 223, 0.15);
+    }
+
+    .payment-table tbody td {
+        padding: 1.2rem 1rem;
+        border-bottom: 1px solid rgba(78, 115, 223, 0.08);
+        color: #2e3440;
+    }
+
+    .payment-table tbody tr:hover {
+        background: rgba(78, 115, 223, 0.05);
+    }
+
+    .payment-table .text-end {
+        text-align: right;
+    }
+
+    .fee-type {
+        font-weight: 600;
+    }
+
+    .badge-term {
+        display: inline-block;
+        background: linear-gradient(135deg, #4e73df 0%, #1cc88a 100%);
+        color: white;
+        padding: 0.4rem 0.8rem;
+        border-radius: 6px;
+        font-size: 0.8rem;
+        font-weight: 600;
+    }
+
+    .payment-table .amount {
+        font-weight: 700;
+        color: #1cc88a;
+        font-size: 1.1rem;
+    }
+
+    /* ====== Transaction Card ====== */
+    .transaction-card {
+        animation-delay: 0.4s;
+    }
+
+    .transaction-card .header-icon {
+        background: linear-gradient(135deg, #4e73df 0%, #224abe 100%);
+    }
+
+    .transaction-grid {
+        display: grid;
+        grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+        gap: 1.5rem;
+    }
+
+    .transaction-item {
+        display: flex;
+        gap: 1rem;
+        padding: 1.25rem;
+        background: rgba(78, 115, 223, 0.05);
+        border-radius: 10px;
+        border: 1px solid rgba(78, 115, 223, 0.08);
+    }
+
+    .transaction-item i {
+        font-size: 1.5rem;
+        color: #4e73df;
+        flex-shrink: 0;
+        margin-top: 0.2rem;
+    }
+
+    .trans-label {
+        font-size: 0.8rem;
+        color: #6c757d;
+        font-weight: 600;
+        text-transform: uppercase;
+        letter-spacing: 0.5px;
+        margin: 0 0 0.3rem 0;
+    }
+
+    .trans-value {
+        font-size: 0.95rem;
+        font-weight: 700;
+        color: #2e3440;
+        margin: 0;
+        word-break: break-word;
+    }
+
+    /* ====== Balance Summary ====== */
+    .balance-summary {
+        display: grid;
+        grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
+        gap: 1.5rem;
+        margin-bottom: 2rem;
+        animation: slideInUp 0.6s ease 0.5s both;
+    }
+
+    .balance-item {
+        background: linear-gradient(135deg, rgba(255, 255, 255, 0.95) 0%, rgba(255, 255, 255, 0.85) 100%);
+        border-radius: 12px;
+        padding: 1.5rem;
+        display: flex;
+        gap: 1rem;
+        align-items: flex-start;
+        border: 1px solid rgba(78, 115, 223, 0.1);
+        box-shadow: 0 4px 15px rgba(31, 38, 135, 0.05);
+        backdrop-filter: blur(10px);
+    }
+
+    .balance-item.paid {
+        border-color: rgba(28, 200, 138, 0.2);
+    }
+
+    .balance-item.remaining {
+        border-color: rgba(246, 194, 62, 0.2);
+    }
+
+    .balance-item.total {
+        border-color: rgba(78, 115, 223, 0.2);
+    }
+
+    .balance-icon {
+        width: 50px;
+        height: 50px;
+        border-radius: 10px;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        color: white;
+        font-size: 1.5rem;
+        flex-shrink: 0;
+    }
+
+    .balance-item.paid .balance-icon {
+        background: linear-gradient(135deg, #1cc88a 0%, #13a968 100%);
+    }
+
+    .balance-item.remaining .balance-icon {
+        background: linear-gradient(135deg, #f6c23e 0%, #daa520 100%);
+    }
+
+    .balance-item.total .balance-icon {
+        background: linear-gradient(135deg, #4e73df 0%, #224abe 100%);
+    }
+
+    .balance-info {
+        flex: 1;
+    }
+
+    .balance-label {
+        font-size: 0.8rem;
+        color: #6c757d;
+        font-weight: 600;
+        text-transform: uppercase;
+        letter-spacing: 0.5px;
+        margin: 0 0 0.5rem 0;
+    }
+
+    .balance-amount {
+        font-size: 1.4rem;
+        font-weight: 800;
+        color: #2e3440;
+        margin: 0;
+    }
+
+    .balance-item.paid .balance-amount {
+        color: #1cc88a;
+    }
+
+    .balance-item.remaining .balance-amount {
+        color: #f6c23e;
+    }
+
+    .balance-item.total .balance-amount {
+        color: #4e73df;
+    }
+
+    /* ====== Receipt Footer ====== */
+    .receipt-footer {
+        background: linear-gradient(135deg, rgba(255, 255, 255, 0.95) 0%, rgba(255, 255, 255, 0.85) 100%);
+        border: 1px solid rgba(78, 115, 223, 0.1);
+        border-radius: 12px;
+        padding: 1.5rem;
+        text-align: center;
+        margin-bottom: 2rem;
+        backdrop-filter: blur(10px);
+        animation: slideInUp 0.6s ease 0.6s both;
+    }
+
+    .footer-text {
+        margin: 0 0 0.5rem 0;
+        color: #6c757d;
+        font-size: 0.9rem;
+    }
+
+    .footer-text i {
+        color: #4e73df;
+        margin-right: 0.35rem;
+    }
+
+    .footer-secondary {
+        margin: 0;
+        color: #9ca3af;
+        font-size: 0.85rem;
+    }
+
+    /* ====== Action Buttons ====== */
+    .receipt-actions {
+        max-width: 900px;
+        margin: 0 auto;
+        padding: 0 1rem;
+        display: flex;
+        gap: 1.5rem;
+        justify-content: center;
+        flex-wrap: wrap;
+        animation: slideInUp 0.6s ease 0.7s both;
+    }
+
+    .btn-print,
+    .btn-back {
+        padding: 0.95rem 2rem;
+        border-radius: 12px;
+        font-weight: 600;
+        font-size: 0.95rem;
+        text-decoration: none;
+        border: none;
+        cursor: pointer;
+        transition: all 0.3s ease;
+        display: inline-flex;
+        align-items: center;
+        justify-content: center;
+        gap: 0.5rem;
+    }
+
+    .btn-print {
+        background: linear-gradient(135deg, #4e73df 0%, #224abe 100%);
+        color: white;
+        box-shadow: 0 4px 15px rgba(78, 115, 223, 0.3);
+    }
+
+    .btn-print:hover {
+        transform: translateY(-2px);
+        box-shadow: 0 8px 25px rgba(78, 115, 223, 0.4);
+    }
+
+    .btn-back {
+        background: rgba(78, 115, 223, 0.1);
+        color: #4e73df;
+        border: 1.5px solid rgba(78, 115, 223, 0.2);
+    }
+
+    .btn-back:hover {
+        background: rgba(78, 115, 223, 0.15);
+        border-color: rgba(78, 115, 223, 0.3);
+    }
+
+    /* ====== Animations ====== */
+    @keyframes fadeIn {
+        from { opacity: 0; }
+        to { opacity: 1; }
+    }
+
+    @keyframes slideInUp {
+        from {
+            opacity: 0;
+            transform: translateY(30px);
+        }
+        to {
+            opacity: 1;
+            transform: translateY(0);
+        }
+    }
+
+    @keyframes slideInDown {
+        from {
+            opacity: 0;
+            transform: translateY(-20px);
+        }
+        to {
+            opacity: 1;
+            transform: translateY(0);
+        }
+    }
+
+    /* ====== Print Styles ====== */
+    @media print {
+        .hero-section,
+        .receipt-actions {
+            display: none;
+        }
+
+        .receipt-container {
+            background: white;
+            padding: 0;
+        }
+
+        .receipt-content {
+            padding: 0;
+        }
+
+        .receipt-card {
+            box-shadow: none;
+            border: 1px solid #ddd;
+            page-break-inside: avoid;
+        }
+
+        .receipt-meta,
+        .balance-summary {
+            page-break-inside: avoid;
+        }
+    }
+
+    /* ====== Responsive Design ====== */
+    @media (max-width: 1024px) {
+        .receipt-meta {
+            grid-template-columns: repeat(auto-fit, minmax(180px, 1fr));
+            gap: 1.25rem;
+        }
+
+        .info-grid {
+            grid-template-columns: repeat(2, 1fr);
+            gap: 1.25rem;
+        }
+
+        .balance-summary {
+            grid-template-columns: repeat(auto-fit, minmax(180px, 1fr));
+            gap: 1.25rem;
+        }
+
+        .transaction-grid {
+            grid-template-columns: 1fr;
+        }
+    }
+
+    @media (max-width: 768px) {
+        .hero-section {
+            height: auto;
+            min-height: 280px;
+            padding: 2rem 1rem 2.5rem;
+            margin-bottom: 1.5rem;
+        }
+
+        .receipt-badge {
+            font-size: 0.75rem;
+            padding: 0.5rem 1rem;
+        }
+
+        .receipt-title {
+            font-size: 1.75rem;
+            margin-bottom: 0.5rem;
+        }
+
+        .hero-subtitle {
+            font-size: 0.9rem;
+        }
+
+        .receipt-content {
+            padding: 0 0.75rem;
+        }
+
+        .receipt-card {
+            padding: 1.5rem;
+            margin-bottom: 1.25rem;
+            border-radius: 12px;
+        }
+
+        .school-header {
+            padding: 1.5rem;
+        }
+
+        .school-logo {
+            max-height: 70px;
+            margin-bottom: 1rem;
+        }
+
+        .school-name {
+            font-size: 1.3rem;
+        }
+
+        .receipt-meta {
+            grid-template-columns: repeat(auto-fit, minmax(150px, 1fr));
+            gap: 1rem;
+            margin-bottom: 1.5rem;
+        }
+
+        .meta-card,
+        .balance-item {
+            padding: 1.25rem;
+        }
+
+        .meta-icon,
+        .balance-icon,
+        .header-icon {
+            width: 45px;
+            height: 45px;
+            font-size: 1.1rem;
+        }
+
+        .card-header-section h3 {
+            font-size: 1.05rem;
+        }
+
+        .info-grid {
+            grid-template-columns: 1fr;
+            gap: 1rem;
+        }
+
+        .balance-summary {
+            grid-template-columns: 1fr;
+            gap: 1rem;
+            margin-bottom: 1.5rem;
+        }
+
+        .transaction-grid {
+            grid-template-columns: 1fr;
+            gap: 1rem;
+        }
+
+        .payment-table thead th {
+            font-size: 0.85rem;
+            padding: 0.75rem;
+        }
+
+        .payment-table tbody td {
+            padding: 0.85rem 0.75rem;
+            font-size: 0.9rem;
+        }
+
+        .receipt-actions {
+            gap: 1rem;
+            margin: 0 -0.75rem;
+            padding: 0 0.75rem;
+        }
+
+        .btn-print,
+        .btn-back {
+            padding: 0.85rem 1.5rem;
+            font-size: 0.9rem;
+            flex: 1;
+            min-width: 150px;
+        }
+    }
+
+    @media (max-width: 480px) {
+        .hero-section {
+            min-height: 240px;
+            padding: 1.5rem 1rem 2rem;
+        }
+
+        .receipt-badge {
+            font-size: 0.7rem;
+            padding: 0.4rem 0.8rem;
+        }
+
+        .receipt-title {
+            font-size: 1.3rem;
+            margin-bottom: 0.3rem;
+        }
+
+        .hero-subtitle {
+            font-size: 0.8rem;
+        }
+
+        .receipt-content {
+            padding: 0 0.5rem;
+        }
+
+        .receipt-card {
+            padding: 1.25rem;
+            margin-bottom: 1rem;
+            border-radius: 10px;
+        }
+
+        .receipt-meta {
+            grid-template-columns: 1fr;
+            gap: 0.75rem;
+            margin-bottom: 1.25rem;
+        }
+
+        .meta-card {
+            padding: 1rem;
+            gap: 0.75rem;
+        }
+
+        .meta-icon {
+            width: 40px;
+            height: 40px;
+            font-size: 1rem;
+        }
+
+        .meta-label {
+            font-size: 0.7rem;
+        }
+
+        .meta-value {
+            font-size: 0.95rem;
+        }
+
+        .school-header {
+            padding: 1.25rem;
+        }
+
+        .school-logo {
+            max-height: 60px;
+            margin-bottom: 0.75rem;
+        }
+
+        .school-name {
+            font-size: 1.1rem;
+        }
+
+        .school-address {
+            font-size: 0.85rem;
+        }
+
+        .school-contact {
+            gap: 1rem;
+            font-size: 0.8rem;
+            margin: 0.5rem 0;
+        }
+
+        .school-session {
+            font-size: 0.75rem;
+            margin-top: 0.5rem;
+        }
+
+        .card-header-section {
+            gap: 0.75rem;
+            margin-bottom: 1.25rem;
+            padding-bottom: 1rem;
+        }
+
+        .header-icon {
+            width: 40px;
+            height: 40px;
+            font-size: 1rem;
+        }
+
+        .card-header-section h3 {
+            font-size: 0.95rem;
+        }
+
+        .info-grid {
+            grid-template-columns: 1fr;
+            gap: 0.75rem;
+        }
+
+        .info-label,
+        .trans-label {
+            font-size: 0.7rem;
+        }
+
+        .info-value {
+            font-size: 0.9rem;
+        }
+
+        .trans-value {
+            font-size: 0.9rem;
+        }
+
+        .balance-summary {
+            grid-template-columns: 1fr;
+            gap: 0.75rem;
+            margin-bottom: 1.25rem;
+        }
+
+        .balance-item {
+            padding: 1rem;
+            gap: 0.75rem;
+        }
+
+        .balance-icon {
+            width: 40px;
+            height: 40px;
+            font-size: 1.2rem;
+        }
+
+        .balance-label {
+            font-size: 0.7rem;
+        }
+
+        .balance-amount {
+            font-size: 1.1rem;
+        }
+
+        .transaction-grid {
+            grid-template-columns: 1fr;
+            gap: 0.75rem;
+        }
+
+        .transaction-item {
+            padding: 1rem;
+            gap: 0.75rem;
+        }
+
+        .transaction-item i {
+            font-size: 1.25rem;
+        }
+
+        .payment-table-wrapper {
+            font-size: 0.85rem;
+        }
+
+        .payment-table thead th {
+            font-size: 0.75rem;
+            padding: 0.6rem;
+        }
+
+        .payment-table tbody td {
+            padding: 0.6rem;
+            font-size: 0.85rem;
+        }
+
+        .badge-term {
+            padding: 0.3rem 0.6rem;
+            font-size: 0.7rem;
+        }
+
+        .receipt-footer {
+            padding: 1.25rem;
+            margin-bottom: 1.5rem;
+        }
+
+        .footer-text {
+            font-size: 0.8rem;
+            margin-bottom: 0.35rem;
+        }
+
+        .footer-secondary {
+            font-size: 0.75rem;
+        }
+
+        .receipt-actions {
+            gap: 0.75rem;
+            margin: 0 -0.5rem;
+            padding: 0 0.5rem;
+        }
+
+        .btn-print,
+        .btn-back {
+            padding: 0.75rem 1.2rem;
+            font-size: 0.85rem;
+            flex: 1;
+            min-width: auto;
+        }
+    }
+
+    /* Dark Mode Support */
+    [data-bs-theme="dark"] .receipt-container {
+        background: linear-gradient(135deg, #1a1f2e 0%, #2d3436 100%);
+    }
+
+    [data-bs-theme="dark"] .receipt-card,
+    [data-bs-theme="dark"] .meta-card,
+    [data-bs-theme="dark"] .balance-item,
+    [data-bs-theme="dark"] .receipt-footer {
+        background: linear-gradient(135deg, rgba(45, 52, 64, 0.95) 0%, rgba(45, 52, 64, 0.85) 100%);
+    }
+
+    [data-bs-theme="dark"] .school-name,
+    [data-bs-theme="dark"] .card-header-section h3,
+    [data-bs-theme="dark"] .info-value,
+    [data-bs-theme="dark"] .meta-value,
+    [data-bs-theme="dark"] .trans-value,
+    [data-bs-theme="dark"] .balance-amount {
+        color: #e0e0e0;
+    }
+
+    [data-bs-theme="dark"] .school-address,
+    [data-bs-theme="dark"] .school-contact,
+    [data-bs-theme="dark"] .school-session,
+    [data-bs-theme="dark"] .info-label,
+    [data-bs-theme="dark"] .meta-label,
+    [data-bs-theme="dark"] .trans-label,
+    [data-bs-theme="dark"] .balance-label,
+    [data-bs-theme="dark"] .footer-text,
+    [data-bs-theme="dark"] .footer-secondary {
+        color: #b0b0b0;
+    }
+
+    [data-bs-theme="dark"] .payment-table thead th {
+        color: #e0e0e0;
+        border-color: rgba(78, 115, 223, 0.15);
+    }
+
+    [data-bs-theme="dark"] .payment-table tbody td {
+        color: #e0e0e0;
+        border-color: rgba(78, 115, 223, 0.08);
+    }
+
+    [data-bs-theme="dark"] .payment-table tbody tr:hover {
+        background: rgba(78, 115, 223, 0.1);
+    }
+
+    [data-bs-theme="dark"] .transaction-item {
+        background: rgba(78, 115, 223, 0.1);
+        border-color: rgba(78, 115, 223, 0.15);
+    }
+
+    [data-bs-theme="dark"] .btn-back {
+        background: rgba(78, 115, 223, 0.15);
+        color: #7fb3ff;
+        border-color: rgba(78, 115, 223, 0.3);
+    }
+
+    [data-bs-theme="dark"] .btn-back:hover {
+        background: rgba(78, 115, 223, 0.25);
+        border-color: rgba(78, 115, 223, 0.4);
+    }
+</style>
+{% endblock %}

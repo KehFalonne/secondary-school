@@ -1,0 +1,737 @@
+{% extends 'base.html' %}
+
+{% block title %}Teachers List{% endblock %}
+{% block page_title %}Teachers Management{% endblock %}
+
+{% block breadcrumb %}
+<li class="breadcrumb-item active">Teachers</li>
+{% endblock %}
+
+{% block page_actions %}
+<div class="btn-group">
+    <a href="{% url 'teacher_create' %}" class="btn btn-primary btn-action-glow rounded-pill">
+        <i class="fas fa-plus me-2"></i>Add New Teacher
+    </a>
+    <button type="button" class="btn btn-primary dropdown-toggle dropdown-toggle-split btn-action-glow rounded-pill" data-bs-toggle="dropdown">
+        <span class="visually-hidden">Toggle Dropdown</span>
+    </button>
+    <ul class="dropdown-menu">
+        <li><a class="dropdown-item" href="#"><i class="fas fa-file-import me-2"></i>Import Teachers</a></li>
+        <li><a class="dropdown-item" href="#"><i class="fas fa-file-export me-2"></i>Export Teachers</a></li>
+    </ul>
+</div>
+{% endblock %}
+
+{% block content %}
+<style>
+    /* Filter Card Styles */
+    .filter-card {
+        background: linear-gradient(135deg, rgba(255, 255, 255, 0.08) 0%, rgba(255, 255, 255, 0.03) 100%);
+        border: 1px solid rgba(78, 115, 223, 0.15);
+        border-radius: 20px;
+        backdrop-filter: blur(10px);
+        padding: 2rem;
+        margin-bottom: 2.5rem;
+        box-shadow: 0 8px 32px rgba(0, 0, 0, 0.08);
+        animation: slideDown 0.6s ease;
+    }
+
+    @keyframes slideDown {
+        from { opacity: 0; transform: translateY(-20px); }
+        to { opacity: 1; transform: translateY(0); }
+    }
+
+    .filter-title {
+        color: #4e73df;
+        font-weight: 700;
+        text-transform: uppercase;
+        letter-spacing: 0.05em;
+        font-size: 0.95rem;
+        margin-bottom: 1.5rem;
+        display: flex;
+        align-items: center;
+        gap: 0.7rem;
+    }
+
+    .filter-title i {
+        color: #1cc88a;
+        font-size: 1.1rem;
+    }
+
+    .form-control, .form-select {
+        background: rgba(255, 255, 255, 0.05);
+        border: 1px solid rgba(78, 115, 223, 0.2);
+        color: inherit;
+        border-radius: 12px;
+        padding: 0.75rem 1rem;
+        transition: all 0.3s ease;
+    }
+
+    .form-control::placeholder {
+        color: rgba(0, 0, 0, 0.4);
+    }
+
+    [data-bs-theme="dark"] .form-control::placeholder {
+        color: rgba(255, 255, 255, 0.4);
+    }
+
+    .form-control:focus, .form-select:focus {
+        background: rgba(255, 255, 255, 0.08);
+        border-color: #4e73df;
+        box-shadow: 0 0 20px rgba(78, 115, 223, 0.3);
+        color: inherit;
+    }
+
+    .form-label {
+        color: rgba(0, 0, 0, 0.7);
+        font-weight: 600;
+        font-size: 0.9rem;
+        margin-bottom: 0.6rem;
+        text-transform: uppercase;
+        letter-spacing: 0.03em;
+    }
+
+    [data-bs-theme="dark"] .form-label {
+        color: rgba(255, 255, 255, 0.8);
+    }
+
+    .btn-action-glow {
+        border-radius: 12px;
+        padding: 0.75rem 1.5rem;
+        font-weight: 600;
+        font-size: 0.9rem;
+        transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+        position: relative;
+        overflow: hidden;
+    }
+
+    .btn-action-glow:hover {
+        transform: translateY(-3px);
+        box-shadow: 0 15px 35px rgba(78, 115, 223, 0.3);
+    }
+
+    /* Teacher Cards */
+    .teacher-card {
+        background: linear-gradient(135deg, rgba(255, 255, 255, 0.06) 0%, rgba(255, 255, 255, 0.02) 100%);
+        border: 1px solid rgba(78, 115, 223, 0.12);
+        border-radius: 16px;
+        backdrop-filter: blur(10px);
+        transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+        overflow: hidden;
+        animation: popIn 0.5s cubic-bezier(0.34, 1.56, 0.64, 1) forwards;
+        opacity: 0;
+    }
+
+    @keyframes popIn {
+        0% { opacity: 0; transform: scale(0.95); }
+        100% { opacity: 1; transform: scale(1); }
+    }
+
+    .teacher-card:nth-child(1) { animation-delay: 0.1s; }
+    .teacher-card:nth-child(2) { animation-delay: 0.15s; }
+    .teacher-card:nth-child(3) { animation-delay: 0.2s; }
+    .teacher-card:nth-child(4) { animation-delay: 0.25s; }
+    .teacher-card:nth-child(5) { animation-delay: 0.3s; }
+    .teacher-card:nth-child(n+6) { animation-delay: 0.35s; }
+
+    .teacher-card:hover {
+        transform: translateY(-12px);
+        border-color: rgba(78, 115, 223, 0.3);
+        box-shadow: 0 25px 50px rgba(78, 115, 223, 0.2), inset 0 1px 0 rgba(255, 255, 255, 0.1);
+    }
+
+    .teacher-avatar {
+        width: 56px;
+        height: 56px;
+        border-radius: 14px;
+        border: 2px solid #4e73df;
+        object-fit: cover;
+        box-shadow: 0 4px 15px rgba(78, 115, 223, 0.3);
+    }
+
+    .teacher-avatar-placeholder {
+        width: 56px;
+        height: 56px;
+        border-radius: 14px;
+        background: linear-gradient(135deg, #4e73df, #1cc88a);
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        color: white;
+        font-size: 1.5rem;
+        border: 2px solid #4e73df;
+        box-shadow: 0 4px 15px rgba(78, 115, 223, 0.3);
+    }
+
+    .teacher-name {
+        font-weight: 700;
+        font-size: 1.05rem;
+        color: #000;
+        margin-bottom: 0.25rem;
+    }
+
+    [data-bs-theme="dark"] .teacher-name {
+        color: #fff;
+    }
+
+    .teacher-id {
+        font-size: 0.85rem;
+        color: rgba(0, 0, 0, 0.5);
+        font-weight: 500;
+    }
+
+    [data-bs-theme="dark"] .teacher-id {
+        color: rgba(255, 255, 255, 0.6);
+    }
+
+    .status-badge-active {
+        background: linear-gradient(135deg, #1cc88a, #0da860);
+        color: white;
+        padding: 0.4rem 0.9rem;
+        border-radius: 50px;
+        font-size: 0.75rem;
+        font-weight: 700;
+        text-transform: uppercase;
+        box-shadow: 0 4px 12px rgba(28, 200, 138, 0.3);
+    }
+
+    .status-badge-inactive {
+        background: linear-gradient(135deg, #f87171, #dc2626);
+        color: white;
+        padding: 0.4rem 0.9rem;
+        border-radius: 50px;
+        font-size: 0.75rem;
+        font-weight: 700;
+        text-transform: uppercase;
+        box-shadow: 0 4px 12px rgba(248, 113, 113, 0.3);
+    }
+
+    .info-row {
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        padding: 0.75rem 0;
+        border-bottom: 1px solid rgba(78, 115, 223, 0.08);
+        font-size: 0.9rem;
+    }
+
+    .info-row:last-child {
+        border-bottom: none;
+    }
+
+    .info-label {
+        color: rgba(0, 0, 0, 0.5);
+        font-weight: 600;
+        text-transform: uppercase;
+        font-size: 0.75rem;
+        letter-spacing: 0.03em;
+    }
+
+    [data-bs-theme="dark"] .info-label {
+        color: rgba(255, 255, 255, 0.5);
+    }
+
+    .info-value {
+        color: #4e73df;
+        font-weight: 700;
+    }
+
+    .badge-designation {
+        padding: 0.35rem 0.8rem;
+        border-radius: 8px;
+        border: 1px solid;
+        font-weight: 600;
+        font-size: 0.8rem;
+        text-transform: uppercase;
+    }
+
+    .badge-principal {
+        background: rgba(220, 38, 38, 0.2);
+        color: #dc2626;
+        border-color: rgba(220, 38, 38, 0.3);
+    }
+
+    .badge-viceprincipal {
+        background: rgba(245, 158, 11, 0.2);
+        color: #f59e0b;
+        border-color: rgba(245, 158, 11, 0.3);
+    }
+
+    .badge-headteacher {
+        background: rgba(59, 130, 246, 0.2);
+        color: #3b82f6;
+        border-color: rgba(59, 130, 246, 0.3);
+    }
+
+    .badge-teacher {
+        background: rgba(34, 197, 94, 0.2);
+        color: #22c55e;
+        border-color: rgba(34, 197, 94, 0.3);
+    }
+
+    .action-buttons {
+        display: flex;
+        gap: 0.5rem;
+        margin-top: 1.25rem;
+        padding-top: 1rem;
+        border-top: 1px solid rgba(78, 115, 223, 0.08);
+    }
+
+    .btn-icon-sm {
+        width: 36px;
+        height: 36px;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        border-radius: 10px;
+        font-size: 0.85rem;
+        transition: all 0.3s ease;
+        border: 1px solid rgba(78, 115, 223, 0.2);
+        background: rgba(78, 115, 223, 0.08);
+        color: #4e73df;
+    }
+
+    .btn-icon-sm:hover {
+        background: rgba(78, 115, 223, 0.15);
+        transform: translateY(-2px);
+        box-shadow: 0 6px 20px rgba(78, 115, 223, 0.2);
+    }
+
+    .btn-icon-sm.danger {
+        color: #dc2626;
+        border-color: rgba(220, 38, 38, 0.2);
+        background: rgba(220, 38, 38, 0.08);
+    }
+
+    .btn-icon-sm.danger:hover {
+        background: rgba(220, 38, 38, 0.15);
+        box-shadow: 0 6px 20px rgba(220, 38, 38, 0.2);
+    }
+
+    /* Table Styles */
+    .teachers-table {
+        background: linear-gradient(135deg, rgba(255, 255, 255, 0.06) 0%, rgba(255, 255, 255, 0.02) 100%);
+        border: 1px solid rgba(78, 115, 223, 0.12);
+        border-radius: 16px;
+        overflow: hidden;
+        backdrop-filter: blur(10px);
+        box-shadow: 0 8px 32px rgba(0, 0, 0, 0.08);
+        margin-bottom: 2rem;
+    }
+
+    .table-container {
+        padding: 2rem;
+    }
+
+    .table-header {
+        color: #4e73df;
+        font-weight: 700;
+        text-transform: uppercase;
+        letter-spacing: 0.05em;
+        font-size: 0.8rem;
+        padding: 1rem;
+        border-bottom: 2px solid rgba(78, 115, 223, 0.2);
+    }
+
+    .table-row {
+        border-bottom: 1px solid rgba(78, 115, 223, 0.08);
+        transition: all 0.3s ease;
+        padding: 1rem;
+    }
+
+    .table-row:hover {
+        background: rgba(78, 115, 223, 0.05);
+    }
+
+    .table-cell {
+        padding: 1rem;
+        vertical-align: middle;
+        color: #000;
+    }
+
+    [data-bs-theme="dark"] .table-cell {
+        color: #fff;
+    }
+
+    .subject-badge {
+        background: linear-gradient(135deg, rgba(78, 115, 223, 0.2), rgba(28, 200, 138, 0.1));
+        color: #4e73df;
+        padding: 0.3rem 0.7rem;
+        border-radius: 6px;
+        border: 1px solid rgba(78, 115, 223, 0.2);
+        font-weight: 600;
+        font-size: 0.75rem;
+        display: inline-block;
+        margin: 0.25rem 0.25rem 0.25rem 0;
+    }
+
+    /* Stats Section */
+    .stats-container {
+        display: grid;
+        grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
+        gap: 1.5rem;
+        margin-bottom: 3rem;
+    }
+
+    .stat-card {
+        background: linear-gradient(135deg, rgba(78, 115, 223, 0.08) 0%, rgba(28, 200, 138, 0.04) 100%);
+        border: 1px solid rgba(78, 115, 223, 0.15);
+        border-radius: 16px;
+        padding: 2rem;
+        text-align: center;
+        backdrop-filter: blur(10px);
+        transition: all 0.3s ease;
+        position: relative;
+        overflow: hidden;
+        animation: slideUp 0.6s ease forwards;
+        opacity: 0;
+    }
+
+    @keyframes slideUp {
+        from { opacity: 0; transform: translateY(20px); }
+        to { opacity: 1; transform: translateY(0); }
+    }
+
+    .stat-card:nth-child(1) { animation-delay: 0.2s; }
+    .stat-card:nth-child(2) { animation-delay: 0.3s; }
+    .stat-card:nth-child(3) { animation-delay: 0.4s; }
+
+    .stat-card:hover {
+        transform: translateY(-10px);
+        border-color: rgba(78, 115, 223, 0.3);
+        box-shadow: 0 20px 50px rgba(78, 115, 223, 0.2);
+    }
+
+    .stat-icon {
+        font-size: 2.5rem;
+        margin-bottom: 1rem;
+        color: #4e73df;
+    }
+
+    .stat-value {
+        font-size: 2.5rem;
+        font-weight: 800;
+        background: linear-gradient(135deg, #4e73df, #1cc88a);
+        -webkit-background-clip: text;
+        -webkit-text-fill-color: transparent;
+        background-clip: text;
+        margin-bottom: 0.5rem;
+    }
+
+    .stat-label {
+        font-size: 0.9rem;
+        text-transform: uppercase;
+        color: rgba(0, 0, 0, 0.6);
+        font-weight: 600;
+        letter-spacing: 0.05em;
+    }
+
+    [data-bs-theme="dark"] .stat-label {
+        color: rgba(255, 255, 255, 0.6);
+    }
+
+    /* Empty State */
+    .empty-state {
+        text-align: center;
+        padding: 4rem 2rem;
+    }
+
+    .empty-icon {
+        font-size: 4rem;
+        color: rgba(78, 115, 223, 0.3);
+        margin-bottom: 1.5rem;
+    }
+
+    .empty-title {
+        font-size: 1.5rem;
+        font-weight: 700;
+        color: #000;
+        margin-bottom: 0.5rem;
+    }
+
+    [data-bs-theme="dark"] .empty-title {
+        color: #fff;
+    }
+
+    .empty-subtitle {
+        color: rgba(0, 0, 0, 0.5);
+        margin-bottom: 2rem;
+    }
+
+    [data-bs-theme="dark"] .empty-subtitle {
+        color: rgba(255, 255, 255, 0.5);
+    }
+
+    /* Mobile Responsive */
+    @media (max-width: 768px) {
+        .filter-card {
+            padding: 1.5rem;
+        }
+
+        .teacher-card {
+            margin-bottom: 1rem;
+        }
+
+        .stats-container {
+            grid-template-columns: 1fr;
+        }
+    }
+</style>
+
+<!-- Filter Section -->
+<div class="filter-card">
+    <h6 class="filter-title">
+        <i class="fas fa-filter"></i> Advanced Filters
+    </h6>
+    <form method="get" class="row g-3">
+        <div class="col-md-4">
+            <label class="form-label">Search Teacher</label>
+            <input type="text" name="search" class="form-control" placeholder="Name, Employee ID..." 
+                   value="{{ search_query }}">
+        </div>
+        <div class="col-md-3">
+            <label class="form-label">Designation</label>
+            <select name="designation" class="form-select">
+                <option value="">All Designations</option>
+                <option value="Principal" {% if designation_filter == 'Principal' %}selected{% endif %}>Principal</option>
+                <option value="Vice Principal" {% if designation_filter == 'Vice Principal' %}selected{% endif %}>Vice Principal</option>
+                <option value="Head Teacher" {% if designation_filter == 'Head Teacher' %}selected{% endif %}>Head Teacher</option>
+                <option value="Senior Teacher" {% if designation_filter == 'Senior Teacher' %}selected{% endif %}>Senior Teacher</option>
+                <option value="Teacher" {% if designation_filter == 'Teacher' %}selected{% endif %}>Teacher</option>
+            </select>
+        </div>
+        <div class="col-md-3">
+            <label class="form-label">Status</label>
+            <select name="status" class="form-select">
+                <option value="">All</option>
+                <option value="active" {% if status_filter == 'active' %}selected{% endif %}>Active</option>
+                <option value="inactive" {% if status_filter == 'inactive' %}selected{% endif %}>Inactive</option>
+            </select>
+        </div>
+        <div class="col-md-2 d-flex align-items-end">
+            <button type="submit" class="btn btn-primary btn-action-glow w-100">
+                <i class="fas fa-search me-2"></i>Filter
+            </button>
+        </div>
+    </form>
+</div>
+
+<!-- Desktop Table View -->
+<div class="d-none d-lg-block">
+    {% if teachers %}
+    <div class="teachers-table">
+        <div class="d-flex justify-content-between align-items-center p-3" style="background: rgba(78, 115, 223, 0.08); border-bottom: 1px solid rgba(78, 115, 223, 0.15);">
+            <h6 class="mb-0 filter-title">
+                <i class="fas fa-chalkboard-teacher"></i> Teachers List
+            </h6>
+            <span style="color: #4e73df; font-weight: 700;">{{ teachers.paginator.count }} Teachers</span>
+        </div>
+        <div class="table-container">
+            <div style="overflow-x: auto;">
+                <table style="width: 100%; border-collapse: separate; border-spacing: 0;">
+                    <thead>
+                        <tr style="background: rgba(78, 115, 223, 0.08);">
+                            <th class="table-header" style="border-radius: 10px 0 0 0;">Employee ID</th>
+                            <th class="table-header">Teacher Name</th>
+                            <th class="table-header">Designation</th>
+                            <th class="table-header">Qualification</th>
+                            <th class="table-header">Subjects</th>
+                            <th class="table-header">Joining Date</th>
+                            <th class="table-header">Status</th>
+                            <th class="table-header" style="border-radius: 0 10px 0 0;">Actions</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        {% for teacher in teachers %}
+                        <tr class="table-row">
+                            <td class="table-cell">
+                                <a href="{% url 'teacher_detail' teacher.employee_id %}" style="color: #4e73df; text-decoration: none; font-weight: 700;">
+                                    {{ teacher.employee_id }}
+                                </a>
+                            </td>
+                            <td class="table-cell">
+                                <div style="display: flex; align-items: center; gap: 0.75rem;">
+                                    {% if teacher.user.profile_picture %}
+                                    <img src="{{ teacher.user.profile_picture.url }}" alt="" class="teacher-avatar">
+                                    {% else %}
+                                    <div class="teacher-avatar-placeholder">
+                                        <i class="fas fa-user"></i>
+                                    </div>
+                                    {% endif %}
+                                    <div>
+                                        <strong style="color: #000; display: block;">{{ teacher.user.get_full_name }}</strong>
+                                        <small style="color: rgba(0, 0, 0, 0.5);">{{ teacher.user.email|default:"No email" }}</small>
+                                    </div>
+                                </div>
+                            </td>
+                            <td class="table-cell">
+                                <span class="badge-designation badge-{% if teacher.designation == 'Principal' %}principal{% elif teacher.designation == 'Vice Principal' %}viceprincipal{% elif teacher.designation == 'Head Teacher' %}headteacher{% else %}teacher{% endif %}">
+                                    {{ teacher.designation }}
+                                </span>
+                            </td>
+                            <td class="table-cell"><strong>{{ teacher.qualification }}</strong></td>
+                            <td class="table-cell">
+                                {% for subject in teacher.subjects.all|slice:":2" %}
+                                <span class="subject-badge">{{ subject.name }}</span>
+                                {% endfor %}
+                                {% if teacher.subjects.count > 2 %}
+                                <span class="subject-badge">+{{ teacher.subjects.count|add:"-2" }}</span>
+                                {% endif %}
+                            </td>
+                            <td class="table-cell">{{ teacher.joining_date|date:"d M Y" }}</td>
+                            <td class="table-cell">
+                                {% if teacher.is_active %}
+                                <span class="status-badge-active">Active</span>
+                                {% else %}
+                                <span class="status-badge-inactive">Inactive</span>
+                                {% endif %}
+                            </td>
+                            <td class="table-cell">
+                                <div style="display: flex; gap: 0.4rem;">
+                                    <a href="{% url 'teacher_detail' teacher.employee_id %}" class="btn-icon-sm" title="View">
+                                        <i class="fas fa-eye"></i>
+                                    </a>
+                                    <a href="{% url 'teacher_update' teacher.employee_id %}" class="btn-icon-sm" title="Edit">
+                                        <i class="fas fa-edit"></i>
+                                    </a>
+                                    {% if teacher.is_active %}
+                                    <a href="{% url 'teacher_delete' teacher.employee_id %}" class="btn-icon-sm danger" title="Delete"
+                                       onclick="return confirm('Deactivate this teacher?')">
+                                        <i class="fas fa-trash"></i>
+                                    </a>
+                                    {% endif %}
+                                </div>
+                            </td>
+                        </tr>
+                        {% endfor %}
+                    </tbody>
+                </table>
+            </div>
+        </div>
+    </div>
+    {% else %}
+    <div class="teachers-table">
+        <div class="empty-state">
+            <div class="empty-icon"><i class="fas fa-chalkboard-teacher"></i></div>
+            <h5 class="empty-title">No teachers found</h5>
+            <p class="empty-subtitle">Try adjusting your filters or add a new teacher</p>
+            <a href="{% url 'teacher_create' %}" class="btn btn-primary btn-action-glow">
+                <i class="fas fa-plus me-2"></i>Add First Teacher
+            </a>
+        </div>
+    </div>
+    {% endif %}
+</div>
+
+<!-- Mobile Card View -->
+<div class="d-lg-none">
+    {% if teachers %}
+    <div style="display: grid; grid-template-columns: 1fr; gap: 1.25rem;">
+        {% for teacher in teachers %}
+        <div class="teacher-card p-4">
+            <div style="display: flex; justify-content: space-between; align-items: flex-start; margin-bottom: 1.25rem;">
+                <div style="display: flex; align-items: center; gap: 0.75rem; flex: 1;">
+                    {% if teacher.user.profile_picture %}
+                    <img src="{{ teacher.user.profile_picture.url }}" alt="" class="teacher-avatar">
+                    {% else %}
+                    <div class="teacher-avatar-placeholder">
+                        <i class="fas fa-user"></i>
+                    </div>
+                    {% endif %}
+                    <div>
+                        <div class="teacher-name">{{ teacher.user.get_full_name }}</div>
+                        <div class="teacher-id">{{ teacher.employee_id }}</div>
+                    </div>
+                </div>
+                {% if teacher.is_active %}
+                <span class="status-badge-active">Active</span>
+                {% else %}
+                <span class="status-badge-inactive">Inactive</span>
+                {% endif %}
+            </div>
+
+            <div style="margin-bottom: 1rem;">
+                <div class="info-row">
+                    <span class="info-label">Designation</span>
+                    <span class="badge-designation badge-{% if teacher.designation == 'Principal' %}principal{% elif teacher.designation == 'Vice Principal' %}viceprincipal{% elif teacher.designation == 'Head Teacher' %}headteacher{% else %}teacher{% endif %}">
+                        {{ teacher.designation }}
+                    </span>
+                </div>
+                <div class="info-row">
+                    <span class="info-label">Qualification</span>
+                    <span class="info-value">{{ teacher.qualification }}</span>
+                </div>
+                <div class="info-row">
+                    <span class="info-label">Joined</span>
+                    <span style="color: #4e73df; font-weight: 600;">{{ teacher.joining_date|date:"d M Y" }}</span>
+                </div>
+                {% if teacher.subjects.count > 0 %}
+                <div class="info-row">
+                    <span class="info-label">Subjects</span>
+                    <div>
+                        {% for subject in teacher.subjects.all|slice:":2" %}
+                        <span class="subject-badge">{{ subject.name }}</span>
+                        {% endfor %}
+                        {% if teacher.subjects.count > 2 %}
+                        <span class="subject-badge">+{{ teacher.subjects.count|add:"-2" }}</span>
+                        {% endif %}
+                    </div>
+                </div>
+                {% endif %}
+            </div>
+
+            <div class="action-buttons">
+                <a href="tel:{{ teacher.user.phone }}" class="btn-icon-sm" title="Call">
+                    <i class="fas fa-phone"></i>
+                </a>
+                <a href="mailto:{{ teacher.user.email }}" class="btn-icon-sm" title="Email">
+                    <i class="fas fa-envelope"></i>
+                </a>
+                <a href="{% url 'teacher_detail' teacher.employee_id %}" class="btn-icon-sm" title="View">
+                    <i class="fas fa-eye"></i>
+                </a>
+                <a href="{% url 'teacher_update' teacher.employee_id %}" class="btn-icon-sm" title="Edit">
+                    <i class="fas fa-edit"></i>
+                </a>
+                {% if teacher.is_active %}
+                <a href="{% url 'teacher_delete' teacher.employee_id %}" class="btn-icon-sm danger" 
+                   onclick="return confirm('Deactivate this teacher?')" title="Delete">
+                    <i class="fas fa-trash"></i>
+                </a>
+                {% endif %}
+            </div>
+        </div>
+        {% endfor %}
+    </div>
+    {% else %}
+    <div class="empty-state">
+        <div class="empty-icon"><i class="fas fa-chalkboard-teacher"></i></div>
+        <h5 class="empty-title">No teachers found</h5>
+        <p class="empty-subtitle">Add a new teacher to get started</p>
+        <a href="{% url 'teacher_create' %}" class="btn btn-primary btn-action-glow">
+            <i class="fas fa-plus me-2"></i>Add First Teacher
+        </a>
+    </div>
+    {% endif %}
+</div>
+
+<!-- Statistics Section -->
+<div class="stats-container">
+    <div class="stat-card">
+        <div class="stat-icon"><i class="fas fa-users"></i></div>
+        <div class="stat-value">{{ teachers.paginator.count|default:"0" }}</div>
+        <div class="stat-label">Total Teachers</div>
+    </div>
+    <div class="stat-card">
+        <div class="stat-icon"><i class="fas fa-check-circle"></i></div>
+        <div class="stat-value" style="background: linear-gradient(135deg, #1cc88a, #0da860); -webkit-background-clip: text; -webkit-text-fill-color: transparent; background-clip: text;">{{ active_teachers_count|default:"0" }}</div>
+        <div class="stat-label">Active Teachers</div>
+    </div>
+    <div class="stat-card">
+        <div class="stat-icon"><i class="fas fa-ban"></i></div>
+        <div class="stat-value" style="background: linear-gradient(135deg, #dc2626, #991b1b); -webkit-background-clip: text; -webkit-text-fill-color: transparent; background-clip: text;">{{ inactive_teachers_count|default:"0" }}</div>
+        <div class="stat-label">Inactive Teachers</div>
+    </div>
+</div>
+
+{% endblock %}

@@ -1,0 +1,820 @@
+{% extends 'base.html' %}
+{% load crispy_forms_tags %}
+
+{% block title %}{{ title }}{% endblock %}
+{% block page_title %}{{ title }}{% endblock %}
+
+{% block breadcrumb %}
+<li class="breadcrumb-item"><a href="{% url 'fee_dashboard' %}">Fees</a></li>
+<li class="breadcrumb-item active">Structure</li>
+{% endblock %}
+
+{% block content %}
+<div class="fee-structure-container">
+    <!-- Hero Section -->
+    <div class="hero-section">
+        <div class="hero-gradient"></div>
+        <div class="hero-content">
+            <div class="form-badge">
+                <i class="fas fa-layer-group"></i> FEE CONFIGURATION
+            </div>
+            <h1 class="form-title">{{ title }}</h1>
+            <p class="hero-subtitle">Set up fee structures for student billing and payments</p>
+        </div>
+    </div>
+
+    <!-- Form Container -->
+    <div class="form-container">
+        <div class="form-wrapper">
+            <form method="post" class="modern-form">
+                {% csrf_token %}
+
+                <!-- Class & Fee Type Section -->
+                <div class="form-section">
+                    <div class="section-header">
+                        <div class="section-icon">
+                            <i class="fas fa-graduation-cap"></i>
+                        </div>
+                        <div>
+                            <h2>Class & Fee Information</h2>
+                            <p>Select the class and fee type for this structure</p>
+                        </div>
+                    </div>
+                    <div class="section-body">
+                        <div class="form-grid-2">
+                            <div class="form-group-custom">
+                                <label for="id_class_name" class="form-label">
+                                    <i class="fas fa-school"></i> Class Name
+                                </label>
+                                {{ form.class_name }}
+                                <div class="form-help">Select the class this fee applies to</div>
+                            </div>
+                            <div class="form-group-custom">
+                                <label for="id_fee_type" class="form-label">
+                                    <i class="fas fa-tag"></i> Fee Type
+                                </label>
+                                {{ form.fee_type }}
+                                <div class="form-help">Choose the type of fee (tuition, books, etc.)</div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Academic Details Section -->
+                <div class="form-section">
+                    <div class="section-header">
+                        <div class="section-icon">
+                            <i class="fas fa-calendar-alt"></i>
+                        </div>
+                        <div>
+                            <h2>Academic Period</h2>
+                            <p>Define the academic year and term for this fee</p>
+                        </div>
+                    </div>
+                    <div class="section-body">
+                        <div class="form-grid-2">
+                            <div class="form-group-custom">
+                                <label for="id_academic_year" class="form-label">
+                                    <i class="fas fa-book"></i> Academic Year
+                                </label>
+                                {{ form.academic_year }}
+                                <div class="form-help">Academic year for this fee structure</div>
+                            </div>
+                            <div class="form-group-custom">
+                                <label for="id_term" class="form-label">
+                                    <i class="fas fa-hourglass-half"></i> Term
+                                </label>
+                                {{ form.term }}
+                                <div class="form-help">Academic term (First, Second, Third)</div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Financial Details Section -->
+                <div class="form-section">
+                    <div class="section-header">
+                        <div class="section-icon">
+                            <i class="fas fa-dollar-sign"></i>
+                        </div>
+                        <div>
+                            <h2>Financial Information</h2>
+                            <p>Set the amount and payment deadline</p>
+                        </div>
+                    </div>
+                    <div class="section-body">
+                        <div class="form-grid-2">
+                            <div class="form-group-custom">
+                                <label for="id_amount" class="form-label">
+                                    <i class="fas fa-coins"></i> Amount
+                                </label>
+                                {{ form.amount }}
+                                <div class="form-help">Fee amount in dollars</div>
+                            </div>
+                            <div class="form-group-custom">
+                                <label for="id_due_date" class="form-label">
+                                    <i class="fas fa-clock"></i> Due Date
+                                </label>
+                                {{ form.due_date }}
+                                <div class="form-help">Payment deadline for students</div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Information Banner -->
+                <div class="info-banner">
+                    <div class="banner-icon">
+                        <i class="fas fa-info-circle"></i>
+                    </div>
+                    <div class="banner-content">
+                        <h4>Automatic Assignment</h4>
+                        <p>Creating this fee structure will automatically assign it to all active students currently enrolled in the selected class.</p>
+                    </div>
+                </div>
+
+                <!-- Form Actions -->
+                <div class="form-actions">
+                    <button type="submit" class="btn-submit">
+                        <i class="fas fa-check-circle me-2"></i>Save Fee Structure
+                    </button>
+                    <a href="{% url 'fee_dashboard' %}" class="btn-cancel">
+                        <i class="fas fa-times-circle me-2"></i>Cancel
+                    </a>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block extra_css %}
+<style>
+    /* ====== Container ====== */
+    .fee-structure-container {
+        background: linear-gradient(135deg, #f5f7fa 0%, #c3cfe2 100%);
+        min-height: 100vh;
+        padding-bottom: 3rem;
+        animation: fadeIn 0.6s ease;
+    }
+
+    /* ====== Hero Section ====== */
+    .hero-section {
+        position: relative;
+        height: 380px;
+        display: flex;
+        align-items: flex-end;
+        padding: 3rem 2rem;
+        overflow: hidden;
+        margin-bottom: 3rem;
+    }
+
+    .hero-gradient {
+        position: absolute;
+        top: 0;
+        left: 0;
+        right: 0;
+        bottom: 0;
+        background: linear-gradient(135deg, #4e73df 0%, #1cc88a 100%);
+        z-index: 0;
+    }
+
+    .hero-section::before {
+        content: '';
+        position: absolute;
+        top: 0;
+        left: 0;
+        right: 0;
+        bottom: 0;
+        background: 
+            radial-gradient(circle at 20% 50%, rgba(255,255,255,0.1) 0%, transparent 50%),
+            radial-gradient(circle at 80% 80%, rgba(255,255,255,0.1) 0%, transparent 50%);
+        z-index: 1;
+    }
+
+    .hero-content {
+        position: relative;
+        z-index: 2;
+        width: 100%;
+        max-width: 1200px;
+        margin: 0 auto;
+        padding: 0 1rem;
+    }
+
+    .form-badge {
+        display: inline-flex;
+        align-items: center;
+        gap: 0.5rem;
+        background: rgba(255, 255, 255, 0.25);
+        color: white;
+        padding: 0.6rem 1.2rem;
+        border-radius: 30px;
+        font-weight: 600;
+        font-size: 0.85rem;
+        margin-bottom: 1.5rem;
+        backdrop-filter: blur(10px);
+    }
+
+    .form-title {
+        font-size: 2.5rem;
+        font-weight: 800;
+        color: white;
+        margin: 0 0 0.5rem 0;
+        text-shadow: 0 2px 10px rgba(0,0,0,0.2);
+    }
+
+    .hero-subtitle {
+        font-size: 1rem;
+        color: rgba(255, 255, 255, 0.9);
+        margin: 0;
+    }
+
+    /* ====== Form Container ====== */
+    .form-container {
+        max-width: 900px;
+        margin: 0 auto;
+        padding: 0 1rem;
+        margin-bottom: 2rem;
+    }
+
+    .form-wrapper {
+        background: linear-gradient(135deg, rgba(255, 255, 255, 0.95) 0%, rgba(255, 255, 255, 0.85) 100%);
+        border: 1px solid rgba(78, 115, 223, 0.1);
+        border-radius: 20px;
+        backdrop-filter: blur(10px);
+        padding: 2.5rem;
+        box-shadow: 0 8px 32px 0 rgba(31, 38, 135, 0.07);
+        animation: slideInUp 0.6s ease;
+    }
+
+    .modern-form {
+        display: flex;
+        flex-direction: column;
+        gap: 2rem;
+    }
+
+    /* ====== Form Sections ====== */
+    .form-section {
+        padding-bottom: 2rem;
+        border-bottom: 2px solid rgba(78, 115, 223, 0.08);
+        animation: slideInUp 0.6s ease;
+    }
+
+    .form-section:last-of-type {
+        border-bottom: none;
+        padding-bottom: 0;
+    }
+
+    .form-section:nth-child(2) {
+        animation-delay: 0.1s;
+    }
+
+    .form-section:nth-child(3) {
+        animation-delay: 0.2s;
+    }
+
+    .form-section:nth-child(4) {
+        animation-delay: 0.3s;
+    }
+
+    .section-header {
+        display: flex;
+        gap: 1rem;
+        margin-bottom: 1.5rem;
+    }
+
+    .section-icon {
+        width: 60px;
+        height: 60px;
+        border-radius: 12px;
+        background: linear-gradient(135deg, #4e73df 0%, #1cc88a 100%);
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        color: white;
+        font-size: 1.5rem;
+        flex-shrink: 0;
+    }
+
+    .section-header h2 {
+        margin: 0 0 0.3rem 0;
+        font-size: 1.3rem;
+        color: #2e3440;
+        font-weight: 700;
+    }
+
+    .section-header p {
+        margin: 0;
+        font-size: 0.9rem;
+        color: #6c757d;
+    }
+
+    .section-body {
+        background: linear-gradient(135deg, rgba(78, 115, 223, 0.03) 0%, rgba(28, 200, 138, 0.03) 100%);
+        border: 1px solid rgba(78, 115, 223, 0.08);
+        border-radius: 12px;
+        padding: 1.5rem;
+    }
+
+    /* ====== Form Grid ====== */
+    .form-grid-2 {
+        display: grid;
+        grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
+        gap: 1.5rem;
+    }
+
+    /* ====== Form Groups ====== */
+    .form-group-custom {
+        display: flex;
+        flex-direction: column;
+        gap: 0.5rem;
+    }
+
+    .form-label {
+        font-weight: 600;
+        color: #2e3440;
+        font-size: 0.95rem;
+        display: flex;
+        align-items: center;
+        gap: 0.5rem;
+    }
+
+    .form-label i {
+        color: #4e73df;
+        font-size: 1rem;
+    }
+
+    /* ====== Form Controls ====== */
+    .form-group-custom input,
+    .form-group-custom select,
+    .form-group-custom textarea {
+        padding: 0.85rem 1rem;
+        border: 1.5px solid rgba(78, 115, 223, 0.2);
+        border-radius: 10px;
+        background: linear-gradient(135deg, rgba(255, 255, 255, 0.8) 0%, rgba(255, 255, 255, 0.6) 100%);
+        color: #2e3440;
+        font-size: 0.95rem;
+        transition: all 0.3s ease;
+        font-family: inherit;
+    }
+
+    .form-group-custom input::placeholder {
+        color: rgba(108, 117, 125, 0.5);
+    }
+
+    .form-group-custom input:focus,
+    .form-group-custom select:focus,
+    .form-group-custom textarea:focus {
+        outline: none;
+        border-color: #4e73df;
+        background: white;
+        box-shadow: 0 0 0 4px rgba(78, 115, 223, 0.1);
+    }
+
+    .form-help {
+        font-size: 0.8rem;
+        color: #6c757d;
+        margin-top: 0.3rem;
+    }
+
+    /* ====== Info Banner ====== */
+    .info-banner {
+        display: flex;
+        align-items: flex-start;
+        gap: 1rem;
+        background: linear-gradient(135deg, rgba(78, 115, 223, 0.08) 0%, rgba(28, 200, 138, 0.08) 100%);
+        border-left: 4px solid #4e73df;
+        border-radius: 12px;
+        padding: 1.5rem;
+        border: 1px solid rgba(78, 115, 223, 0.15);
+    }
+
+    .banner-icon {
+        width: 50px;
+        height: 50px;
+        border-radius: 10px;
+        background: linear-gradient(135deg, #4e73df 0%, #1cc88a 100%);
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        color: white;
+        font-size: 1.3rem;
+        flex-shrink: 0;
+    }
+
+    .banner-content h4 {
+        margin: 0 0 0.5rem 0;
+        color: #2e3440;
+        font-weight: 700;
+        font-size: 1rem;
+    }
+
+    .banner-content p {
+        margin: 0;
+        color: #6c757d;
+        font-size: 0.9rem;
+        line-height: 1.5;
+    }
+
+    /* ====== Form Actions ====== */
+    .form-actions {
+        display: grid;
+        grid-template-columns: 1fr 1fr;
+        gap: 1rem;
+        padding-top: 1.5rem;
+        margin-top: 1.5rem;
+        border-top: 2px solid rgba(78, 115, 223, 0.08);
+    }
+
+    .btn-submit,
+    .btn-cancel {
+        padding: 0.9rem 2rem;
+        border-radius: 12px;
+        font-weight: 600;
+        font-size: 0.95rem;
+        text-decoration: none;
+        border: none;
+        cursor: pointer;
+        transition: all 0.3s ease;
+        display: inline-flex;
+        align-items: center;
+        justify-content: center;
+        gap: 0.5rem;
+    }
+
+    .btn-submit {
+        background: linear-gradient(135deg, #4e73df 0%, #1cc88a 100%);
+        color: white;
+        box-shadow: 0 4px 15px rgba(78, 115, 223, 0.3);
+    }
+
+    .btn-submit:hover {
+        transform: translateY(-2px);
+        box-shadow: 0 8px 25px rgba(78, 115, 223, 0.4);
+        color: white;
+    }
+
+    .btn-cancel {
+        background: rgba(78, 115, 223, 0.1);
+        color: #4e73df;
+        border: 1.5px solid rgba(78, 115, 223, 0.2);
+    }
+
+    .btn-cancel:hover {
+        background: rgba(78, 115, 223, 0.2);
+        border-color: rgba(78, 115, 223, 0.3);
+    }
+
+    /* ====== Animations ====== */
+    @keyframes fadeIn {
+        from { opacity: 0; }
+        to { opacity: 1; }
+    }
+
+    @keyframes slideInUp {
+        from {
+            opacity: 0;
+            transform: translateY(30px);
+        }
+        to {
+            opacity: 1;
+            transform: translateY(0);
+        }
+    }
+
+    /* ====== Responsive Design ====== */
+    @media (max-width: 1024px) {
+        .hero-section {
+            height: 320px;
+            padding: 2.5rem 1.5rem;
+            margin-bottom: 2rem;
+        }
+
+        .form-title {
+            font-size: 2rem;
+        }
+
+        .form-container {
+            padding: 0 1rem;
+        }
+
+        .form-wrapper {
+            padding: 2rem;
+        }
+    }
+
+    @media (max-width: 768px) {
+        .hero-section {
+            height: auto;
+            min-height: 280px;
+            padding: 2rem 1rem 2.5rem;
+            margin-bottom: 1.5rem;
+        }
+
+        .form-badge {
+            font-size: 0.75rem;
+            padding: 0.5rem 1rem;
+            margin-bottom: 1rem;
+        }
+
+        .form-title {
+            font-size: 1.5rem;
+            margin-bottom: 0.5rem;
+        }
+
+        .hero-subtitle {
+            font-size: 0.9rem;
+        }
+
+        .form-container {
+            padding: 0 0.75rem;
+            margin-bottom: 1.5rem;
+        }
+
+        .form-wrapper {
+            padding: 1.5rem 1rem;
+            gap: 1.5rem;
+        }
+
+        .form-grid-2 {
+            grid-template-columns: 1fr;
+            gap: 1rem;
+        }
+
+        .section-body {
+            padding: 1.25rem;
+        }
+
+        .section-header {
+            gap: 0.75rem;
+            margin-bottom: 1.25rem;
+        }
+
+        .section-icon {
+            width: 50px;
+            height: 50px;
+            font-size: 1.25rem;
+        }
+
+        .section-header h2 {
+            font-size: 1.1rem;
+        }
+
+        .section-header p {
+            font-size: 0.85rem;
+        }
+
+        .form-label {
+            font-size: 0.9rem;
+        }
+
+        .form-group-custom input,
+        .form-group-custom select,
+        .form-group-custom textarea {
+            padding: 0.75rem 0.9rem;
+            font-size: 0.9rem;
+        }
+
+        .info-banner {
+            padding: 1.25rem;
+            gap: 0.75rem;
+        }
+
+        .banner-icon {
+            width: 45px;
+            height: 45px;
+            font-size: 1.1rem;
+        }
+
+        .banner-content h4 {
+            font-size: 0.95rem;
+            margin-bottom: 0.3rem;
+        }
+
+        .banner-content p {
+            font-size: 0.85rem;
+        }
+
+        .form-actions {
+            grid-template-columns: 1fr;
+            gap: 0.75rem;
+            margin-top: 1rem;
+            padding-top: 1rem;
+        }
+
+        .btn-submit,
+        .btn-cancel {
+            padding: 0.8rem 1.5rem;
+            font-size: 0.9rem;
+        }
+
+        .form-section {
+            padding-bottom: 1.5rem;
+        }
+
+        .form-section:nth-child(2) {
+            animation-delay: 0.05s;
+        }
+
+        .form-section:nth-child(3) {
+            animation-delay: 0.1s;
+        }
+
+        .form-section:nth-child(4) {
+            animation-delay: 0.15s;
+        }
+    }
+
+    @media (max-width: 480px) {
+        .hero-section {
+            min-height: 240px;
+            padding: 1.5rem 1rem 2rem;
+        }
+
+        .form-badge {
+            font-size: 0.7rem;
+            padding: 0.4rem 0.8rem;
+        }
+
+        .form-title {
+            font-size: 1.25rem;
+            margin-bottom: 0.4rem;
+        }
+
+        .hero-subtitle {
+            font-size: 0.8rem;
+        }
+
+        .form-container {
+            padding: 0 0.5rem;
+        }
+
+        .form-wrapper {
+            padding: 1.25rem 0.75rem;
+            gap: 1.25rem;
+            border-radius: 16px;
+        }
+
+        .section-header {
+            gap: 0.6rem;
+            margin-bottom: 1rem;
+        }
+
+        .section-icon {
+            width: 45px;
+            height: 45px;
+            font-size: 1.1rem;
+        }
+
+        .section-header h2 {
+            font-size: 1rem;
+        }
+
+        .section-header p {
+            font-size: 0.8rem;
+        }
+
+        .section-body {
+            padding: 1rem;
+        }
+
+        .form-grid-2 {
+            gap: 0.75rem;
+        }
+
+        .form-label {
+            font-size: 0.85rem;
+        }
+
+        .form-group-custom input,
+        .form-group-custom select,
+        .form-group-custom textarea {
+            padding: 0.7rem 0.8rem;
+            font-size: 0.85rem;
+        }
+
+        .form-help {
+            font-size: 0.75rem;
+        }
+
+        .info-banner {
+            padding: 1rem;
+            gap: 0.6rem;
+        }
+
+        .banner-icon {
+            width: 40px;
+            height: 40px;
+            font-size: 1rem;
+        }
+
+        .banner-content h4 {
+            font-size: 0.9rem;
+            margin-bottom: 0.25rem;
+        }
+
+        .banner-content p {
+            font-size: 0.8rem;
+            line-height: 1.4;
+        }
+
+        .form-actions {
+            grid-template-columns: 1fr;
+            gap: 0.6rem;
+            margin-top: 0.75rem;
+            padding-top: 0.75rem;
+        }
+
+        .btn-submit,
+        .btn-cancel {
+            padding: 0.7rem 1.2rem;
+            font-size: 0.85rem;
+        }
+
+        .form-section {
+            padding-bottom: 1.25rem;
+        }
+    }
+
+    /* Dark Mode Support */
+    [data-bs-theme="dark"] .fee-structure-container {
+        background: linear-gradient(135deg, #1a1f2e 0%, #2d3436 100%);
+    }
+
+    [data-bs-theme="dark"] .form-wrapper {
+        background: linear-gradient(135deg, rgba(45, 52, 64, 0.95) 0%, rgba(45, 52, 64, 0.85) 100%);
+    }
+
+    [data-bs-theme="dark"] .form-title,
+    [data-bs-theme="dark"] .section-header h2 {
+        color: #e0e0e0;
+    }
+
+    [data-bs-theme="dark"] .hero-subtitle,
+    [data-bs-theme="dark"] .section-header p,
+    [data-bs-theme="dark"] .form-help {
+        color: #b0b0b0;
+    }
+
+    [data-bs-theme="dark"] .form-label {
+        color: #e0e0e0;
+    }
+
+    [data-bs-theme="dark"] .form-group-custom input,
+    [data-bs-theme="dark"] .form-group-custom select,
+    [data-bs-theme="dark"] .form-group-custom textarea {
+        background: rgba(78, 115, 223, 0.1);
+        color: #e0e0e0;
+        border-color: rgba(78, 115, 223, 0.2);
+    }
+
+    [data-bs-theme="dark"] .form-group-custom input::placeholder {
+        color: #7fb3ff;
+    }
+
+    [data-bs-theme="dark"] .form-group-custom input:focus,
+    [data-bs-theme="dark"] .form-group-custom select:focus,
+    [data-bs-theme="dark"] .form-group-custom textarea:focus {
+        background: rgba(78, 115, 223, 0.15);
+        border-color: #7fb3ff;
+        box-shadow: 0 0 0 4px rgba(127, 179, 255, 0.1);
+    }
+
+    [data-bs-theme="dark"] .section-body {
+        background: rgba(78, 115, 223, 0.08);
+        border-color: rgba(78, 115, 223, 0.15);
+    }
+
+    [data-bs-theme="dark"] .form-section {
+        border-color: rgba(78, 115, 223, 0.1);
+    }
+
+    [data-bs-theme="dark"] .info-banner {
+        background: rgba(78, 115, 223, 0.08);
+        border-color: rgba(78, 115, 223, 0.15);
+    }
+
+    [data-bs-theme="dark"] .banner-content h4 {
+        color: #e0e0e0;
+    }
+
+    [data-bs-theme="dark"] .banner-content p {
+        color: #b0b0b0;
+    }
+
+    [data-bs-theme="dark"] .btn-cancel {
+        background: rgba(78, 115, 223, 0.15);
+        color: #7fb3ff;
+        border-color: rgba(78, 115, 223, 0.3);
+    }
+
+    [data-bs-theme="dark"] .btn-cancel:hover {
+        background: rgba(78, 115, 223, 0.25);
+        border-color: rgba(78, 115, 223, 0.4);
+    }
+
+    [data-bs-theme="dark"] .form-actions {
+        border-color: rgba(78, 115, 223, 0.1);
+    }
+</style>
+{% endblock %}

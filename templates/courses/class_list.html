@@ -1,0 +1,902 @@
+{% extends 'base.html' %}
+
+{% block title %}Classes List{% endblock %}
+{% block page_title %}Classes Management{% endblock %}
+
+{% block breadcrumb %}
+<li class="breadcrumb-item active">Classes</li>
+{% endblock %}
+
+{% block page_actions %}
+<a href="{% url 'class_create' %}" class="btn-action-primary">
+    <i class="fas fa-plus me-2"></i>Add New Class
+</a>
+{% endblock %}
+
+{% block content %}
+<div class="class-list-container">
+    <!-- Statistics Header -->
+    <div class="stats-header">
+        <div class="stat-card">
+            <div class="stat-icon classes">
+                <i class="fas fa-school"></i>
+            </div>
+            <div class="stat-info">
+                <div class="stat-value">{{ classes.count }}</div>
+                <div class="stat-label">Total Classes</div>
+            </div>
+        </div>
+        <div class="stat-card">
+            <div class="stat-icon students">
+                <i class="fas fa-user-graduate"></i>
+            </div>
+            <div class="stat-info">
+                <div class="stat-value">{{ total_students }}</div>
+                <div class="stat-label">Total Students</div>
+            </div>
+        </div>
+        <div class="stat-card">
+            <div class="stat-icon teachers">
+                <i class="fas fa-chalkboard-user"></i>
+            </div>
+            <div class="stat-info">
+                <div class="stat-value">{{ total_teachers }}</div>
+                <div class="stat-label">Class Teachers</div>
+            </div>
+        </div>
+        <div class="stat-card">
+            <div class="stat-icon subjects">
+                <i class="fas fa-book"></i>
+            </div>
+            <div class="stat-info">
+                <div class="stat-value">{{ total_subjects }}</div>
+                <div class="stat-label">Total Subjects</div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Filter & Search Section -->
+    <div class="filter-section">
+        <div class="filter-card">
+            <div class="search-box">
+                <i class="fas fa-search"></i>
+                <input type="text" id="classSearch" placeholder="Search by class name or section..." class="search-input">
+            </div>
+        </div>
+    </div>
+
+    <!-- Classes Grid -->
+    {% if classes %}
+    <div class="classes-grid">
+        {% for class in classes %}
+        <div class="class-card">
+            <!-- Card Header -->
+            <div class="class-card-header">
+                <div class="class-name-badge">
+                    <h3 class="class-name">{{ class.name }}</h3>
+                    <span class="section-badge">Section {{ class.section }}</span>
+                </div>
+                <div class="class-stats">
+                    <div class="stat-item">
+                        <i class="fas fa-users"></i>
+                        <span>{{ class.total_students }}</span>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Class Teacher Info -->
+            <div class="class-teacher-section">
+                <div class="teacher-label">
+                    <i class="fas fa-chalkboard-user"></i>
+                    Class Teacher
+                </div>
+                {% if class.class_teacher %}
+                <div class="teacher-info">
+                    <div class="teacher-avatar">
+                        {% if class.class_teacher.user.profile_picture %}
+                        <img src="{{ class.class_teacher.user.profile_picture.url }}" alt="{{ class.class_teacher.user.get_full_name }}">
+                        {% else %}
+                        <div class="avatar-placeholder">
+                            <i class="fas fa-user"></i>
+                        </div>
+                        {% endif %}
+                    </div>
+                    <div class="teacher-details">
+                        <div class="teacher-name">{{ class.class_teacher.user.get_full_name }}</div>
+                        <div class="teacher-designation">{{ class.class_teacher.designation }}</div>
+                    </div>
+                </div>
+                {% else %}
+                <div class="teacher-unassigned">
+                    <i class="fas fa-user-times"></i>
+                    <span>Not Assigned</span>
+                </div>
+                {% endif %}
+            </div>
+
+            <!-- Capacity Info -->
+            <div class="capacity-section">
+                <div class="capacity-header">
+                    <span class="capacity-label">Capacity</span>
+                    <span class="capacity-text">{{ class.total_students }}/{{ class.capacity }}</span>
+                </div>
+                <div class="capacity-bar">
+                    <div class="capacity-fill {% if class.total_students > class.capacity %}overfull{% elif class.total_students == class.capacity %}full{% else %}available{% endif %}" 
+                         style="width: {% widthratio class.total_students class.capacity 100 %}%"></div>
+                </div>
+            </div>
+
+            <!-- Room & Year Info -->
+            <div class="class-meta">
+                <div class="meta-item">
+                    <i class="fas fa-door-open"></i>
+                    <span>Room {{ class.room_number|default:"N/A" }}</span>
+                </div>
+                <div class="meta-item">
+                    <i class="fas fa-calendar-alt"></i>
+                    <span>{{ class.academic_year }}</span>
+                </div>
+            </div>
+
+            <!-- Subjects Preview -->
+            {% if class.subjects.count > 0 %}
+            <div class="subjects-preview">
+                <div class="subjects-label">
+                    <i class="fas fa-book"></i>
+                    Subjects ({{ class.subjects.count }})
+                </div>
+                <div class="subjects-list">
+                    {% for subject in class.subjects.all|slice:":3" %}
+                    <span class="subject-tag">{{ subject.code }}</span>
+                    {% endfor %}
+                    {% if class.subjects.count > 3 %}
+                    <span class="subject-more">+{{ class.subjects.count|add:"-3" }} more</span>
+                    {% endif %}
+                </div>
+            </div>
+            {% endif %}
+
+            <!-- Action Buttons -->
+            <div class="class-actions">
+                <a href="{% url 'class_detail' class.id %}" class="action-btn view-btn">
+                    <i class="fas fa-eye"></i>
+                    <span>View</span>
+                </a>
+                <a href="{% url 'class_update' class.id %}" class="action-btn edit-btn">
+                    <i class="fas fa-edit"></i>
+                    <span>Edit</span>
+                </a>
+            </div>
+        </div>
+        {% endfor %}
+    </div>
+    {% else %}
+    <!-- Empty State -->
+    <div class="empty-state">
+        <div class="empty-icon">
+            <i class="fas fa-school"></i>
+        </div>
+        <h3>No Classes Yet</h3>
+        <p>You haven't created any classes yet. Start by adding your first class.</p>
+        <a href="{% url 'class_create' %}" class="btn-action-primary">
+            <i class="fas fa-plus me-2"></i>Add Your First Class
+        </a>
+    </div>
+    {% endif %}
+</div>
+{% endblock %}
+
+{% block extra_css %}
+<style>
+    /* ====== Container ====== */
+    .class-list-container {
+        background: linear-gradient(135deg, #f5f7fa 0%, #c3cfe2 100%);
+        min-height: 100vh;
+        padding: 2rem 1rem 3rem;
+        animation: fadeIn 0.6s ease;
+    }
+
+    /* ====== Stats Header ====== */
+    .stats-header {
+        display: grid;
+        grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+        gap: 1.5rem;
+        margin-bottom: 3rem;
+        max-width: 1400px;
+        margin-left: auto;
+        margin-right: auto;
+    }
+
+    .stat-card {
+        background: linear-gradient(135deg, rgba(255, 255, 255, 0.95) 0%, rgba(255, 255, 255, 0.85) 100%);
+        border: 1px solid rgba(78, 115, 223, 0.1);
+        border-radius: 15px;
+        backdrop-filter: blur(10px);
+        padding: 1.5rem;
+        display: flex;
+        align-items: center;
+        gap: 1.25rem;
+        box-shadow: 0 8px 32px 0 rgba(31, 38, 135, 0.07);
+        transition: all 0.3s ease;
+        animation: slideInUp 0.6s ease forwards;
+    }
+
+    .stat-card:nth-child(1) { animation-delay: 0s; }
+    .stat-card:nth-child(2) { animation-delay: 0.1s; }
+    .stat-card:nth-child(3) { animation-delay: 0.2s; }
+    .stat-card:nth-child(4) { animation-delay: 0.3s; }
+
+    .stat-card:hover {
+        transform: translateY(-5px);
+        box-shadow: 0 15px 40px 0 rgba(31, 38, 135, 0.12);
+    }
+
+    .stat-icon {
+        width: 55px;
+        height: 55px;
+        border-radius: 12px;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        color: white;
+        font-size: 1.5rem;
+    }
+
+    .stat-icon.classes {
+        background: linear-gradient(135deg, #4e73df 0%, #224abe 100%);
+    }
+
+    .stat-icon.students {
+        background: linear-gradient(135deg, #1cc88a 0%, #13a968 100%);
+    }
+
+    .stat-icon.teachers {
+        background: linear-gradient(135deg, #36b9cc 0%, #1f8b94 100%);
+    }
+
+    .stat-icon.subjects {
+        background: linear-gradient(135deg, #f6c23e 0%, #daa520 100%);
+    }
+
+    .stat-info {
+        flex: 1;
+    }
+
+    .stat-value {
+        font-size: 1.8rem;
+        font-weight: 800;
+        color: #2e3440;
+    }
+
+    .stat-label {
+        font-size: 0.8rem;
+        color: #6c757d;
+        text-transform: uppercase;
+        letter-spacing: 0.5px;
+        font-weight: 600;
+    }
+
+    /* ====== Filter Section ====== */
+    .filter-section {
+        display: flex;
+        justify-content: center;
+        margin-bottom: 2.5rem;
+        max-width: 1400px;
+        margin-left: auto;
+        margin-right: auto;
+        animation: slideInDown 0.6s ease 0.1s both;
+    }
+
+    .filter-card {
+        width: 100%;
+        max-width: 500px;
+        background: linear-gradient(135deg, rgba(255, 255, 255, 0.95) 0%, rgba(255, 255, 255, 0.85) 100%);
+        border: 1px solid rgba(78, 115, 223, 0.1);
+        border-radius: 15px;
+        backdrop-filter: blur(10px);
+        padding: 1rem;
+        box-shadow: 0 8px 32px 0 rgba(31, 38, 135, 0.07);
+    }
+
+    .search-box {
+        display: flex;
+        align-items: center;
+        gap: 0.75rem;
+        padding: 0.5rem 1rem;
+        background: rgba(78, 115, 223, 0.03);
+        border-radius: 10px;
+        border: 2px solid rgba(78, 115, 223, 0.1);
+        transition: all 0.3s ease;
+    }
+
+    .search-box:focus-within {
+        border-color: #4e73df;
+        background: rgba(78, 115, 223, 0.08);
+    }
+
+    .search-box i {
+        color: #4e73df;
+        font-size: 1.1rem;
+    }
+
+    .search-input {
+        flex: 1;
+        border: none;
+        background: transparent;
+        color: #2e3440;
+        font-size: 0.95rem;
+    }
+
+    .search-input::placeholder {
+        color: rgba(108, 117, 125, 0.6);
+    }
+
+    .search-input:focus {
+        outline: none;
+    }
+
+    /* ====== Classes Grid ====== */
+    .classes-grid {
+        display: grid;
+        grid-template-columns: repeat(auto-fill, minmax(340px, 1fr));
+        gap: 2rem;
+        max-width: 1400px;
+        margin: 0 auto;
+        padding: 0 1rem;
+    }
+
+    /* ====== Class Card ====== */
+    .class-card {
+        background: linear-gradient(135deg, rgba(255, 255, 255, 0.95) 0%, rgba(255, 255, 255, 0.85) 100%);
+        border: 1px solid rgba(78, 115, 223, 0.1);
+        border-radius: 20px;
+        backdrop-filter: blur(10px);
+        padding: 2rem;
+        box-shadow: 0 8px 32px 0 rgba(31, 38, 135, 0.07);
+        transition: all 0.3s ease;
+        display: flex;
+        flex-direction: column;
+        gap: 1.5rem;
+        animation: fadeInUp 0.6s ease forwards;
+    }
+
+    .class-card:nth-child(1) { animation-delay: 0s; }
+    .class-card:nth-child(2) { animation-delay: 0.05s; }
+    .class-card:nth-child(3) { animation-delay: 0.1s; }
+    .class-card:nth-child(4) { animation-delay: 0.15s; }
+    .class-card:nth-child(n+5) { animation-delay: 0.2s; }
+
+    .class-card:hover {
+        transform: translateY(-8px);
+        border-color: rgba(78, 115, 223, 0.2);
+        box-shadow: 0 15px 40px 0 rgba(31, 38, 135, 0.12);
+    }
+
+    /* ====== Card Header ====== */
+    .class-card-header {
+        display: flex;
+        justify-content: space-between;
+        align-items: flex-start;
+        padding-bottom: 1rem;
+        border-bottom: 2px solid rgba(78, 115, 223, 0.1);
+        gap: 1rem;
+    }
+
+    .class-name-badge {
+        flex: 1;
+    }
+
+    .class-name {
+        margin: 0 0 0.5rem 0;
+        font-size: 1.3rem;
+        font-weight: 700;
+        color: #2e3440;
+    }
+
+    .section-badge {
+        display: inline-flex;
+        align-items: center;
+        background: linear-gradient(135deg, rgba(78, 115, 223, 0.15) 0%, rgba(28, 200, 138, 0.15) 100%);
+        color: #4e73df;
+        padding: 0.35rem 0.85rem;
+        border-radius: 20px;
+        font-size: 0.8rem;
+        font-weight: 600;
+    }
+
+    .class-stats {
+        display: flex;
+        gap: 1rem;
+    }
+
+    .class-stats .stat-item {
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+        gap: 0.3rem;
+    }
+
+    .class-stats i {
+        color: #4e73df;
+        font-size: 1.1rem;
+    }
+
+    .class-stats span {
+        font-size: 1.2rem;
+        font-weight: 700;
+        color: #2e3440;
+    }
+
+    /* ====== Teacher Section ====== */
+    .class-teacher-section {
+        display: flex;
+        flex-direction: column;
+        gap: 0.75rem;
+    }
+
+    .teacher-label {
+        display: flex;
+        align-items: center;
+        gap: 0.5rem;
+        font-size: 0.85rem;
+        font-weight: 600;
+        color: #6c757d;
+        text-transform: uppercase;
+        letter-spacing: 0.5px;
+    }
+
+    .teacher-label i {
+        color: #4e73df;
+    }
+
+    .teacher-info {
+        display: flex;
+        align-items: center;
+        gap: 1rem;
+        padding: 1rem;
+        background: linear-gradient(135deg, rgba(78, 115, 223, 0.05) 0%, rgba(28, 200, 138, 0.05) 100%);
+        border-radius: 10px;
+    }
+
+    .teacher-avatar {
+        width: 50px;
+        height: 50px;
+        flex-shrink: 0;
+    }
+
+    .teacher-avatar img,
+    .avatar-placeholder {
+        width: 100%;
+        height: 100%;
+        border-radius: 50%;
+        object-fit: cover;
+        background: linear-gradient(135deg, #4e73df 0%, #1cc88a 100%);
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        color: white;
+        font-size: 1.3rem;
+    }
+
+    .teacher-details {
+        flex: 1;
+    }
+
+    .teacher-name {
+        font-weight: 600;
+        color: #2e3440;
+        margin: 0 0 0.25rem 0;
+    }
+
+    .teacher-designation {
+        font-size: 0.85rem;
+        color: #6c757d;
+    }
+
+    .teacher-unassigned {
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        gap: 0.5rem;
+        padding: 1rem;
+        background: linear-gradient(135deg, rgba(255, 193, 7, 0.08) 0%, rgba(255, 193, 7, 0.04) 100%);
+        border-radius: 10px;
+        color: #ffc107;
+        font-weight: 600;
+        border: 1px solid rgba(255, 193, 7, 0.2);
+    }
+
+    /* ====== Capacity Section ====== */
+    .capacity-section {
+        display: flex;
+        flex-direction: column;
+        gap: 0.5rem;
+    }
+
+    .capacity-header {
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+    }
+
+    .capacity-label {
+        font-size: 0.85rem;
+        font-weight: 600;
+        color: #6c757d;
+        text-transform: uppercase;
+        letter-spacing: 0.5px;
+    }
+
+    .capacity-text {
+        font-weight: 700;
+        color: #2e3440;
+    }
+
+    .capacity-bar {
+        height: 8px;
+        background: rgba(78, 115, 223, 0.1);
+        border-radius: 10px;
+        overflow: hidden;
+    }
+
+    .capacity-fill {
+        height: 100%;
+        transition: all 0.3s ease;
+        border-radius: 10px;
+    }
+
+    .capacity-fill.available {
+        background: linear-gradient(90deg, #1cc88a 0%, #13a968 100%);
+    }
+
+    .capacity-fill.full {
+        background: linear-gradient(90deg, #ffc107 0%, #ff9800 100%);
+    }
+
+    .capacity-fill.overfull {
+        background: linear-gradient(90deg, #dc3545 0%, #c82333 100%);
+    }
+
+    /* ====== Meta Section ====== */
+    .class-meta {
+        display: grid;
+        grid-template-columns: 1fr 1fr;
+        gap: 1rem;
+    }
+
+    .meta-item {
+        display: flex;
+        align-items: center;
+        gap: 0.75rem;
+        padding: 0.75rem;
+        background: rgba(78, 115, 223, 0.05);
+        border-radius: 8px;
+        font-size: 0.9rem;
+        color: #6c757d;
+    }
+
+    .meta-item i {
+        color: #4e73df;
+        font-size: 1rem;
+    }
+
+    /* ====== Subjects Preview ====== */
+    .subjects-preview {
+        display: flex;
+        flex-direction: column;
+        gap: 0.75rem;
+    }
+
+    .subjects-label {
+        display: flex;
+        align-items: center;
+        gap: 0.5rem;
+        font-size: 0.85rem;
+        font-weight: 600;
+        color: #6c757d;
+        text-transform: uppercase;
+        letter-spacing: 0.5px;
+    }
+
+    .subjects-label i {
+        color: #4e73df;
+    }
+
+    .subjects-list {
+        display: flex;
+        gap: 0.5rem;
+        flex-wrap: wrap;
+    }
+
+    .subject-tag {
+        display: inline-flex;
+        align-items: center;
+        background: linear-gradient(135deg, rgba(78, 115, 223, 0.15) 0%, rgba(28, 200, 138, 0.15) 100%);
+        color: #4e73df;
+        padding: 0.4rem 0.8rem;
+        border-radius: 20px;
+        font-size: 0.8rem;
+        font-weight: 600;
+    }
+
+    .subject-more {
+        display: inline-flex;
+        align-items: center;
+        color: #6c757d;
+        font-size: 0.8rem;
+        font-weight: 600;
+    }
+
+    /* ====== Action Buttons ====== */
+    .class-actions {
+        display: grid;
+        grid-template-columns: repeat(2, 1fr);
+        gap: 0.75rem;
+        padding-top: 1rem;
+        border-top: 2px solid rgba(78, 115, 223, 0.1);
+    }
+
+    .action-btn {
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        gap: 0.5rem;
+        padding: 0.65rem 1rem;
+        border-radius: 8px;
+        text-decoration: none;
+        font-weight: 600;
+        font-size: 0.85rem;
+        transition: all 0.3s ease;
+        border: none;
+        cursor: pointer;
+    }
+
+    .action-btn span {
+        display: none;
+    }
+
+    .action-btn i {
+        font-size: 1.1rem;
+    }
+
+    .action-btn.view-btn {
+        background: linear-gradient(135deg, rgba(13, 202, 240, 0.15) 0%, rgba(13, 202, 240, 0.08) 100%);
+        color: #0dcaf0;
+        border: 1px solid rgba(13, 202, 240, 0.2);
+    }
+
+    .action-btn.view-btn:hover {
+        background: linear-gradient(135deg, #0dcaf0 0%, #0aa2c0 100%);
+        color: white;
+        transform: translateY(-2px);
+    }
+
+    .action-btn.edit-btn {
+        background: linear-gradient(135deg, rgba(255, 193, 7, 0.15) 0%, rgba(255, 193, 7, 0.08) 100%);
+        color: #ffc107;
+        border: 1px solid rgba(255, 193, 7, 0.2);
+    }
+
+    .action-btn.edit-btn:hover {
+        background: linear-gradient(135deg, #ffc107 0%, #ffb300 100%);
+        color: white;
+        transform: translateY(-2px);
+    }
+
+    .action-btn.delete-btn {
+        background: linear-gradient(135deg, rgba(220, 53, 69, 0.15) 0%, rgba(220, 53, 69, 0.08) 100%);
+        color: #dc3545;
+        border: 1px solid rgba(220, 53, 69, 0.2);
+    }
+
+    .action-btn.delete-btn:hover {
+        background: linear-gradient(135deg, #dc3545 0%, #c82333 100%);
+        color: white;
+        transform: translateY(-2px);
+    }
+
+    /* ====== Empty State ====== */
+    .empty-state {
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+        justify-content: center;
+        padding: 4rem 2rem;
+        text-align: center;
+        max-width: 500px;
+        margin: 3rem auto 0;
+    }
+
+    .empty-icon {
+        font-size: 4rem;
+        color: rgba(78, 115, 223, 0.15);
+        margin-bottom: 1.5rem;
+    }
+
+    .empty-state h3 {
+        font-size: 1.5rem;
+        font-weight: 700;
+        color: #2e3440;
+        margin: 0 0 1rem 0;
+    }
+
+    .empty-state p {
+        color: #6c757d;
+        margin: 0 0 2rem 0;
+        line-height: 1.6;
+    }
+
+    .btn-action-primary {
+        display: inline-flex;
+        align-items: center;
+        padding: 0.9rem 2rem;
+        background: linear-gradient(135deg, #4e73df 0%, #1cc88a 100%);
+        color: white;
+        text-decoration: none;
+        border-radius: 12px;
+        font-weight: 600;
+        transition: all 0.3s ease;
+        box-shadow: 0 4px 15px rgba(78, 115, 223, 0.3);
+        border: none;
+        cursor: pointer;
+    }
+
+    .btn-action-primary:hover {
+        transform: translateY(-2px);
+        box-shadow: 0 8px 25px rgba(78, 115, 223, 0.4);
+        color: white;
+    }
+
+    /* ====== Animations ====== */
+    @keyframes fadeIn {
+        from { opacity: 0; }
+        to { opacity: 1; }
+    }
+
+    @keyframes slideInUp {
+        from {
+            opacity: 0;
+            transform: translateY(30px);
+        }
+        to {
+            opacity: 1;
+            transform: translateY(0);
+        }
+    }
+
+    @keyframes slideInDown {
+        from {
+            opacity: 0;
+            transform: translateY(-20px);
+        }
+        to {
+            opacity: 1;
+            transform: translateY(0);
+        }
+    }
+
+    @keyframes fadeInUp {
+        from {
+            opacity: 0;
+            transform: translateY(20px);
+        }
+        to {
+            opacity: 1;
+            transform: translateY(0);
+        }
+    }
+
+    /* ====== Responsive Design ====== */
+    @media (max-width: 1024px) {
+        .classes-grid {
+            grid-template-columns: repeat(auto-fill, minmax(300px, 1fr));
+        }
+
+        .stats-header {
+            grid-template-columns: repeat(2, 1fr);
+        }
+    }
+
+    @media (max-width: 768px) {
+        .class-list-container {
+            padding: 1rem 0.5rem 2rem;
+        }
+
+        .stats-header {
+            grid-template-columns: 1fr;
+            gap: 1rem;
+            margin-bottom: 2rem;
+        }
+
+        .classes-grid {
+            grid-template-columns: 1fr;
+            gap: 1.5rem;
+            padding: 0 0.5rem;
+        }
+
+        .class-card {
+            padding: 1.5rem;
+        }
+
+        .class-name {
+            font-size: 1.1rem;
+        }
+
+        .action-btn {
+            padding: 0.5rem 0.75rem;
+        }
+
+        .class-card-header {
+            flex-direction: column;
+            gap: 0.5rem;
+        }
+
+        .class-stats {
+            width: 100%;
+            justify-content: flex-start;
+        }
+
+        .class-meta {
+            grid-template-columns: 1fr;
+        }
+
+        .action-btn span {
+            display: inline;
+        }
+
+        .action-btn i {
+            font-size: 0.9rem;
+        }
+    }
+
+    /* ====== Dark Mode Support ====== */
+    [data-bs-theme="dark"] .class-list-container {
+        background: linear-gradient(135deg, #1a1f2e 0%, #2d3436 100%);
+    }
+
+    [data-bs-theme="dark"] .stat-card,
+    [data-bs-theme="dark"] .filter-card,
+    [data-bs-theme="dark"] .class-card {
+        background: linear-gradient(135deg, rgba(45, 52, 64, 0.9) 0%, rgba(45, 52, 64, 0.8) 100%);
+    }
+
+    [data-bs-theme="dark"] .stat-value,
+    [data-bs-theme="dark"] .class-name,
+    [data-bs-theme="dark"] .capacity-text,
+    [data-bs-theme="dark"] .teacher-name {
+        color: #e0e0e0;
+    }
+
+    [data-bs-theme="dark"] .empty-state h3 {
+        color: #e0e0e0;
+    }
+
+    [data-bs-theme="dark"] .search-input {
+        color: #e0e0e0;
+    }
+</style>
+
+<script>
+    // Search functionality
+    const classSearch = document.getElementById('classSearch');
+    const classCards = document.querySelectorAll('.class-card');
+
+    if (classSearch) {
+        classSearch.addEventListener('input', (e) => {
+            const searchTerm = e.target.value.toLowerCase();
+            
+            classCards.forEach(card => {
+                const className = card.querySelector('.class-name').textContent.toLowerCase();
+                const sectionBadge = card.querySelector('.section-badge').textContent.toLowerCase();
+                
+                if (className.includes(searchTerm) || sectionBadge.includes(searchTerm)) {
+                    card.style.display = '';
+                    card.style.animation = 'fadeInUp 0.3s ease';
+                } else {
+                    card.style.display = 'none';
+                }
+            });
+        });
+    }
+</script>
+{% endblock %}

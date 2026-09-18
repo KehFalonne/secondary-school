@@ -1,0 +1,703 @@
+{% extends 'base.html' %}
+{% load static %}
+
+{% block title %}Subjects List{% endblock %}
+{% block page_title %}Subjects Management{% endblock %}
+
+{% block breadcrumb %}
+<li class="breadcrumb-item active">Subjects</li>
+{% endblock %}
+
+{% block page_actions %}
+<a href="{% url 'subject_create' %}" class="btn-primary-action">
+    <i class="fas fa-plus me-2"></i>Add New Subject
+</a>
+{% endblock %}
+
+{% block content %}
+<div class="subjects-container">
+    <!-- Search & Filter Section -->
+    <div class="filter-section">
+        <div class="filter-card">
+            <div class="filter-header">
+                <i class="fas fa-search"></i>
+                <h4>Search & Filter</h4>
+            </div>
+            <form method="get" class="filter-form">
+                <div class="filter-row">
+                    <div class="filter-group">
+                        <label for="search">Search by Name or Code</label>
+                        <input type="text" id="search" name="search" class="filter-input" 
+                               placeholder="Enter subject name or code..." value="{{ search_query }}">
+                    </div>
+                    <div class="filter-group">
+                        <label for="type">Subject Type</label>
+                        <select id="type" name="type" class="filter-select">
+                            <option value="">All Types</option>
+                            <option value="core">Core Subjects</option>
+                            <option value="elective">Elective Subjects</option>
+                        </select>
+                    </div>
+                    <button type="submit" class="filter-btn">
+                        <i class="fas fa-filter me-1"></i>Filter
+                    </button>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    <!-- Stats Header -->
+    <div class="stats-header">
+        <div class="stat-item">
+            <div class="stat-icon">
+                <i class="fas fa-book"></i>
+            </div>
+            <div class="stat-content">
+                <div class="stat-number">{{ subjects.count }}</div>
+                <div class="stat-label">Total Subjects</div>
+            </div>
+        </div>
+        <div class="stat-item">
+            <div class="stat-icon">
+                <i class="fas fa-graduation-cap"></i>
+            </div>
+            <div class="stat-content">
+                <div class="stat-number">{{ subjects|dictsort:"is_elective"|length }}</div>
+                <div class="stat-label">Available</div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Subjects Grid -->
+    {% if subjects %}
+    <div class="subjects-grid">
+        {% for subject in subjects %}
+        <div class="subject-card">
+            <!-- Card Header with Type Badge -->
+            <div class="card-header-section">
+                <div class="subject-code">{{ subject.code }}</div>
+                {% if subject.is_elective %}
+                <span class="type-badge elective">
+                    <i class="fas fa-star"></i> Elective
+                </span>
+                {% else %}
+                <span class="type-badge core">
+                    <i class="fas fa-check-circle"></i> Core
+                </span>
+                {% endif %}
+            </div>
+
+            <!-- Card Body -->
+            <div class="card-body-section">
+                <h3 class="subject-name">{{ subject.name }}</h3>
+                <p class="subject-description">{{ subject.description|truncatechars:120 }}</p>
+                
+                <!-- Credits & Info -->
+                <div class="info-row">
+                    <div class="info-item">
+                        <i class="fas fa-hourglass-half"></i>
+                        <span>{{ subject.credit_hours }} Credits</span>
+                    </div>
+                </div>
+
+                <!-- Stats -->
+                <div class="stats-row">
+                    <div class="stat-box">
+                        <i class="fas fa-chalkboard-user"></i>
+                        <div class="stat-text">
+                            <div class="stat-value">{{ subject.teacher_count }}</div>
+                            <div class="stat-title">Teachers</div>
+                        </div>
+                    </div>
+                    <div class="stat-box">
+                        <i class="fas fa-school"></i>
+                        <div class="stat-text">
+                            <div class="stat-value">{{ subject.class_count }}</div>
+                            <div class="stat-title">Classes</div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Card Actions -->
+            <div class="card-actions">
+                <a href="{% url 'subject_detail' subject.id %}" class="action-btn view-btn" title="View Details">
+                    <i class="fas fa-eye"></i>
+                    <span>View</span>
+                </a>
+                <a href="{% url 'subject_update' subject.id %}" class="action-btn edit-btn" title="Edit">
+                    <i class="fas fa-edit"></i>
+                    <span>Edit</span>
+                </a>
+                <a href="{% url 'subject_delete' subject.id %}" class="action-btn delete-btn" title="Delete">
+                    <i class="fas fa-trash"></i>
+                    <span>Delete</span>
+                </a>
+            </div>
+        </div>
+        {% endfor %}
+    </div>
+    {% else %}
+    <!-- Empty State -->
+    <div class="empty-state">
+        <div class="empty-icon">
+            <i class="fas fa-book-open"></i>
+        </div>
+        <h3>No Subjects Found</h3>
+        <p>There are no subjects yet. Create one to get started!</p>
+        <a href="{% url 'subject_create' %}" class="btn-primary-action">
+            <i class="fas fa-plus me-2"></i>Add First Subject
+        </a>
+    </div>
+    {% endif %}
+</div>
+{% endblock %}
+
+{% block extra_css %}
+<style>
+    /* ====== Container & Layout ====== */
+    .subjects-container {
+        max-width: 1400px;
+        margin: 0 auto;
+        padding: 2rem 1rem;
+        animation: slideDown 0.6s ease;
+    }
+
+    /* ====== Filter Section ====== */
+    .filter-section {
+        margin-bottom: 3rem;
+    }
+
+    .filter-card {
+        background: linear-gradient(135deg, rgba(78, 115, 223, 0.08) 0%, rgba(28, 200, 138, 0.08) 100%);
+        border: 1px solid rgba(78, 115, 223, 0.12);
+        border-radius: 20px;
+        backdrop-filter: blur(10px);
+        padding: 2rem;
+        box-shadow: 0 8px 32px 0 rgba(31, 38, 135, 0.07);
+        animation: fadeInUp 0.6s ease;
+    }
+
+    .filter-header {
+        display: flex;
+        align-items: center;
+        gap: 1rem;
+        margin-bottom: 1.5rem;
+        padding-bottom: 1rem;
+        border-bottom: 1px solid rgba(78, 115, 223, 0.15);
+    }
+
+    .filter-header i {
+        font-size: 1.5rem;
+        color: #4e73df;
+    }
+
+    .filter-header h4 {
+        margin: 0;
+        color: #2e3440;
+        font-weight: 600;
+    }
+
+    .filter-form {
+        display: flex;
+        gap: 1rem;
+        flex-wrap: wrap;
+    }
+
+    .filter-row {
+        display: flex;
+        gap: 1rem;
+        width: 100%;
+        flex-wrap: wrap;
+        align-items: flex-end;
+    }
+
+    .filter-group {
+        flex: 1;
+        min-width: 200px;
+        display: flex;
+        flex-direction: column;
+    }
+
+    .filter-group label {
+        font-size: 0.85rem;
+        font-weight: 600;
+        color: #495057;
+        margin-bottom: 0.5rem;
+        text-transform: uppercase;
+        letter-spacing: 0.5px;
+    }
+
+    .filter-input,
+    .filter-select {
+        padding: 0.75rem 1rem;
+        border: 1px solid rgba(78, 115, 223, 0.2);
+        border-radius: 12px;
+        background: rgba(255, 255, 255, 0.8);
+        font-size: 0.95rem;
+        transition: all 0.3s ease;
+        font-family: inherit;
+    }
+
+    .filter-input:focus,
+    .filter-select:focus {
+        outline: none;
+        border-color: #4e73df;
+        background: white;
+        box-shadow: 0 0 0 3px rgba(78, 115, 223, 0.1);
+    }
+
+    .filter-btn {
+        padding: 0.75rem 1.5rem;
+        background: linear-gradient(135deg, #4e73df 0%, #1cc88a 100%);
+        color: white;
+        border: none;
+        border-radius: 12px;
+        font-weight: 600;
+        cursor: pointer;
+        transition: all 0.3s ease;
+        display: flex;
+        align-items: center;
+        gap: 0.5rem;
+        white-space: nowrap;
+    }
+
+    .filter-btn:hover {
+        transform: translateY(-2px);
+        box-shadow: 0 10px 25px rgba(78, 115, 223, 0.3);
+    }
+
+    /* ====== Stats Header ====== */
+    .stats-header {
+        display: grid;
+        grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+        gap: 1.5rem;
+        margin-bottom: 3rem;
+    }
+
+    .stat-item {
+        background: linear-gradient(135deg, rgba(78, 115, 223, 0.1) 0%, rgba(28, 200, 138, 0.1) 100%);
+        border: 1px solid rgba(78, 115, 223, 0.15);
+        border-radius: 16px;
+        padding: 1.5rem;
+        display: flex;
+        align-items: center;
+        gap: 1.5rem;
+        backdrop-filter: blur(10px);
+        animation: fadeInUp 0.6s ease 0.1s both;
+    }
+
+    .stat-icon {
+        width: 60px;
+        height: 60px;
+        background: linear-gradient(135deg, #4e73df 0%, #1cc88a 100%);
+        border-radius: 12px;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        color: white;
+        font-size: 1.5rem;
+    }
+
+    .stat-content {
+        flex: 1;
+    }
+
+    .stat-number {
+        font-size: 1.8rem;
+        font-weight: 700;
+        color: #2e3440;
+    }
+
+    .stat-label {
+        font-size: 0.85rem;
+        color: #6c757d;
+        text-transform: uppercase;
+        letter-spacing: 0.5px;
+    }
+
+    /* ====== Subjects Grid ====== */
+    .subjects-grid {
+        display: grid;
+        grid-template-columns: repeat(auto-fill, minmax(340px, 1fr));
+        gap: 2rem;
+        margin-bottom: 3rem;
+    }
+
+    .subject-card {
+        background: linear-gradient(135deg, rgba(255, 255, 255, 0.9) 0%, rgba(255, 255, 255, 0.7) 100%);
+        border: 1px solid rgba(78, 115, 223, 0.1);
+        border-radius: 20px;
+        backdrop-filter: blur(10px);
+        overflow: hidden;
+        box-shadow: 0 8px 32px 0 rgba(31, 38, 135, 0.07);
+        transition: all 0.3s ease;
+        display: flex;
+        flex-direction: column;
+        animation: fadeInUp 0.6s ease;
+    }
+
+    .subject-card:hover {
+        transform: translateY(-8px);
+        box-shadow: 0 16px 40px rgba(78, 115, 223, 0.15);
+        border-color: rgba(78, 115, 223, 0.2);
+    }
+
+    .card-header-section {
+        background: linear-gradient(135deg, #4e73df 0%, #1cc88a 100%);
+        padding: 1.5rem;
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+    }
+
+    .subject-code {
+        background: rgba(255, 255, 255, 0.3);
+        color: white;
+        padding: 0.5rem 1rem;
+        border-radius: 8px;
+        font-weight: 700;
+        font-size: 0.85rem;
+        letter-spacing: 1px;
+    }
+
+    .type-badge {
+        display: flex;
+        align-items: center;
+        gap: 0.5rem;
+        padding: 0.5rem 1rem;
+        border-radius: 8px;
+        font-weight: 600;
+        font-size: 0.8rem;
+        color: white;
+    }
+
+    .type-badge.core {
+        background: rgba(255, 255, 255, 0.25);
+    }
+
+    .type-badge.elective {
+        background: rgba(255, 255, 255, 0.25);
+    }
+
+    .card-body-section {
+        padding: 1.5rem;
+        flex: 1;
+    }
+
+    .subject-name {
+        margin: 0 0 0.75rem 0;
+        font-size: 1.3rem;
+        font-weight: 700;
+        color: #2e3440;
+        line-height: 1.4;
+    }
+
+    .subject-description {
+        margin: 0 0 1.5rem 0;
+        color: #6c757d;
+        font-size: 0.9rem;
+        line-height: 1.6;
+    }
+
+    .info-row {
+        display: flex;
+        gap: 1rem;
+        margin-bottom: 1.5rem;
+        padding-bottom: 1.5rem;
+        border-bottom: 1px solid rgba(78, 115, 223, 0.1);
+    }
+
+    .info-item {
+        display: flex;
+        align-items: center;
+        gap: 0.5rem;
+        color: #4e73df;
+        font-weight: 600;
+        font-size: 0.9rem;
+    }
+
+    .info-item i {
+        font-size: 1rem;
+    }
+
+    .stats-row {
+        display: grid;
+        grid-template-columns: 1fr 1fr;
+        gap: 1rem;
+    }
+
+    .stat-box {
+        background: linear-gradient(135deg, rgba(78, 115, 223, 0.05) 0%, rgba(28, 200, 138, 0.05) 100%);
+        border: 1px solid rgba(78, 115, 223, 0.1);
+        border-radius: 12px;
+        padding: 1rem;
+        display: flex;
+        align-items: center;
+        gap: 0.75rem;
+    }
+
+    .stat-box i {
+        font-size: 1.3rem;
+        color: #4e73df;
+    }
+
+    .stat-text {
+        flex: 1;
+    }
+
+    .stat-value {
+        font-size: 1.3rem;
+        font-weight: 700;
+        color: #2e3440;
+    }
+
+    .stat-title {
+        font-size: 0.75rem;
+        color: #6c757d;
+        text-transform: uppercase;
+        letter-spacing: 0.5px;
+    }
+
+    .card-actions {
+        display: flex;
+        gap: 0.5rem;
+        padding: 1.5rem;
+        background: rgba(78, 115, 223, 0.02);
+        border-top: 1px solid rgba(78, 115, 223, 0.1);
+    }
+
+    .action-btn {
+        flex: 1;
+        padding: 0.75rem;
+        border: 1px solid rgba(78, 115, 223, 0.2);
+        border-radius: 10px;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        gap: 0.5rem;
+        font-weight: 600;
+        font-size: 0.85rem;
+        text-decoration: none;
+        transition: all 0.3s ease;
+        cursor: pointer;
+    }
+
+    .action-btn i {
+        font-size: 0.95rem;
+    }
+
+    .action-btn.view-btn {
+        color: #0dcaf0;
+        border-color: rgba(13, 202, 240, 0.3);
+        background: rgba(13, 202, 240, 0.05);
+    }
+
+    .action-btn.view-btn:hover {
+        color: white;
+        background: #0dcaf0;
+        border-color: #0dcaf0;
+    }
+
+    .action-btn.edit-btn {
+        color: #ffc107;
+        border-color: rgba(255, 193, 7, 0.3);
+        background: rgba(255, 193, 7, 0.05);
+    }
+
+    .action-btn.edit-btn:hover {
+        color: white;
+        background: #ffc107;
+        border-color: #ffc107;
+    }
+
+    .action-btn.delete-btn {
+        color: #dc3545;
+        border-color: rgba(220, 53, 69, 0.3);
+        background: rgba(220, 53, 69, 0.05);
+    }
+
+    .action-btn.delete-btn:hover {
+        color: white;
+        background: #dc3545;
+        border-color: #dc3545;
+    }
+
+    /* ====== Empty State ====== */
+    .empty-state {
+        text-align: center;
+        padding: 4rem 2rem;
+        background: linear-gradient(135deg, rgba(78, 115, 223, 0.05) 0%, rgba(28, 200, 138, 0.05) 100%);
+        border: 2px dashed rgba(78, 115, 223, 0.2);
+        border-radius: 20px;
+        animation: fadeIn 0.6s ease;
+    }
+
+    .empty-icon {
+        font-size: 4rem;
+        color: rgba(78, 115, 223, 0.3);
+        margin-bottom: 1rem;
+    }
+
+    .empty-state h3 {
+        color: #2e3440;
+        margin: 1rem 0;
+        font-weight: 700;
+    }
+
+    .empty-state p {
+        color: #6c757d;
+        margin: 0 0 2rem 0;
+        font-size: 1rem;
+    }
+
+    /* ====== Primary Action Button ====== */
+    .btn-primary-action {
+        display: inline-flex;
+        align-items: center;
+        padding: 0.75rem 1.75rem;
+        background: linear-gradient(135deg, #4e73df 0%, #1cc88a 100%);
+        color: white;
+        text-decoration: none;
+        border-radius: 12px;
+        font-weight: 600;
+        font-size: 0.95rem;
+        transition: all 0.3s ease;
+        box-shadow: 0 4px 15px rgba(78, 115, 223, 0.3);
+        border: none;
+        cursor: pointer;
+    }
+
+    .btn-primary-action:hover {
+        transform: translateY(-2px);
+        box-shadow: 0 8px 25px rgba(78, 115, 223, 0.4);
+        color: white;
+    }
+
+    /* ====== Animations ====== */
+    @keyframes slideDown {
+        from {
+            opacity: 0;
+            transform: translateY(-20px);
+        }
+        to {
+            opacity: 1;
+            transform: translateY(0);
+        }
+    }
+
+    @keyframes fadeInUp {
+        from {
+            opacity: 0;
+            transform: translateY(20px);
+        }
+        to {
+            opacity: 1;
+            transform: translateY(0);
+        }
+    }
+
+    @keyframes fadeIn {
+        from {
+            opacity: 0;
+        }
+        to {
+            opacity: 1;
+        }
+    }
+
+    /* ====== Responsive Design ====== */
+    @media (max-width: 1024px) {
+        .subjects-grid {
+            grid-template-columns: repeat(auto-fill, minmax(280px, 1fr));
+            gap: 1.5rem;
+        }
+
+        .filter-row {
+            flex-direction: column;
+        }
+
+        .filter-group {
+            width: 100%;
+        }
+
+        .filter-btn {
+            width: 100%;
+            justify-content: center;
+        }
+    }
+
+    @media (max-width: 768px) {
+        .subjects-container {
+            padding: 1.5rem 0.75rem;
+        }
+
+        .subjects-grid {
+            grid-template-columns: 1fr;
+            gap: 1rem;
+        }
+
+        .filter-card {
+            padding: 1.5rem 1rem;
+        }
+
+        .stats-header {
+            grid-template-columns: 1fr;
+            gap: 1rem;
+            margin-bottom: 2rem;
+        }
+
+        .card-header-section {
+            padding: 1rem;
+        }
+
+        .card-body-section {
+            padding: 1rem;
+        }
+
+        .subject-name {
+            font-size: 1.1rem;
+        }
+    }
+
+    /* Dark Mode Support */
+    [data-bs-theme="dark"] .subjects-container {
+        color: #e0e0e0;
+    }
+
+    [data-bs-theme="dark"] .filter-card {
+        background: linear-gradient(135deg, rgba(78, 115, 223, 0.15) 0%, rgba(28, 200, 138, 0.15) 100%);
+    }
+
+    [data-bs-theme="dark"] .filter-header h4,
+    [data-bs-theme="dark"] .stat-number,
+    [data-bs-theme="dark"] .subject-name {
+        color: #e0e0e0;
+    }
+
+    [data-bs-theme="dark"] .filter-input,
+    [data-bs-theme="dark"] .filter-select {
+        background: rgba(255, 255, 255, 0.1);
+        color: #e0e0e0;
+        border-color: rgba(78, 115, 223, 0.3);
+    }
+
+    [data-bs-theme="dark"] .subject-card {
+        background: linear-gradient(135deg, rgba(45, 52, 64, 0.8) 0%, rgba(45, 52, 64, 0.6) 100%);
+        border-color: rgba(78, 115, 223, 0.2);
+    }
+
+    [data-bs-theme="dark"] .subject-description {
+        color: #b0b0b0;
+    }
+
+    [data-bs-theme="dark"] .empty-state {
+        background: linear-gradient(135deg, rgba(78, 115, 223, 0.1) 0%, rgba(28, 200, 138, 0.1) 100%);
+        border-color: rgba(78, 115, 223, 0.3);
+    }
+
+    [data-bs-theme="dark"] .empty-state h3 {
+        color: #e0e0e0;
+    }
+</style>
+{% endblock %}

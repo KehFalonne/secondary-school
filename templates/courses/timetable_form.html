@@ -1,0 +1,1067 @@
+{% extends 'base.html' %}
+{% load crispy_forms_tags %}
+{% load static %}
+{% load custom_filters %}
+
+{% block title %}Manage Timetable{% endblock %}
+{% block page_title %}Manage Timetable{% endblock %}
+
+{% block breadcrumb %}
+<li class="breadcrumb-item"><a href="{% url 'class_list' %}">Classes</a></li>
+{% if selected_class %}
+<li class="breadcrumb-item"><a href="{% url 'class_detail' selected_class.id %}">Class Details</a></li>
+{% endif %}
+<li class="breadcrumb-item active">Manage Timetable</li>
+{% endblock %}
+
+{% block page_actions %}
+{% if selected_class %}
+<a href="{% url 'class_detail' selected_class.id %}" class="btn-icon-action" title="Back to Class">
+    <i class="fas fa-arrow-left"></i>
+</a>
+{% endif %}
+{% endblock %}
+
+{% block content %}
+<div class="timetable-form-container">
+    <!-- Class Selector -->
+    <div class="class-selector-card">
+        <div class="selector-header">
+            <i class="fas fa-list"></i>
+            <h5><label for="classSelector">Select Class</label></h5>
+        </div>
+        <select id="classSelector" class="selector-select" onchange="selectClass(this.value)" aria-label="Select a class">
+            <option value="">-- Select Class --</option>
+            {% for class in classes %}
+            <option value="{{ class.id }}" {% if selected_class.id == class.id %}selected{% endif %}>
+                {{ class.name }} - Section {{ class.section }}
+            </option>
+            {% endfor %}
+        </select>
+    </div>
+
+    {% if selected_class %}
+    <!-- Class Header -->
+    <div class="class-header-card">
+        <div class="header-content">
+            <div class="header-title">
+                <h2>{{ selected_class.name }} <span class="section-label">Section {{ selected_class.section }}</span></h2>
+                <p class="header-subtitle">Configure Weekly Schedule</p>
+            </div>
+            <button class="btn-add-period" data-bs-toggle="modal" data-bs-target="#addPeriodModal">
+                <i class="fas fa-plus me-2"></i>Add Period
+            </button>
+        </div>
+    </div>
+
+    <!-- Main Form -->
+    <form method="post" id="timetableForm" class="timetable-edit-form">
+        {% csrf_token %}
+        
+        <!-- Timetable Grid Editor -->
+        <div class="timetable-editor-wrapper">
+            <div class="timetable-editor">
+                <!-- Period Header -->
+                <div class="editor-period-header">
+                    <div class="editor-day-cell">Day/Period</div>
+                    {% for period in "1,2,3,4,5,6,7,8"|split:"," %}
+                    <div class="editor-period-cell">
+                        <div class="period-label">P{{ period }}</div>
+                    </div>
+                    {% endfor %}
+                    <div class="editor-action-cell">Actions</div>
+                </div>
+
+                <!-- Days -->
+                {% for day in days %}
+                <div class="editor-day-row">
+                    <div class="editor-day-cell day-label">{{ day }}</div>
+                    {% for period in "1,2,3,4,5,6,7,8"|split:"," %}
+                    <div class="editor-period-cell">
+                        <div class="period-editor">
+                            {% for entry in timetable_data %}
+                                {% if entry.day == day and entry.period == period|add:0 %}
+                                <input type="hidden" name="entry_id_{{ day }}_{{ period }}" value="{{ entry.id }}">
+                                {% endif %}
+                            {% endfor %}
+                            <label for="subject_{{ day }}_{{ period }}" class="visually-hidden">Subject for {{ day }} Period {{ period }}</label>
+                            <select name="subject_{{ day }}_{{ period }}" id="subject_{{ day }}_{{ period }}" class="editor-select subject-select" aria-label="Subject for {{ day }} Period {{ period }}" data-period="{{ period }}" data-day="{{ day }}">
+                                <option value="">Subject</option>
+                                {% if selected_class.subjects.all %}
+                                    {% for subject in selected_class.subjects.all %}
+                                    <option value="{{ subject.id }}">
+                                        {{ subject.name }}
+                                    </option>
+                                    {% endfor %}
+                                {% elif subjects %}
+                                    {% for subject in subjects %}
+                                    <option value="{{ subject.id }}">
+                                        {{ subject.name }}
+                                    </option>
+                                    {% endfor %}
+                                {% else %}
+                                    <option value="">No subjects available</option>
+                                {% endif %}
+                            </select>
+                            <label for="teacher_{{ day }}_{{ period }}" class="visually-hidden">Teacher for {{ day }} Period {{ period }}</label>
+                            <select name="teacher_{{ day }}_{{ period }}" id="teacher_{{ day }}_{{ period }}" class="editor-select teacher-select" aria-label="Teacher for {{ day }} Period {{ period }}" data-period="{{ period }}" data-day="{{ day }}">
+                                <option value="">Teacher</option>
+                                {% if teachers %}
+                                    {% for teacher in teachers %}
+                                    <option value="{{ teacher.pk }}">
+                                        {{ teacher.user.get_full_name|truncatewords:2 }}
+                                    </option>
+                                    {% endfor %}
+                                {% else %}
+                                    <option value="">No teachers available</option>
+                                {% endif %}
+                            </select>
+                            <label for="room_{{ day }}_{{ period }}" class="visually-hidden">Room for {{ day }} Period {{ period }}</label>
+                            <input type="text" name="room_{{ day }}_{{ period }}" id="room_{{ day }}_{{ period }}" class="editor-input room-input" 
+                                   placeholder="Room" aria-label="Room for {{ day }} Period {{ period }}" {% for entry in timetable_data %}{% if entry.day == day and entry.period == period|add:0 %}value="{{ entry.room|default:'' }}"{% endif %}{% endfor %}>
+                        </div>
+                    </div>
+                    {% endfor %}
+                    <div class="editor-action-cell">
+                        <button type="button" class="btn-clear-day" onclick="clearDay('{{ day }}')">
+                            <i class="fas fa-trash"></i>
+                        </button>
+                    </div>
+                </div>
+                {% endfor %}
+            </div>
+        </div>
+
+        <!-- Settings Cards -->
+        <div class="settings-grid">
+            <!-- Period Times -->
+            <div class="settings-card">
+                <div class="settings-header">
+                    <i class="fas fa-clock"></i>
+                    <h4>Period Times</h4>
+                </div>
+                <div class="period-times-list">
+                    {% for period in periods %}
+                    <div class="period-time-row">
+                        <label for="start_time_{{ period.number }}" class="period-time-label">P{{ period.number }}</label>
+                        <div class="time-inputs">
+                            <input type="time" name="start_time_{{ period.number }}" id="start_time_{{ period.number }}"
+                                   class="time-input" aria-label="Start time for period {{ period.number }}" value="{{ period.start_time|default:'08:00' }}">
+                            <span class="time-separator">→</span>
+                            <input type="time" name="end_time_{{ period.number }}" id="end_time_{{ period.number }}"
+                                   class="time-input" aria-label="End time for period {{ period.number }}" value="{{ period.end_time|default:'08:45' }}">
+                        </div>
+                    </div>
+                    {% endfor %}
+                </div>
+            </div>
+
+            <!-- Quick Actions -->
+            <div class="settings-card">
+                <div class="settings-header">
+                    <i class="fas fa-bolt"></i>
+                    <h4>Quick Actions</h4>
+                </div>
+                <div class="action-buttons-grid">
+                    <button type="button" class="action-btn copy-btn" onclick="copyMondayToAll()">
+                        <i class="fas fa-copy"></i>
+                        <span>Copy Monday</span>
+                    </button>
+                    <button type="button" class="action-btn clear-btn" onclick="clearAll()">
+                        <i class="fas fa-trash-alt"></i>
+                        <span>Clear All</span>
+                    </button>
+                    <button type="button" class="action-btn generate-btn" onclick="generateDefault()">
+                        <i class="fas fa-wand-magic-sparkles"></i>
+                        <span>Generate</span>
+                    </button>
+                </div>
+            </div>
+        </div>
+
+        <!-- Form Actions -->
+        <div class="form-actions">
+            <a href="{% url 'class_detail' selected_class.id %}" class="btn-action-cancel">
+                <i class="fas fa-times me-2"></i>Cancel
+            </a>
+            <button type="submit" class="btn-action-save">
+                <i class="fas fa-save me-2"></i>Save Timetable
+            </button>
+        </div>
+    </form>
+
+    <!-- Add Period Modal -->
+    <div class="modal fade" id="addPeriodModal" tabindex="-1">
+        <div class="modal-dialog modal-dialog-centered">
+            <div class="modal-content modal-glassmorphic">
+                <div class="modal-header-custom">
+                    <h5><i class="fas fa-plus-circle me-2"></i>Add New Period</h5>
+                    <button type="button" class="btn-modal-close" data-bs-dismiss="modal">
+                        <i class="fas fa-times"></i>
+                    </button>
+                </div>
+                <div class="modal-body-custom">
+                    <div class="form-group-custom">
+                        <label class="form-label-custom" for="newPeriodNumber">Period Number</label>
+                        <input type="number" id="newPeriodNumber" class="form-input-custom" min="1" max="12" value="9" aria-label="Period number">
+                    </div>
+                    <div class="form-group-custom">
+                        <label class="form-label-custom" for="newPeriodStart">Start Time</label>
+                        <input type="time" id="newPeriodStart" class="form-input-custom" value="14:00" aria-label="Start time">
+                    </div>
+                    <div class="form-group-custom">
+                        <label class="form-label-custom" for="newPeriodEnd">End Time</label>
+                        <input type="time" id="newPeriodEnd" class="form-input-custom" value="14:45" aria-label="End time">
+                    </div>
+                </div>
+                <div class="modal-footer-custom">
+                    <button type="button" class="btn-modal-cancel" data-bs-dismiss="modal">
+                        <i class="fas fa-times me-1"></i>Cancel
+                    </button>
+                    <button type="button" class="btn-modal-confirm" onclick="addNewPeriod()">
+                        <i class="fas fa-check me-1"></i>Add Period
+                    </button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    {% else %}
+    <!-- No Class Selected -->
+    <div class="empty-state-card">
+        <div class="empty-icon">
+            <i class="fas fa-calendar-alt"></i>
+        </div>
+        <h3>Select a Class</h3>
+        <p>Please select a class from the dropdown above to manage its timetable</p>
+    </div>
+    {% endif %}
+</div>
+
+{% endblock %}
+
+{% block extra_css %}
+<style>
+    /* ====== Container ====== */
+    .timetable-form-container {
+        max-width: 1400px;
+        margin: 0 auto;
+        animation: slideDown 0.6s ease;
+    }
+
+    /* ====== Class Selector ====== */
+    .class-selector-card {
+        background: linear-gradient(135deg, rgba(255, 255, 255, 0.08) 0%, rgba(255, 255, 255, 0.02) 100%);
+        border: 1px solid rgba(78, 115, 223, 0.12);
+        border-radius: 20px;
+        backdrop-filter: blur(10px);
+        padding: 1.75rem;
+        margin-bottom: 2rem;
+        animation: fadeInUp 0.6s ease;
+    }
+
+    .selector-header {
+        display: flex;
+        align-items: center;
+        gap: 0.75rem;
+        margin-bottom: 1.25rem;
+        font-weight: 600;
+        color: #4e73df;
+    }
+
+    .selector-header i {
+        font-size: 1.1rem;
+    }
+
+    .selector-form {
+        margin: 0;
+    }
+
+    .selector-select {
+        width: 100%;
+        padding: 0.85rem 1rem;
+        background: linear-gradient(135deg, rgba(78, 115, 223, 0.08) 0%, rgba(28, 200, 138, 0.04) 100%);
+        border: 1px solid rgba(78, 115, 223, 0.15);
+        border-radius: 12px;
+        color: rgba(0, 0, 0, 0.8);
+        font-weight: 500;
+        transition: all 0.3s ease;
+        cursor: pointer;
+    }
+
+    [data-bs-theme="dark"] .selector-select {
+        background: linear-gradient(135deg, rgba(78, 115, 223, 0.12) 0%, rgba(28, 200, 138, 0.08) 100%);
+        color: rgba(255, 255, 255, 0.9);
+    }
+
+    .selector-select:hover {
+        border-color: rgba(78, 115, 223, 0.25);
+        box-shadow: 0 4px 12px rgba(78, 115, 223, 0.1);
+    }
+
+    /* ====== Class Header ====== */
+    .class-header-card {
+        background: linear-gradient(135deg, rgba(78, 115, 223, 0.08) 0%, rgba(28, 200, 138, 0.04) 100%);
+        border: 1px solid rgba(78, 115, 223, 0.12);
+        border-radius: 20px;
+        backdrop-filter: blur(10px);
+        padding: 2rem;
+        margin-bottom: 2rem;
+        animation: fadeInUp 0.6s ease 0.1s forwards;
+        opacity: 0;
+    }
+
+    .header-content {
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        gap: 2rem;
+    }
+
+    .header-title h2 {
+        margin: 0 0 0.5rem 0;
+        font-size: 1.75rem;
+        font-weight: 700;
+        background: linear-gradient(135deg, #4e73df 0%, #1cc88a 100%);
+        background-clip: text;
+        -webkit-background-clip: text;
+        -webkit-text-fill-color: transparent;
+    }
+
+    .header-title .section-label {
+        background: linear-gradient(135deg, rgba(78, 115, 223, 0.15), rgba(28, 200, 138, 0.1));
+        color: #4e73df;
+        -webkit-text-fill-color: #4e73df;
+        padding: 0.35rem 0.8rem;
+        border-radius: 12px;
+        font-size: 0.85rem;
+        font-weight: 600;
+    }
+
+    .header-subtitle {
+        margin: 0;
+        color: rgba(0, 0, 0, 0.5);
+        font-size: 0.9rem;
+    }
+
+    [data-bs-theme="dark"] .header-subtitle {
+        color: rgba(255, 255, 255, 0.6);
+    }
+
+    .btn-add-period {
+        padding: 0.85rem 1.5rem;
+        background: linear-gradient(135deg, #4e73df, #1cc88a);
+        color: white;
+        border: none;
+        border-radius: 12px;
+        font-weight: 600;
+        cursor: pointer;
+        transition: all 0.3s ease;
+        display: flex;
+        align-items: center;
+        white-space: nowrap;
+        box-shadow: 0 8px 20px rgba(78, 115, 223, 0.25);
+    }
+
+    .btn-add-period:hover {
+        transform: translateY(-2px);
+        box-shadow: 0 12px 28px rgba(78, 115, 223, 0.35);
+    }
+
+    /* ====== Timetable Editor ====== */
+    .timetable-edit-form {
+        animation: fadeInUp 0.6s ease 0.15s forwards;
+        opacity: 0;
+    }
+
+    .timetable-editor-wrapper {
+        background: linear-gradient(135deg, rgba(255, 255, 255, 0.08) 0%, rgba(255, 255, 255, 0.02) 100%);
+        border: 1px solid rgba(78, 115, 223, 0.12);
+        border-radius: 16px;
+        backdrop-filter: blur(10px);
+        padding: 1.5rem;
+        margin-bottom: 2rem;
+        overflow-x: auto;
+    }
+
+    .timetable-editor {
+        display: grid;
+        grid-template-columns: 100px repeat(8, 1fr) 80px;
+        gap: 0;
+        min-width: 100%;
+    }
+
+    .editor-period-header, .editor-day-row {
+        display: contents;
+    }
+
+    .editor-day-cell, .editor-period-cell, .editor-action-cell {
+        padding: 1rem;
+        border: 1px solid rgba(78, 115, 223, 0.1);
+    }
+
+    .editor-period-header .editor-day-cell,
+    .editor-period-header .editor-period-cell,
+    .editor-period-header .editor-action-cell {
+        background: linear-gradient(135deg, rgba(78, 115, 223, 0.1), rgba(28, 200, 138, 0.05));
+        font-weight: 700;
+        color: #4e73df;
+        text-align: center;
+    }
+
+    .day-label {
+        background: linear-gradient(135deg, rgba(78, 115, 223, 0.08), rgba(28, 200, 138, 0.04));
+        font-weight: 700;
+        color: rgba(0, 0, 0, 0.8);
+        display: flex;
+        align-items: center;
+        justify-content: center;
+    }
+
+    [data-bs-theme="dark"] .day-label {
+        color: rgba(255, 255, 255, 0.9);
+    }
+
+    .period-label {
+        font-size: 0.9rem;
+        font-weight: 700;
+        color: #4e73df;
+    }
+
+    .period-editor {
+        display: flex;
+        flex-direction: column;
+        gap: 0.6rem;
+        min-height: 120px;
+    }
+
+    .editor-select, .editor-input {
+        padding: 0.6rem 0.75rem;
+        background: linear-gradient(135deg, rgba(78, 115, 223, 0.08) 0%, rgba(28, 200, 138, 0.04) 100%);
+        border: 1px solid rgba(78, 115, 223, 0.12);
+        border-radius: 6px;
+        color: rgba(0, 0, 0, 0.8);
+        font-size: 0.85rem;
+        font-weight: 500;
+        transition: all 0.2s ease;
+        cursor: pointer;
+    }
+
+    [data-bs-theme="dark"] .editor-select,
+    [data-bs-theme="dark"] .editor-input {
+        background: linear-gradient(135deg, rgba(78, 115, 223, 0.12) 0%, rgba(28, 200, 138, 0.08) 100%);
+        color: rgba(255, 255, 255, 0.9);
+    }
+
+    .editor-select:hover, .editor-input:hover {
+        border-color: rgba(78, 115, 223, 0.25);
+        box-shadow: 0 4px 12px rgba(78, 115, 223, 0.1);
+    }
+
+    .editor-select:focus, .editor-input:focus {
+        outline: none;
+        border-color: rgba(78, 115, 223, 0.4);
+        box-shadow: 0 6px 16px rgba(78, 115, 223, 0.15);
+    }
+
+    .editor-action-cell {
+        display: flex;
+        align-items: center;
+        justify-content: center;
+    }
+
+    .btn-clear-day {
+        width: 36px;
+        height: 36px;
+        border-radius: 8px;
+        background: linear-gradient(135deg, rgba(255, 107, 107, 0.1), rgba(255, 117, 117, 0.05));
+        border: 1px solid rgba(255, 107, 107, 0.15);
+        color: #ff6b6b;
+        cursor: pointer;
+        transition: all 0.2s ease;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        font-size: 0.9rem;
+    }
+
+    .btn-clear-day:hover {
+        background: linear-gradient(135deg, rgba(255, 107, 107, 0.15), rgba(255, 117, 117, 0.1));
+        border-color: rgba(255, 107, 107, 0.25);
+        transform: translateY(-2px);
+    }
+
+    /* ====== Settings Grid ====== */
+    .settings-grid {
+        display: grid;
+        grid-template-columns: repeat(auto-fit, minmax(320px, 1fr));
+        gap: 1.5rem;
+        margin-bottom: 2rem;
+    }
+
+    .settings-card {
+        background: linear-gradient(135deg, rgba(78, 115, 223, 0.08) 0%, rgba(28, 200, 138, 0.04) 100%);
+        border: 1px solid rgba(78, 115, 223, 0.12);
+        border-radius: 16px;
+        backdrop-filter: blur(10px);
+        padding: 1.75rem;
+        animation: fadeInUp 0.6s ease forwards;
+        opacity: 0;
+    }
+
+    .settings-card:nth-child(1) { animation-delay: 0.2s; }
+    .settings-card:nth-child(2) { animation-delay: 0.25s; }
+
+    .settings-header {
+        display: flex;
+        align-items: center;
+        gap: 0.75rem;
+        margin-bottom: 1.5rem;
+        font-weight: 600;
+        color: #4e73df;
+    }
+
+    .settings-header i {
+        font-size: 1.1rem;
+    }
+
+    .settings-header h4 {
+        margin: 0;
+        font-size: 1rem;
+    }
+
+    /* Period Times */
+    .period-times-list {
+        display: flex;
+        flex-direction: column;
+        gap: 1rem;
+    }
+
+    .period-time-row {
+        display: flex;
+        align-items: center;
+        gap: 1rem;
+        padding: 0.75rem;
+        background: rgba(78, 115, 223, 0.04);
+        border-radius: 8px;
+    }
+
+    .period-time-label {
+        font-weight: 600;
+        color: rgba(0, 0, 0, 0.7);
+        min-width: 40px;
+    }
+
+    [data-bs-theme="dark"] .period-time-label {
+        color: rgba(255, 255, 255, 0.7);
+    }
+
+    .time-inputs {
+        display: flex;
+        align-items: center;
+        gap: 0.75rem;
+        flex: 1;
+    }
+
+    .time-input {
+        flex: 1;
+        padding: 0.5rem 0.75rem;
+        background: linear-gradient(135deg, rgba(255, 255, 255, 0.5), rgba(255, 255, 255, 0.3));
+        border: 1px solid rgba(78, 115, 223, 0.15);
+        border-radius: 6px;
+        color: rgba(0, 0, 0, 0.8);
+        font-weight: 500;
+        transition: all 0.2s ease;
+    }
+
+    [data-bs-theme="dark"] .time-input {
+        background: linear-gradient(135deg, rgba(255, 255, 255, 0.1), rgba(255, 255, 255, 0.05));
+        color: rgba(255, 255, 255, 0.9);
+    }
+
+    .time-input:focus {
+        outline: none;
+        border-color: rgba(78, 115, 223, 0.3);
+        box-shadow: 0 4px 12px rgba(78, 115, 223, 0.1);
+    }
+
+    .time-separator {
+        color: rgba(0, 0, 0, 0.4);
+        font-weight: 600;
+    }
+
+    [data-bs-theme="dark"] .time-separator {
+        color: rgba(255, 255, 255, 0.5);
+    }
+
+    /* Quick Actions */
+    .action-buttons-grid {
+        display: grid;
+        grid-template-columns: 1fr;
+        gap: 0.75rem;
+    }
+
+    .action-btn {
+        padding: 0.85rem 1.25rem;
+        border-radius: 10px;
+        border: none;
+        font-weight: 600;
+        cursor: pointer;
+        transition: all 0.3s ease;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        gap: 0.5rem;
+    }
+
+    .copy-btn {
+        background: linear-gradient(135deg, rgba(78, 115, 223, 0.15), rgba(28, 200, 138, 0.1));
+        color: #4e73df;
+        border: 1px solid rgba(78, 115, 223, 0.2);
+    }
+
+    .copy-btn:hover {
+        background: linear-gradient(135deg, rgba(78, 115, 223, 0.2), rgba(28, 200, 138, 0.15));
+        transform: translateY(-2px);
+        box-shadow: 0 6px 16px rgba(78, 115, 223, 0.15);
+    }
+
+    .clear-btn {
+        background: linear-gradient(135deg, rgba(255, 107, 107, 0.15), rgba(255, 117, 117, 0.1));
+        color: #ff6b6b;
+        border: 1px solid rgba(255, 107, 107, 0.2);
+    }
+
+    .clear-btn:hover {
+        background: linear-gradient(135deg, rgba(255, 107, 107, 0.2), rgba(255, 117, 117, 0.15));
+        transform: translateY(-2px);
+        box-shadow: 0 6px 16px rgba(255, 107, 107, 0.15);
+    }
+
+    .generate-btn {
+        background: linear-gradient(135deg, rgba(255, 193, 7, 0.15), rgba(255, 193, 7, 0.1));
+        color: #ff9800;
+        border: 1px solid rgba(255, 193, 7, 0.2);
+    }
+
+    .generate-btn:hover {
+        background: linear-gradient(135deg, rgba(255, 193, 7, 0.2), rgba(255, 193, 7, 0.15));
+        transform: translateY(-2px);
+        box-shadow: 0 6px 16px rgba(255, 193, 7, 0.15);
+    }
+
+    /* ====== Form Actions ====== */
+    .form-actions {
+        display: flex;
+        gap: 1rem;
+        justify-content: flex-end;
+        padding: 2rem 1.5rem;
+        background: linear-gradient(135deg, rgba(255, 255, 255, 0.04) 0%, rgba(255, 255, 255, 0.01) 100%);
+        border: 1px solid rgba(78, 115, 223, 0.1);
+        border-radius: 16px;
+        animation: fadeInUp 0.6s ease 0.3s forwards;
+        opacity: 0;
+    }
+
+    .btn-action-cancel, .btn-action-save {
+        padding: 0.85rem 1.75rem;
+        border-radius: 12px;
+        font-weight: 600;
+        border: none;
+        cursor: pointer;
+        transition: all 0.3s ease;
+        display: inline-flex;
+        align-items: center;
+        text-decoration: none;
+    }
+
+    .btn-action-cancel {
+        background: transparent;
+        color: rgba(0, 0, 0, 0.6);
+        border: 1px solid rgba(0, 0, 0, 0.12);
+    }
+
+    [data-bs-theme="dark"] .btn-action-cancel {
+        color: rgba(255, 255, 255, 0.7);
+        border-color: rgba(255, 255, 255, 0.12);
+    }
+
+    .btn-action-cancel:hover {
+        background: rgba(78, 115, 223, 0.08);
+        border-color: rgba(78, 115, 223, 0.2);
+        color: #4e73df;
+        transform: translateY(-2px);
+    }
+
+    .btn-action-save {
+        background: linear-gradient(135deg, #4e73df, #1cc88a);
+        color: white;
+        box-shadow: 0 8px 20px rgba(78, 115, 223, 0.25);
+    }
+
+    .btn-action-save:hover {
+        transform: translateY(-2px);
+        box-shadow: 0 12px 28px rgba(78, 115, 223, 0.35);
+    }
+
+    /* ====== Modal ====== */
+    .modal-glassmorphic .modal-content {
+        background: linear-gradient(135deg, rgba(255, 255, 255, 0.95), rgba(255, 255, 255, 0.9));
+        border: 1px solid rgba(78, 115, 223, 0.15);
+        border-radius: 20px;
+        backdrop-filter: blur(10px);
+    }
+
+    [data-bs-theme="dark"] .modal-glassmorphic .modal-content {
+        background: linear-gradient(135deg, rgba(25, 25, 25, 0.95), rgba(20, 20, 20, 0.9));
+    }
+
+    .modal-header-custom {
+        border-bottom: 1px solid rgba(78, 115, 223, 0.1);
+        padding: 1.75rem;
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+    }
+
+    .modal-header-custom h5 {
+        margin: 0;
+        font-weight: 700;
+        color: #4e73df;
+        display: flex;
+        align-items: center;
+    }
+
+    .btn-modal-close {
+        width: 32px;
+        height: 32px;
+        background: transparent;
+        border: none;
+        color: rgba(0, 0, 0, 0.5);
+        cursor: pointer;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        border-radius: 6px;
+        transition: all 0.2s ease;
+    }
+
+    .btn-modal-close:hover {
+        background: rgba(0, 0, 0, 0.05);
+        color: rgba(0, 0, 0, 0.8);
+    }
+
+    .modal-body-custom {
+        padding: 1.75rem;
+    }
+
+    .form-group-custom {
+        margin-bottom: 1.25rem;
+    }
+
+    .form-group-custom:last-child {
+        margin-bottom: 0;
+    }
+
+    .form-label-custom {
+        display: block;
+        margin-bottom: 0.6rem;
+        font-weight: 600;
+        color: rgba(0, 0, 0, 0.7);
+    }
+
+    [data-bs-theme="dark"] .form-label-custom {
+        color: rgba(255, 255, 255, 0.8);
+    }
+
+    .form-input-custom {
+        width: 100%;
+        padding: 0.85rem 1rem;
+        background: linear-gradient(135deg, rgba(78, 115, 223, 0.08) 0%, rgba(28, 200, 138, 0.04) 100%);
+        border: 1px solid rgba(78, 115, 223, 0.15);
+        border-radius: 10px;
+        color: rgba(0, 0, 0, 0.8);
+        font-weight: 500;
+        transition: all 0.3s ease;
+    }
+
+    [data-bs-theme="dark"] .form-input-custom {
+        background: linear-gradient(135deg, rgba(78, 115, 223, 0.12) 0%, rgba(28, 200, 138, 0.08) 100%);
+        color: rgba(255, 255, 255, 0.9);
+    }
+
+    .form-input-custom:focus {
+        outline: none;
+        border-color: rgba(78, 115, 223, 0.4);
+        box-shadow: 0 6px 16px rgba(78, 115, 223, 0.15);
+    }
+
+    .modal-footer-custom {
+        border-top: 1px solid rgba(78, 115, 223, 0.1);
+        padding: 1.5rem 1.75rem;
+        display: flex;
+        justify-content: flex-end;
+        gap: 1rem;
+    }
+
+    .btn-modal-cancel, .btn-modal-confirm {
+        padding: 0.75rem 1.5rem;
+        border-radius: 10px;
+        font-weight: 600;
+        border: none;
+        cursor: pointer;
+        transition: all 0.3s ease;
+        display: inline-flex;
+        align-items: center;
+    }
+
+    .btn-modal-cancel {
+        background: rgba(0, 0, 0, 0.05);
+        color: rgba(0, 0, 0, 0.7);
+    }
+
+    .btn-modal-cancel:hover {
+        background: rgba(0, 0, 0, 0.1);
+        transform: translateY(-2px);
+    }
+
+    .btn-modal-confirm {
+        background: linear-gradient(135deg, #4e73df, #1cc88a);
+        color: white;
+        box-shadow: 0 8px 20px rgba(78, 115, 223, 0.25);
+    }
+
+    .btn-modal-confirm:hover {
+        transform: translateY(-2px);
+        box-shadow: 0 12px 28px rgba(78, 115, 223, 0.35);
+    }
+
+    /* ====== Empty State ====== */
+    .empty-state-card {
+        background: linear-gradient(135deg, rgba(255, 255, 255, 0.08) 0%, rgba(255, 255, 255, 0.02) 100%);
+        border: 1px solid rgba(78, 115, 223, 0.12);
+        border-radius: 20px;
+        backdrop-filter: blur(10px);
+        padding: 4rem 2rem;
+        text-align: center;
+        animation: slideDown 0.6s ease;
+    }
+
+    .empty-icon {
+        font-size: 3rem;
+        color: rgba(78, 115, 223, 0.2);
+        margin-bottom: 1.5rem;
+    }
+
+    .empty-state-card h3 {
+        color: rgba(0, 0, 0, 0.8);
+        margin-bottom: 0.5rem;
+    }
+
+    [data-bs-theme="dark"] .empty-state-card h3 {
+        color: rgba(255, 255, 255, 0.9);
+    }
+
+    .empty-state-card p {
+        color: rgba(0, 0, 0, 0.5);
+    }
+
+    [data-bs-theme="dark"] .empty-state-card p {
+        color: rgba(255, 255, 255, 0.6);
+    }
+
+    /* ====== Animations ====== */
+    @keyframes slideDown {
+        from {
+            opacity: 0;
+            transform: translateY(-20px);
+        }
+        to {
+            opacity: 1;
+            transform: translateY(0);
+        }
+    }
+
+    @keyframes fadeInUp {
+        from {
+            opacity: 0;
+            transform: translateY(20px);
+        }
+        to {
+            opacity: 1;
+            transform: translateY(0);
+        }
+    }
+
+    /* ====== Accessibility ====== */
+    .visually-hidden {
+        position: absolute;
+        width: 1px;
+        height: 1px;
+        padding: 0;
+        margin: -1px;
+        overflow: hidden;
+        clip: rect(0, 0, 0, 0);
+        white-space: nowrap;
+        border-width: 0;
+    }
+
+    /* ====== Responsive ====== */
+    @media (max-width: 1024px) {
+        .header-content {
+            flex-direction: column;
+            align-items: flex-start;
+        }
+
+        .timetable-editor {
+            grid-template-columns: 90px repeat(6, 1fr) 60px;
+        }
+    }
+
+    @media (max-width: 768px) {
+        .timetable-editor {
+            grid-template-columns: 80px repeat(4, 1fr) 50px;
+        }
+
+        .settings-grid {
+            grid-template-columns: 1fr;
+        }
+
+        .form-actions {
+            flex-direction: column;
+        }
+
+        .btn-action-cancel, .btn-action-save {
+            width: 100%;
+            justify-content: center;
+        }
+    }
+
+    @media (max-width: 480px) {
+        .header-title h2 {
+            font-size: 1.25rem;
+        }
+
+        .timetable-editor-wrapper {
+            padding: 0;
+            border-radius: 0;
+            margin-bottom: 1.5rem;
+        }
+
+        .timetable-editor {
+            grid-template-columns: 70px repeat(3, 1fr) 40px;
+        }
+
+        .editor-select, .editor-input {
+            font-size: 0.75rem;
+            padding: 0.5rem;
+        }
+
+        .period-label {
+            font-size: 0.8rem;
+        }
+    }
+
+    .btn-icon-action {
+        width: 40px;
+        height: 40px;
+        border-radius: 10px;
+        background: linear-gradient(135deg, rgba(78, 115, 223, 0.1), rgba(28, 200, 138, 0.08));
+        border: 1px solid rgba(78, 115, 223, 0.15);
+        color: #4e73df;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        cursor: pointer;
+        transition: all 0.3s ease;
+        font-size: 1rem;
+    }
+
+    .btn-icon-action:hover {
+        background: linear-gradient(135deg, rgba(78, 115, 223, 0.15), rgba(28, 200, 138, 0.12));
+        border-color: rgba(78, 115, 223, 0.25);
+        transform: translateY(-2px);
+    }
+</style>
+
+<script>
+    // Class selector redirect
+    function selectClass(classId) {
+        if (classId) {
+            window.location.href = `/courses/timetable/manage/${classId}/`;
+        }
+    }
+
+    function clearDay(day) {
+        if (confirm(`Clear all periods for ${day}?`)) {
+            document.querySelectorAll(`select[name^="subject_${day}_"], select[name^="teacher_${day}_"], input[name^="room_${day}_"]`).forEach(element => {
+                if (element.tagName === 'SELECT') {
+                    element.selectedIndex = 0;
+                } else {
+                    element.value = '';
+                }
+            });
+        }
+    }
+    
+    function clearAll() {
+        if (confirm('Clear entire timetable? This will remove all subject assignments.')) {
+            document.querySelectorAll('select[name^="subject_"], select[name^="teacher_"], input[name^="room_"]').forEach(element => {
+                if (element.tagName === 'SELECT') {
+                    element.selectedIndex = 0;
+                } else {
+                    element.value = '';
+                }
+            });
+        }
+    }
+    
+    function copyMondayToAll() {
+        if (confirm('Copy Monday\'s schedule to all days?')) {
+            for (let period = 1; period <= 8; period++) {
+                const mondaySubject = document.querySelector(`select[name="subject_Monday_${period}"]`);
+                const mondayTeacher = document.querySelector(`select[name="teacher_Monday_${period}"]`);
+                const mondayRoom = document.querySelector(`input[name="room_Monday_${period}"]`);
+                
+                if (mondaySubject && mondayTeacher) {
+                    const days = ['Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday'];
+                    days.forEach(day => {
+                        const daySubject = document.querySelector(`select[name="subject_${day}_${period}"]`);
+                        const dayTeacher = document.querySelector(`select[name="teacher_${day}_${period}"]`);
+                        const dayRoom = document.querySelector(`input[name="room_${day}_${period}"]`);
+                        
+                        if (daySubject) daySubject.value = mondaySubject.value;
+                        if (dayTeacher) dayTeacher.value = mondayTeacher.value;
+                        if (dayRoom && mondayRoom) dayRoom.value = mondayRoom.value;
+                    });
+                }
+            }
+        }
+    }
+    
+    function generateDefault() {
+        if (confirm('Generate a default timetable? This will overwrite existing assignments.')) {
+            alert('Default timetable generation would be implemented here.');
+        }
+    }
+    
+    function addNewPeriod() {
+        const periodNumber = document.getElementById('newPeriodNumber').value;
+        const startTime = document.getElementById('newPeriodStart').value;
+        const endTime = document.getElementById('newPeriodEnd').value;
+        
+        if (periodNumber && startTime && endTime) {
+            alert(`Adding period ${periodNumber} from ${startTime} to ${endTime}`);
+            bootstrap.Modal.getInstance(document.getElementById('addPeriodModal')).hide();
+        } else {
+            alert('Please fill all fields');
+        }
+    }
+
+    function selectClass(classId) {
+        if (classId) {
+            window.location.href = `/courses/timetable/manage/${classId}/`;
+        }
+    }
+</script>
+{% endblock %}

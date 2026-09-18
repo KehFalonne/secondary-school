@@ -1,0 +1,2079 @@
+{% extends 'base.html' %}
+
+{% block title %}Attendance Reports{% endblock %}
+{% block page_title %}Attendance Reports{% endblock %}
+
+{% block breadcrumb %}
+<li class="breadcrumb-item active">Attendance Reports</li>
+{% endblock %}
+
+{% block page_actions %}
+{% endblock %}
+
+{% block content %}
+<div class="attendance-report-container">
+    <!-- Hero Section -->
+    <div class="hero-section">
+        <div class="attendance-badge">ATTENDANCE ANALYTICS</div>
+        <h1 class="attendance-title">Detailed Attendance Reports</h1>
+        <p class="attendance-subtitle">Generate comprehensive attendance insights across your institution</p>
+    </div>
+
+    <!-- Filter Card -->
+    <div class="filter-card">
+        <h3 class="filter-title">
+            <i class="fas fa-sliders-h"></i> Report Configuration
+        </h3>
+        <form method="get" class="filter-form">
+            <div class="filter-grid">
+                <div class="filter-group">
+                    <label class="filter-label">Report Type</label>
+                    <select name="report_type" class="filter-select" onchange="toggleFields()">
+                        <option value="student">Student-wise Report</option>
+                        <option value="class">Class-wise Report</option>
+                        <option value="monthly">Monthly Summary</option>
+                        {% if request.user.user_type == 'admin' %}
+                        <option value="teacher">Teacher-wise Report</option>
+                        {% endif %}
+                    </select>
+                </div>
+                <div class="filter-group" id="studentField">
+                    <label class="filter-label">Student</label>
+                    <select name="student_id" class="filter-select">
+                        <option value="">Select Student</option>
+                        {% for student in students %}
+                        <option value="{{ student.id }}" {% if selected_student_id == student.id %}selected{% endif %}>{{ student.user.get_full_name }} ({{ student.admission_number }})</option>
+                        {% endfor %}
+                    </select>
+                </div>
+                <div class="filter-group" id="classField" style="display: none;">
+                    <label class="filter-label">Class</label>
+                    <select name="class_id" class="filter-select">
+                        <option value="">Select Class</option>
+                        {% for class in classes %}
+                        <option value="{{ class.id }}">{{ class.name }} - Section {{ class.section }}</option>
+                        {% endfor %}
+                    </select>
+                </div>
+                <div class="filter-group">
+                    <label class="filter-label">Month</label>
+                    <select name="month" class="filter-select">
+                        {% for month_num, month_name in months %}
+                        <option value="{{ month_num }}" {% if current_month == month_num %}selected{% endif %}>{{ month_name }}</option>
+                        {% endfor %}
+                    </select>
+                </div>
+                <div class="filter-group">
+                    <label class="filter-label">Year</label>
+                    <select name="year" class="filter-select">
+                        {% for year in years %}
+                        <option value="{{ year }}" {% if current_year == year %}selected{% endif %}>{{ year }}</option>
+                        {% endfor %}
+                    </select>
+                </div>
+            </div>
+            <div class="filter-actions">
+                <button type="submit" class="filter-btn primary">
+                    <i class="fas fa-search"></i>Generate Report
+                </button>
+                <button type="reset" class="filter-btn secondary">
+                    <i class="fas fa-redo"></i>Reset
+                </button>
+            </div>
+        </form>
+    </div>
+
+
+    {% if report_data %}
+    <div id="reportContent" class="report-content-wrapper">
+        <!-- Report Header -->
+        <div class="report-header">
+            <h2 class="report-title">
+                <i class="fas fa-chart-bar"></i> {{ report_title }}
+            </h2>
+            <div class="report-meta">
+                <span class="meta-badge"><i class="fas fa-calendar-alt"></i> {{ report_period }}</span>
+                <span class="meta-badge"><i class="fas fa-clock"></i> {% now "d M Y, h:i A" %}</span>
+                <span class="meta-badge"><i class="fas fa-user"></i> {{ user.get_full_name }}</span>
+            </div>
+        </div>
+
+        <!-- Student-wise Report -->
+        {% if report_type == 'student' %}
+        <div class="student-report-section">
+            <!-- Period Header -->
+            <div class="period-header" style="animation: slideInUp 0.3s ease-out;">
+                <h3>
+                    <i class="fas fa-user-check"></i> Student-wise Attendance Summary - {{ report_period }}
+                </h3>
+            </div>
+
+            <!-- Single Student Detailed View -->
+            {% if selected_student_id and report_data.students|length == 1 %}
+                {% with student_info=report_data.students.0 %}
+                <!-- Student Info Card -->
+                <div class="info-card student-card" style="animation: slideInUp 0.3s ease-out;">
+                    <div class="card-icon">
+                        <i class="fas fa-user-circle"></i>
+                    </div>
+                    <div class="card-content">
+                        <h4 class="card-title">{{ student_info.name }}</h4>
+                        <p class="card-subtitle">{{ student_info.admission_number }}</p>
+                        <p class="card-info">{{ student_info.class }} - Roll # {{ student_info.roll_number }}</p>
+                    </div>
+                </div>
+
+                <!-- Stats Cards -->
+                <div class="stats-grid" style="animation: slideInUp 0.4s ease-out;">
+                    <div class="stat-card present-stat">
+                        <div class="stat-icon">
+                            <i class="fas fa-check-circle"></i>
+                        </div>
+                        <div class="stat-content">
+                            <div class="stat-value">{{ student_info.present }}</div>
+                            <div class="stat-label">Present Days</div>
+                        </div>
+                    </div>
+                    <div class="stat-card absent-stat">
+                        <div class="stat-icon">
+                            <i class="fas fa-times-circle"></i>
+                        </div>
+                        <div class="stat-content">
+                            <div class="stat-value">{{ student_info.absent }}</div>
+                            <div class="stat-label">Absent Days</div>
+                        </div>
+                    </div>
+                    <div class="stat-card rate-stat">
+                        <div class="stat-icon">
+                            <i class="fas fa-percentage"></i>
+                        </div>
+                        <div class="stat-content">
+                            <div class="stat-value">{{ student_info.percentage|floatformat:1 }}%</div>
+                            <div class="stat-label">Attendance Rate</div>
+                        </div>
+                    </div>
+                    <div class="stat-card summary-stat">
+                        <div class="stat-icon">
+                            <i class="fas fa-list-check"></i>
+                        </div>
+                        <div class="stat-content">
+                            <div class="stat-value">{{ student_info.total }}</div>
+                            <div class="stat-label">Total Days</div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Progress Bar Section -->
+                <div class="progress-section" style="animation: slideInUp 0.5s ease-out;">
+                    <h4 class="section-title"><i class="fas fa-chart-pie"></i> Attendance Progress</h4>
+                    <div class="attendance-progress">
+                        <div class="progress-bar-container">
+                            <div class="progress-bar-fill" style="width: {{ student_info.percentage }}%; background: linear-gradient(90deg, #1cc88a, #00d9a3);">
+                                <span class="progress-value">{{ student_info.percentage|floatformat:1 }}%</span>
+                            </div>
+                        </div>
+                        <div class="progress-details">
+                            <div class="progress-item">
+                                <div class="progress-color present"></div>
+                                <span>Present: {{ student_info.present }}</span>
+                            </div>
+                            <div class="progress-item">
+                                <div class="progress-color absent"></div>
+                                <span>Absent: {{ student_info.absent }}</span>
+                            </div>
+                            <div class="progress-item">
+                                <div class="progress-color" style="background: #f6c23e;"></div>
+                                <span>Late: {{ student_info.late }}</span>
+                            </div>
+                            <div class="progress-item">
+                                <div class="progress-color" style="background: #7fb3ff;"></div>
+                                <span>Half Day: {{ student_info.half_day }}</span>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Daily Attendance Table -->
+                {% if student_info.daily_attendance %}
+                <div class="table-section" style="animation: slideInUp 0.6s ease-out;">
+                    <h4 class="section-title"><i class="fas fa-calendar-check"></i> Daily Attendance Record</h4>
+                    <div class="table-card">
+                        <table class="attendance-table">
+                            <thead>
+                                <tr>
+                                    <th>Date</th>
+                                    <th>Day</th>
+                                    <th>Status</th>
+                                    <th>Subject</th>
+                                    <th>Teacher</th>
+                                    <th>Remarks</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                {% for day in student_info.daily_attendance %}
+                                <tr>
+                                    <td>{{ day.date|date:"d M Y" }}</td>
+                                    <td>{{ day.date|date:"l" }}</td>
+                                    <td>
+                                        {% if day.status == 'Present' %}
+                                        <span class="status-badge present-badge">
+                                            <i class="fas fa-check"></i> Present
+                                        </span>
+                                        {% elif day.status == 'Absent' %}
+                                        <span class="status-badge absent-badge">
+                                            <i class="fas fa-times"></i> Absent
+                                        </span>
+                                        {% elif day.status == 'Late' %}
+                                        <span class="status-badge late-badge">
+                                            <i class="fas fa-hourglass-end"></i> Late
+                                        </span>
+                                        {% elif day.status == 'Half Day' %}
+                                        <span class="status-badge" style="background: rgba(127, 179, 255, 0.15); color: #7fb3ff;">
+                                            <i class="fas fa-calendar-check"></i> Half Day
+                                        </span>
+                                        {% else %}
+                                        <span class="status-badge">{{ day.status }}</span>
+                                        {% endif %}
+                                    </td>
+                                    <td>{{ day.subject|default:"-" }}</td>
+                                    <td>{{ day.teacher|default:"-" }}</td>
+                                    <td>{{ day.remarks|default:"-" }}</td>
+                                </tr>
+                                {% endfor %}
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+                {% endif %}
+                {% endwith %}
+
+            <!-- Multiple Students Overview -->
+            {% else %}
+                <!-- Overall Stats -->
+                <div class="stats-grid" style="animation: slideInUp 0.4s ease-out;">
+                    <div class="stat-card total-stat">
+                        <div class="stat-icon">
+                            <i class="fas fa-users"></i>
+                        </div>
+                        <div class="stat-content">
+                            <div class="stat-value">{{ report_data.students|length }}</div>
+                            <div class="stat-label">Total Students</div>
+                        </div>
+                    </div>
+                    <div class="stat-card present-stat">
+                        <div class="stat-icon">
+                            <i class="fas fa-check-circle"></i>
+                        </div>
+                        <div class="stat-content">
+                            <div class="stat-value">{{ report_data.total_present }}</div>
+                            <div class="stat-label">Total Present</div>
+                        </div>
+                    </div>
+                    <div class="stat-card absent-stat">
+                        <div class="stat-icon">
+                            <i class="fas fa-times-circle"></i>
+                        </div>
+                        <div class="stat-content">
+                            <div class="stat-value">{{ report_data.total_absent }}</div>
+                            <div class="stat-label">Total Absent</div>
+                        </div>
+                    </div>
+                    <div class="stat-card avg-stat">
+                        <div class="stat-icon">
+                            <i class="fas fa-chart-line"></i>
+                        </div>
+                        <div class="stat-content">
+                            <div class="stat-value">{{ report_data.average_attendance|floatformat:1 }}%</div>
+                            <div class="stat-label">Avg. Attendance</div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Students Attendance Table -->
+                <div class="table-section" style="animation: slideInUp 0.5s ease-out;">
+                    <h4 class="section-title"><i class="fas fa-table"></i> All Students Attendance</h4>
+                    <div class="table-card">
+                        <table class="attendance-table">
+                            <thead>
+                                <tr>
+                                    <th>Admission #</th>
+                                    <th>Student Name</th>
+                                    <th>Roll No</th>
+                                    <th>Class</th>
+                                    <th>Present</th>
+                                    <th>Absent</th>
+                                    <th>Late</th>
+                                    <th>Half Day</th>
+                                    <th>Attendance</th>
+                                    <th>Status</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                {% for student_data in report_data.students %}
+                                <tr>
+                                    <td><strong>{{ student_data.admission_number }}</strong></td>
+                                    <td>{{ student_data.name }}</td>
+                                    <td>{{ student_data.roll_number }}</td>
+                                    <td>{{ student_data.class }}</td>
+                                    <td>
+                                        <span class="record-badge present-badge">
+                                            <i class="fas fa-check"></i> {{ student_data.present }}
+                                        </span>
+                                    </td>
+                                    <td>
+                                        <span class="record-badge absent-badge">
+                                            <i class="fas fa-times"></i> {{ student_data.absent }}
+                                        </span>
+                                    </td>
+                                    <td>
+                                        <span class="record-badge late-badge">
+                                            <i class="fas fa-hourglass-end"></i> {{ student_data.late }}
+                                        </span>
+                                    </td>
+                                    <td>
+                                        <span class="record-badge" style="background: rgba(127, 179, 255, 0.15); color: #7fb3ff;">
+                                            <i class="fas fa-calendar-check"></i> {{ student_data.half_day }}
+                                        </span>
+                                    </td>
+                                    <td>
+                                        <div class="mini-progress">
+                                            <div class="mini-progress-bar" style="width: {{ student_data.percentage }}%; background: {% if student_data.percentage >= 75 %}linear-gradient(90deg, #1cc88a, #00d9a3){% elif student_data.percentage >= 50 %}linear-gradient(90deg, #f6c23e, #ffa500){% else %}linear-gradient(90deg, #e74c3c, #ff6b6b){% endif %};"></div>
+                                        </div>
+                                        <small>{{ student_data.percentage|floatformat:1 }}%</small>
+                                    </td>
+                                    <td>
+                                        {% if student_data.percentage >= 75 %}
+                                        <span class="status-badge good-badge"><i class="fas fa-star"></i> Good</span>
+                                        {% elif student_data.percentage >= 50 %}
+                                        <span class="status-badge avg-badge"><i class="fas fa-minus-circle"></i> Average</span>
+                                        {% else %}
+                                        <span class="status-badge poor-badge"><i class="fas fa-exclamation"></i> Poor</span>
+                                        {% endif %}
+                                    </td>
+                                </tr>
+                                {% endfor %}
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+
+                <!-- At-Risk Students Summary -->
+                <div class="table-section" style="animation: slideInUp 0.6s ease-out;">
+                    <h4 class="section-title"><i class="fas fa-exclamation-triangle"></i> At-Risk Analysis</h4>
+                    <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 20px; margin-bottom: 20px;">
+                        <div class="stat-card warn-stat">
+                            <div class="stat-icon">
+                                <i class="fas fa-exclamation-circle"></i>
+                            </div>
+                            <div class="stat-content">
+                                <div class="stat-value">{{ report_data.below_75_percent }}</div>
+                                <div class="stat-label">Below 75%</div>
+                            </div>
+                        </div>
+                        <div class="stat-card critical-stat">
+                            <div class="stat-icon">
+                                <i class="fas fa-alert-triangle"></i>
+                            </div>
+                            <div class="stat-content">
+                                <div class="stat-value">{{ report_data.below_50_percent }}</div>
+                                <div class="stat-label">Below 50% (Critical)</div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            {% endif %}
+        </div>
+
+        <!-- Class-wise Report -->
+        {% elif report_type == 'class' and class_obj %}
+        <div class="class-report-section">
+            <!-- Class Info Card -->
+            <div class="info-card class-card" style="animation: slideInUp 0.3s ease-out;">
+                <div class="card-icon">
+                    <i class="fas fa-school"></i>
+                </div>
+                <div class="card-content">
+                    <h4 class="card-title">{{ class_obj.name }}</h4>
+                    <p class="card-subtitle">Section {{ class_obj.section }}</p>
+                    <p class="card-info">
+                        <i class="fas fa-chalkboard-user"></i> {{ class_obj.class_teacher.user.get_full_name }}
+                    </p>
+                </div>
+            </div>
+
+            <!-- Class Stats -->
+            <div class="stats-grid" style="animation: slideInUp 0.4s ease-out;">
+                <div class="stat-card total-stat">
+                    <div class="stat-icon">
+                        <i class="fas fa-users"></i>
+                    </div>
+                    <div class="stat-content">
+                        <div class="stat-value">{{ report_data.total_students }}</div>
+                        <div class="stat-label">Total Students</div>
+                    </div>
+                </div>
+                <div class="stat-card avg-stat">
+                    <div class="stat-icon">
+                        <i class="fas fa-chart-line"></i>
+                    </div>
+                    <div class="stat-content">
+                        <div class="stat-value">{{ report_data.average_attendance|floatformat:1 }}%</div>
+                        <div class="stat-label">Avg. Attendance</div>
+                    </div>
+                </div>
+                <div class="stat-card warn-stat">
+                    <div class="stat-icon">
+                        <i class="fas fa-exclamation-circle"></i>
+                    </div>
+                    <div class="stat-content">
+                        <div class="stat-value">{{ report_data.below_75_percent }}</div>
+                        <div class="stat-label">Below 75%</div>
+                    </div>
+                </div>
+                <div class="stat-card critical-stat">
+                    <div class="stat-icon">
+                        <i class="fas fa-alert-triangle"></i>
+                    </div>
+                    <div class="stat-content">
+                        <div class="stat-value">{{ report_data.below_50_percent }}</div>
+                        <div class="stat-label">Below 50%</div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Students Attendance Table -->
+            <div class="table-section" style="animation: slideInUp 0.5s ease-out;">
+                <h4 class="section-title"><i class="fas fa-table"></i> Student-wise Breakdown</h4>
+                <div class="table-card">
+                    <table class="attendance-table">
+                        <thead>
+                            <tr>
+                                <th>Roll No</th>
+                                <th>Student Name</th>
+                                <th>Present</th>
+                                <th>Absent</th>
+                                <th>Late</th>
+                                <th>Attendance</th>
+                                <th>Status</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            {% for student_data in report_data.students %}
+                            <tr>
+                                <td><strong>{{ student_data.roll_number }}</strong></td>
+                                <td>{{ student_data.name }}</td>
+                                <td>
+                                    <span class="record-badge present-badge">
+                                        <i class="fas fa-check"></i> {{ student_data.present }}
+                                    </span>
+                                </td>
+                                <td>
+                                    <span class="record-badge absent-badge">
+                                        <i class="fas fa-times"></i> {{ student_data.absent }}
+                                    </span>
+                                </td>
+                                <td>
+                                    <span class="record-badge late-badge">
+                                        <i class="fas fa-hourglass-end"></i> {{ student_data.late }}
+                                    </span>
+                                </td>
+                                <td>
+                                    <div class="mini-progress">
+                                        <div class="mini-progress-bar" style="width: {{ student_data.percentage }}%; background: {% if student_data.percentage >= 75 %}linear-gradient(90deg, #1cc88a, #00d9a3){% elif student_data.percentage >= 50 %}linear-gradient(90deg, #f6c23e, #ffa500){% else %}linear-gradient(90deg, #e74c3c, #ff6b6b){% endif %};"></div>
+                                    </div>
+                                    <small>{{ student_data.percentage|floatformat:1 }}%</small>
+                                </td>
+                                <td>
+                                    {% if student_data.percentage >= 75 %}
+                                    <span class="status-badge good-badge"><i class="fas fa-star"></i> Good</span>
+                                    {% elif student_data.percentage >= 50 %}
+                                    <span class="status-badge avg-badge"><i class="fas fa-minus-circle"></i> Average</span>
+                                    {% else %}
+                                    <span class="status-badge poor-badge"><i class="fas fa-exclamation"></i> Poor</span>
+                                    {% endif %}
+                                </td>
+                            </tr>
+                            {% endfor %}
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+        </div>
+
+        <!-- Monthly Report -->
+        {% elif report_type == 'monthly' %}
+        <div class="monthly-report-section">
+            <!-- Period Header -->
+            <div class="period-header" style="animation: slideInUp 0.3s ease-out;">
+                <h3>
+                    <i class="fas fa-calendar-alt"></i> Monthly Summary - {{ report_period }}
+                </h3>
+            </div>
+
+            <!-- Overall Stats -->
+            <div class="stats-grid" style="animation: slideInUp 0.4s ease-out;">
+                <div class="stat-card total-stat">
+                    <div class="stat-icon">
+                        <i class="fas fa-school"></i>
+                    </div>
+                    <div class="stat-content">
+                        <div class="stat-value">{{ report_data.totals.total_students }}</div>
+                        <div class="stat-label">Total Students</div>
+                    </div>
+                </div>
+                <div class="stat-card avg-stat">
+                    <div class="stat-icon">
+                        <i class="fas fa-chart-line"></i>
+                    </div>
+                    <div class="stat-content">
+                        <div class="stat-value">{{ report_data.totals.avg_attendance|floatformat:1 }}%</div>
+                        <div class="stat-label">Avg. Attendance</div>
+                    </div>
+                </div>
+                <div class="stat-card working-stat">
+                    <div class="stat-icon">
+                        <i class="fas fa-calendar-days"></i>
+                    </div>
+                    <div class="stat-content">
+                        <div class="stat-value">{{ report_data.totals.working_days }}</div>
+                        <div class="stat-label">Working Days</div>
+                    </div>
+                </div>
+                <div class="stat-card concern-stat">
+                    <div class="stat-icon">
+                        <i class="fas fa-exclamation-triangle"></i>
+                    </div>
+                    <div class="stat-content">
+                        <div class="stat-value">{{ report_data.totals.total_below_50 }}</div>
+                        <div class="stat-label">Critical Cases</div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Monthly Class Summary Table -->
+            <div class="table-section" style="animation: slideInUp 0.5s ease-out;">
+                <h4 class="section-title"><i class="fas fa-list-check"></i> Class-wise Summary</h4>
+                <div class="table-card">
+                    <table class="attendance-table">
+                        <thead>
+                            <tr>
+                                <th>Class</th>
+                                <th>Students</th>
+                                <th>Work Days</th>
+                                <th>Avg Present</th>
+                                <th>Avg Absent</th>
+                                <th>Attendance %</th>
+                                <th>Below 75%</th>
+                                <th>Below 50%</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            {% for class_data in report_data.classes %}
+                            <tr>
+                                <td><strong>{{ class_data.name }}</strong></td>
+                                <td>{{ class_data.total_students }}</td>
+                                <td>{{ class_data.working_days }}</td>
+                                <td>{{ class_data.avg_present|floatformat:1 }}</td>
+                                <td>{{ class_data.avg_absent|floatformat:1 }}</td>
+                                <td>
+                                    <div class="mini-progress">
+                                        <div class="mini-progress-bar" style="width: {{ class_data.attendance_percentage }}%; background: {% if class_data.attendance_percentage >= 75 %}linear-gradient(90deg, #1cc88a, #00d9a3){% elif class_data.attendance_percentage >= 50 %}linear-gradient(90deg, #f6c23e, #ffa500){% else %}linear-gradient(90deg, #e74c3c, #ff6b6b){% endif %};"></div>
+                                    </div>
+                                    <small>{{ class_data.attendance_percentage|floatformat:1 }}%</small>
+                                </td>
+                                <td>
+                                    <span class="warn-badge">{{ class_data.below_75_percent }}</span>
+                                </td>
+                                <td>
+                                    <span class="critical-badge">{{ class_data.below_50_percent }}</span>
+                                </td>
+                            </tr>
+                            {% endfor %}
+                        </tbody>
+                        <tfoot>
+                            <tr class="total-row">
+                                <th>Total/Average</th>
+                                <th>{{ report_data.totals.total_students }}</th>
+                                <th>{{ report_data.totals.working_days }}</th>
+                                <th>{{ report_data.totals.avg_present|floatformat:1 }}</th>
+                                <th>{{ report_data.totals.avg_absent|floatformat:1 }}</th>
+                                <th>{{ report_data.totals.avg_attendance|floatformat:1 }}%</th>
+                                <th>{{ report_data.totals.total_below_75 }}</th>
+                                <th>{{ report_data.totals.total_below_50 }}</th>
+                            </tr>
+                        </tfoot>
+                    </table>
+                </div>
+            </div>
+        </div>
+
+        <!-- Teacher-wise Report -->
+        {% elif report_type == 'teacher' %}
+        <div class="teacher-report-section">
+            <!-- Period Header -->
+            <div class="period-header" style="animation: slideInUp 0.3s ease-out;">
+                <h3>
+                    <i class="fas fa-chalkboard-user"></i> Teacher-wise Attendance Summary - {{ report_period }}
+                </h3>
+            </div>
+
+            <!-- Overall Stats -->
+            <div class="stats-grid" style="animation: slideInUp 0.4s ease-out;">
+                <div class="stat-card total-stat">
+                    <div class="stat-icon">
+                        <i class="fas fa-person-chalkboard"></i>
+                    </div>
+                    <div class="stat-content">
+                        <div class="stat-value">{{ report_data.total_teachers }}</div>
+                        <div class="stat-label">Total Teachers</div>
+                    </div>
+                </div>
+                <div class="stat-card avg-stat">
+                    <div class="stat-icon">
+                        <i class="fas fa-chart-line"></i>
+                    </div>
+                    <div class="stat-content">
+                        <div class="stat-value">{{ report_data.avg_attendance|floatformat:1 }}%</div>
+                        <div class="stat-label">Avg. Attendance</div>
+                    </div>
+                </div>
+                <div class="stat-card present-stat">
+                    <div class="stat-icon">
+                        <i class="fas fa-check-circle"></i>
+                    </div>
+                    <div class="stat-content">
+                        <div class="stat-value">{{ report_data.total_present }}</div>
+                        <div class="stat-label">Total Present</div>
+                    </div>
+                </div>
+                <div class="stat-card absent-stat">
+                    <div class="stat-icon">
+                        <i class="fas fa-times-circle"></i>
+                    </div>
+                    <div class="stat-content">
+                        <div class="stat-value">{{ report_data.total_absent }}</div>
+                        <div class="stat-label">Total Absent</div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Teachers Attendance Table -->
+            <div class="table-section" style="animation: slideInUp 0.5s ease-out;">
+                <h4 class="section-title"><i class="fas fa-list-check"></i> Teacher Attendance Details</h4>
+                <div class="table-card">
+                    <table class="attendance-table">
+                        <thead>
+                            <tr>
+                                <th>Teacher Name</th>
+                                <th>Subject/Dept</th>
+                                <th>Total Days</th>
+                                <th>Present</th>
+                                <th>Absent</th>
+                                <th>Leave</th>
+                                <th>Attendance %</th>
+                                <th>Status</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            {% for teacher_data in report_data.teachers %}
+                            <tr>
+                                <td><strong>{{ teacher_data.name }}</strong></td>
+                                <td>{{ teacher_data.subject|default:"General" }}</td>
+                                <td>{{ teacher_data.total_days }}</td>
+                                <td>
+                                    <span class="record-badge present-badge">
+                                        <i class="fas fa-check"></i> {{ teacher_data.present }}
+                                    </span>
+                                </td>
+                                <td>
+                                    <span class="record-badge absent-badge">
+                                        <i class="fas fa-times"></i> {{ teacher_data.absent }}
+                                    </span>
+                                </td>
+                                <td>
+                                    <span class="record-badge late-badge">
+                                        <i class="fas fa-briefcase"></i> {{ teacher_data.leave|default:0 }}
+                                    </span>
+                                </td>
+                                <td>
+                                    <div class="mini-progress">
+                                        <div class="mini-progress-bar" style="width: {{ teacher_data.percentage }}%; background: {% if teacher_data.percentage >= 75 %}linear-gradient(90deg, #1cc88a, #00d9a3){% elif teacher_data.percentage >= 50 %}linear-gradient(90deg, #f6c23e, #ffa500){% else %}linear-gradient(90deg, #e74c3c, #ff6b6b){% endif %};"></div>
+                                    </div>
+                                    <small>{{ teacher_data.percentage|floatformat:1 }}%</small>
+                                </td>
+                                <td>
+                                    {% if teacher_data.percentage >= 75 %}
+                                    <span class="status-badge good-badge"><i class="fas fa-star"></i> Excellent</span>
+                                    {% elif teacher_data.percentage >= 50 %}
+                                    <span class="status-badge avg-badge"><i class="fas fa-minus-circle"></i> Satisfactory</span>
+                                    {% else %}
+                                    <span class="status-badge poor-badge"><i class="fas fa-exclamation"></i> Needs Attention</span>
+                                    {% endif %}
+                                </td>
+                            </tr>
+                            {% endfor %}
+                        </tbody>
+                        <tfoot>
+                            <tr class="total-row">
+                                <th>Total/Average</th>
+                                <th>-</th>
+                                <th>{{ report_data.totals.total_days }}</th>
+                                <th>{{ report_data.totals.total_present }}</th>
+                                <th>{{ report_data.totals.total_absent }}</th>
+                                <th>{{ report_data.totals.total_leave|default:0 }}</th>
+                                <th>{{ report_data.totals.avg_attendance|floatformat:1 }}%</th>
+                                <th>-</th>
+                            </tr>
+                        </tfoot>
+                    </table>
+                </div>
+            </div>
+
+            <!-- Department-wise Summary -->
+            {% if report_data.departments %}
+            <div class="table-section" style="animation: slideInUp 0.6s ease-out;">
+                <h4 class="section-title"><i class="fas fa-building"></i> Department-wise Summary</h4>
+                <div class="table-card">
+                    <table class="attendance-table">
+                        <thead>
+                            <tr>
+                                <th>Department</th>
+                                <th>Teachers</th>
+                                <th>Avg Attendance</th>
+                                <th>Present</th>
+                                <th>Absent</th>
+                                <th>Status</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            {% for dept_data in report_data.departments %}
+                            <tr>
+                                <td><strong>{{ dept_data.name }}</strong></td>
+                                <td>{{ dept_data.teacher_count }}</td>
+                                <td>
+                                    <div class="mini-progress">
+                                        <div class="mini-progress-bar" style="width: {{ dept_data.avg_attendance }}%; background: {% if dept_data.avg_attendance >= 75 %}linear-gradient(90deg, #1cc88a, #00d9a3){% elif dept_data.avg_attendance >= 50 %}linear-gradient(90deg, #f6c23e, #ffa500){% else %}linear-gradient(90deg, #e74c3c, #ff6b6b){% endif %};"></div>
+                                    </div>
+                                    <small>{{ dept_data.avg_attendance|floatformat:1 }}%</small>
+                                </td>
+                                <td>{{ dept_data.present }}</td>
+                                <td>{{ dept_data.absent }}</td>
+                                <td>
+                                    {% if dept_data.avg_attendance >= 75 %}
+                                    <span class="status-badge good-badge">Excellent</span>
+                                    {% elif dept_data.avg_attendance >= 50 %}
+                                    <span class="status-badge avg-badge">Satisfactory</span>
+                                    {% else %}
+                                    <span class="status-badge poor-badge">Needs Attention</span>
+                                    {% endif %}
+                                </td>
+                            </tr>
+                            {% endfor %}
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+            {% endif %}
+        </div>
+        {% endif %}
+    </div>
+
+    <!-- Report Actions -->
+    <div class="report-actions" style="animation: slideInUp 0.8s ease-out;">
+        <button class="action-btn primary" onclick="printDiv('reportContent')">
+            <i class="fas fa-print"></i>
+            <span>Print Report</span>
+        </button>
+        <button class="action-btn secondary" onclick="exportToExcel()">
+            <i class="fas fa-file-excel"></i>
+            <span>Export to Excel</span>
+        </button>
+        <a href="?", class="action-btn tertiary">
+            <i class="fas fa-redo"></i>
+            <span>New Report</span>
+        </a>
+    </div>
+    {% else %}
+    <!-- Empty State -->
+    <div class="empty-state">
+        <div class="empty-icon">
+            <i class="fas fa-chart-bar"></i>
+        </div>
+        <h3 class="empty-title">No Report Generated</h3>
+        <p class="empty-message">Select your report parameters above to generate attendance analytics.</p>
+    </div>
+    {% endif %}
+
+</div>
+
+<script>
+    function toggleFields() {
+        const reportType = document.querySelector('select[name="report_type"]').value;
+        const studentField = document.getElementById('studentField');
+        const classField = document.getElementById('classField');
+        
+        if (reportType === 'student') {
+            studentField.style.display = 'block';
+            classField.style.display = 'none';
+        } else if (reportType === 'class') {
+            studentField.style.display = 'none';
+            classField.style.display = 'block';
+        } else {
+            studentField.style.display = 'none';
+            classField.style.display = 'none';
+        }
+    }
+    
+    function exportToExcel() {
+        alert('Excel export functionality would be implemented here.');
+    }
+    
+    {% if report_data and report_type == 'student' %}
+    // Chart for student attendance
+    const ctx = document.getElementById('attendanceChart');
+    if (ctx) {
+        const attendanceChart = new Chart(ctx.getContext('2d'), {
+            type: 'bar',
+            data: {
+                labels: ['Week 1', 'Week 2', 'Week 3', 'Week 4'],
+                datasets: [{
+                    label: 'Present Days',
+                    data: [5, 4, 5, 4],
+                    backgroundColor: 'rgba(28, 200, 138, 0.8)',
+                    borderColor: '#1cc88a',
+                    borderWidth: 2,
+                    borderRadius: 8
+                }, {
+                    label: 'Absent Days',
+                    data: [0, 1, 0, 1],
+                    backgroundColor: 'rgba(231, 76, 60, 0.8)',
+                    borderColor: '#e74c3c',
+                    borderWidth: 2,
+                    borderRadius: 8
+                }]
+            },
+            options: {
+                responsive: true,
+                maintainAspectRatio: false,
+                plugins: {
+                    legend: {
+                        position: 'top',
+                        labels: {
+                            font: { size: 12, weight: 'bold' },
+                            padding: 15,
+                            usePointStyle: true
+                        }
+                    }
+                },
+                scales: {
+                    y: {
+                        beginAtZero: true,
+                        max: 5,
+                        ticks: { stepSize: 1 }
+                    },
+                    x: {
+                        grid: { display: false }
+                    }
+                }
+            }
+        });
+    }
+    {% endif %}
+    
+    document.addEventListener('DOMContentLoaded', function() {
+        toggleFields();
+    });
+</script>
+
+<style>
+    /* ============= Attendance Report Container ============= */
+    .attendance-report-container {
+        max-width: 1400px;
+        margin: 0 auto;
+        padding: 20px;
+        background: linear-gradient(135deg, #f5f7fa 0%, #e9ecef 100%);
+        min-height: 100vh;
+    }
+
+    /* Dark mode support */
+    [data-bs-theme="dark"] .attendance-report-container {
+        background: linear-gradient(135deg, #1a1d23 0%, #2d3142 100%);
+    }
+
+    /* ============= Hero Section ============= */
+    .hero-section {
+        text-align: center;
+        margin-bottom: 40px;
+        padding: 40px 20px;
+        background: linear-gradient(135deg, #4e73df 0%, #1cc88a 100%);
+        border-radius: 20px;
+        color: white;
+        position: relative;
+        overflow: hidden;
+        animation: slideInDown 0.6s ease-out;
+    }
+
+    .hero-section::before {
+        content: '';
+        position: absolute;
+        top: -50%;
+        right: -10%;
+        width: 400px;
+        height: 400px;
+        background: rgba(255, 255, 255, 0.1);
+        border-radius: 50%;
+    }
+
+    .attendance-badge {
+        display: inline-block;
+        padding: 8px 20px;
+        background: rgba(255, 255, 255, 0.25);
+        border-radius: 50px;
+        font-size: 12px;
+        font-weight: 700;
+        letter-spacing: 1.5px;
+        margin-bottom: 15px;
+        backdrop-filter: blur(10px);
+        animation: slideInDown 0.7s ease-out;
+    }
+
+    .attendance-title {
+        font-size: 42px;
+        font-weight: 800;
+        margin-bottom: 10px;
+        animation: slideInDown 0.8s ease-out;
+    }
+
+    .attendance-subtitle {
+        font-size: 16px;
+        opacity: 0.9;
+        margin: 0;
+        animation: slideInDown 0.9s ease-out;
+    }
+
+    /* ============= Filter Card ============= */
+    .filter-card {
+        background: rgba(255, 255, 255, 0.95);
+        backdrop-filter: blur(10px);
+        border-radius: 20px;
+        padding: 30px;
+        margin-bottom: 40px;
+        box-shadow: 0 8px 32px rgba(0, 0, 0, 0.1);
+        border: 1px solid rgba(255, 255, 255, 0.3);
+        animation: slideInUp 0.4s ease-out;
+    }
+
+    [data-bs-theme="dark"] .filter-card {
+        background: rgba(45, 49, 66, 0.95);
+        border-color: rgba(255, 255, 255, 0.1);
+    }
+
+    .filter-title {
+        font-size: 18px;
+        font-weight: 700;
+        margin-bottom: 25px;
+        color: #2e3440;
+        display: flex;
+        align-items: center;
+        gap: 10px;
+    }
+
+    [data-bs-theme="dark"] .filter-title {
+        color: #e0e0e0;
+    }
+
+    .filter-grid {
+        display: grid;
+        grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+        gap: 20px;
+        margin-bottom: 20px;
+    }
+
+    .filter-group {
+        display: flex;
+        flex-direction: column;
+    }
+
+    .filter-label {
+        font-size: 13px;
+        font-weight: 600;
+        margin-bottom: 8px;
+        color: #495057;
+        text-transform: uppercase;
+        letter-spacing: 0.5px;
+    }
+
+    [data-bs-theme="dark"] .filter-label {
+        color: #b0b0b0;
+    }
+
+    .filter-select {
+        padding: 12px 15px;
+        border: 2px solid #e0e0e0;
+        border-radius: 12px;
+        font-size: 14px;
+        background: white;
+        color: #2e3440;
+        transition: all 0.3s ease;
+        font-weight: 500;
+    }
+
+    [data-bs-theme="dark"] .filter-select {
+        background: #1a1d23;
+        border-color: #4a5568;
+        color: #e0e0e0;
+    }
+
+    .filter-select:focus {
+        outline: none;
+        border-color: #1cc88a;
+        box-shadow: 0 0 0 3px rgba(28, 200, 138, 0.1);
+    }
+
+    .filter-actions {
+        display: flex;
+        gap: 12px;
+        flex-wrap: wrap;
+    }
+
+    .filter-btn {
+        padding: 12px 28px;
+        border: none;
+        border-radius: 12px;
+        font-weight: 600;
+        cursor: pointer;
+        transition: all 0.3s ease;
+        display: flex;
+        align-items: center;
+        gap: 8px;
+        font-size: 14px;
+    }
+
+    .filter-btn.primary {
+        background: linear-gradient(135deg, #4e73df 0%, #224abe 100%);
+        color: white;
+    }
+
+    .filter-btn.primary:hover {
+        transform: translateY(-2px);
+        box-shadow: 0 8px 24px rgba(78, 115, 223, 0.3);
+    }
+
+    .filter-btn.secondary {
+        background: #f0f0f0;
+        color: #2e3440;
+        border: 2px solid #e0e0e0;
+    }
+
+    [data-bs-theme="dark"] .filter-btn.secondary {
+        background: #2d3142;
+        color: #e0e0e0;
+        border-color: #4a5568;
+    }
+
+    .filter-btn.secondary:hover {
+        background: #e8e8e8;
+    }
+
+    [data-bs-theme="dark"] .filter-btn.secondary:hover {
+        background: #3a3f52;
+    }
+
+    /* ============= Report Content ============= */
+    .report-content-wrapper {
+        background: white;
+        border-radius: 20px;
+        padding: 40px;
+        box-shadow: 0 8px 32px rgba(0, 0, 0, 0.1);
+        margin-bottom: 30px;
+    }
+
+    [data-bs-theme="dark"] .report-content-wrapper {
+        background: #2d3142;
+        color: #e0e0e0;
+    }
+
+    /* Report Header */
+    .report-header {
+        border-bottom: 3px solid #f0f0f0;
+        padding-bottom: 20px;
+        margin-bottom: 30px;
+        animation: slideInUp 0.3s ease-out;
+    }
+
+    [data-bs-theme="dark"] .report-header {
+        border-bottom-color: #4a5568;
+    }
+
+    .report-title {
+        font-size: 28px;
+        font-weight: 800;
+        color: #2e3440;
+        margin-bottom: 15px;
+        display: flex;
+        align-items: center;
+        gap: 12px;
+    }
+
+    [data-bs-theme="dark"] .report-title {
+        color: #e0e0e0;
+    }
+
+    .report-title i {
+        color: #4e73df;
+    }
+
+    .report-meta {
+        display: flex;
+        gap: 15px;
+        flex-wrap: wrap;
+    }
+
+    .meta-badge {
+        padding: 8px 16px;
+        background: #f0f0f0;
+        border-radius: 8px;
+        font-size: 13px;
+        font-weight: 600;
+        display: flex;
+        align-items: center;
+        gap: 6px;
+        color: #495057;
+    }
+
+    [data-bs-theme="dark"] .meta-badge {
+        background: #3a3f52;
+        color: #b0b0b0;
+    }
+
+    .meta-badge i {
+        color: #4e73df;
+    }
+
+    /* ============= Info Cards ============= */
+    .info-card {
+        display: flex;
+        align-items: center;
+        gap: 20px;
+        padding: 25px;
+        background: linear-gradient(135deg, #f5f7fa 0%, #e9ecef 100%);
+        border-radius: 16px;
+        margin-bottom: 30px;
+        border-left: 5px solid #4e73df;
+    }
+
+    [data-bs-theme="dark"] .info-card {
+        background: linear-gradient(135deg, #3a3f52 0%, #2d3142 100%);
+        border-left-color: #7fb3ff;
+    }
+
+    .card-icon {
+        width: 70px;
+        height: 70px;
+        background: linear-gradient(135deg, #4e73df 0%, #224abe 100%);
+        border-radius: 16px;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        color: white;
+        font-size: 32px;
+        flex-shrink: 0;
+    }
+
+    .info-card.class-card .card-icon {
+        background: linear-gradient(135deg, #1cc88a 0%, #13a86b 100%);
+    }
+
+    .card-content {
+        flex: 1;
+    }
+
+    .card-title {
+        font-size: 20px;
+        font-weight: 800;
+        margin: 0;
+        color: #2e3440;
+    }
+
+    [data-bs-theme="dark"] .card-title {
+        color: #e0e0e0;
+    }
+
+    .card-subtitle {
+        font-size: 13px;
+        font-weight: 600;
+        color: #7fb3ff;
+        margin: 3px 0;
+    }
+
+    .card-info {
+        font-size: 13px;
+        color: #6c757d;
+        margin: 0;
+        display: flex;
+        align-items: center;
+        gap: 6px;
+    }
+
+    [data-bs-theme="dark"] .card-info {
+        color: #b0b0b0;
+    }
+
+    /* ============= Stats Grid ============= */
+    .stats-grid {
+        display: grid;
+        grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+        gap: 20px;
+        margin-bottom: 30px;
+    }
+
+    .stat-card {
+        display: flex;
+        align-items: center;
+        gap: 15px;
+        padding: 20px;
+        background: #f8f9fa;
+        border-radius: 16px;
+        border-left: 4px solid #4e73df;
+        transition: all 0.3s ease;
+    }
+
+    [data-bs-theme="dark"] .stat-card {
+        background: #3a3f52;
+        border-left-color: #7fb3ff;
+    }
+
+    .stat-card:hover {
+        transform: translateY(-4px);
+        box-shadow: 0 8px 24px rgba(0, 0, 0, 0.1);
+    }
+
+    .stat-card.present-stat {
+        border-left-color: #1cc88a;
+    }
+
+    .stat-card.absent-stat {
+        border-left-color: #e74c3c;
+    }
+
+    .stat-card.rate-stat {
+        border-left-color: #f6c23e;
+    }
+
+    .stat-card.summary-stat {
+        border-left-color: #00d9a3;
+    }
+
+    .stat-card.total-stat {
+        border-left-color: #4e73df;
+    }
+
+    .stat-card.avg-stat {
+        border-left-color: #1cc88a;
+    }
+
+    .stat-card.warn-stat {
+        border-left-color: #f6c23e;
+    }
+
+    .stat-card.critical-stat {
+        border-left-color: #e74c3c;
+    }
+
+    .stat-card.working-stat {
+        border-left-color: #7fb3ff;
+    }
+
+    .stat-card.concern-stat {
+        border-left-color: #ff6b6b;
+    }
+
+    .stat-icon {
+        width: 45px;
+        height: 45px;
+        border-radius: 12px;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        font-size: 20px;
+        flex-shrink: 0;
+    }
+
+    .stat-card.present-stat .stat-icon {
+        background: rgba(28, 200, 138, 0.1);
+        color: #1cc88a;
+    }
+
+    .stat-card.absent-stat .stat-icon {
+        background: rgba(231, 76, 60, 0.1);
+        color: #e74c3c;
+    }
+
+    .stat-card.rate-stat .stat-icon {
+        background: rgba(246, 194, 62, 0.1);
+        color: #f6c23e;
+    }
+
+    .stat-card.summary-stat .stat-icon {
+        background: rgba(0, 217, 163, 0.1);
+        color: #00d9a3;
+    }
+
+    .stat-card.total-stat .stat-icon {
+        background: rgba(78, 115, 223, 0.1);
+        color: #4e73df;
+    }
+
+    .stat-card.avg-stat .stat-icon {
+        background: rgba(28, 200, 138, 0.1);
+        color: #1cc88a;
+    }
+
+    .stat-card.warn-stat .stat-icon {
+        background: rgba(246, 194, 62, 0.1);
+        color: #f6c23e;
+    }
+
+    .stat-card.critical-stat .stat-icon {
+        background: rgba(231, 76, 60, 0.1);
+        color: #e74c3c;
+    }
+
+    .stat-card.working-stat .stat-icon {
+        background: rgba(127, 179, 255, 0.1);
+        color: #7fb3ff;
+    }
+
+    .stat-card.concern-stat .stat-icon {
+        background: rgba(255, 107, 107, 0.1);
+        color: #ff6b6b;
+    }
+
+    .stat-content {
+        flex: 1;
+    }
+
+    .stat-value {
+        font-size: 28px;
+        font-weight: 800;
+        color: #2e3440;
+        line-height: 1;
+        margin-bottom: 4px;
+    }
+
+    [data-bs-theme="dark"] .stat-value {
+        color: #e0e0e0;
+    }
+
+    .stat-label {
+        font-size: 12px;
+        font-weight: 600;
+        color: #6c757d;
+        text-transform: uppercase;
+        letter-spacing: 0.5px;
+    }
+
+    [data-bs-theme="dark"] .stat-label {
+        color: #b0b0b0;
+    }
+
+    /* ============= Progress Section ============= */
+    .progress-section {
+        padding: 25px;
+        background: linear-gradient(135deg, #f5f7fa 0%, #e9ecef 100%);
+        border-radius: 16px;
+        margin-bottom: 30px;
+    }
+
+    [data-bs-theme="dark"] .progress-section {
+        background: linear-gradient(135deg, #3a3f52 0%, #2d3142 100%);
+    }
+
+    .section-title {
+        font-size: 16px;
+        font-weight: 700;
+        color: #2e3440;
+        margin-bottom: 20px;
+        display: flex;
+        align-items: center;
+        gap: 10px;
+    }
+
+    [data-bs-theme="dark"] .section-title {
+        color: #e0e0e0;
+    }
+
+    .section-title i {
+        color: #4e73df;
+    }
+
+    .attendance-progress {
+        display: flex;
+        flex-direction: column;
+        gap: 15px;
+    }
+
+    .progress-bar-container {
+        width: 100%;
+        height: 40px;
+        background: white;
+        border-radius: 12px;
+        overflow: hidden;
+        position: relative;
+    }
+
+    [data-bs-theme="dark"] .progress-bar-container {
+        background: #1a1d23;
+    }
+
+    .progress-bar-fill {
+        height: 100%;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        color: white;
+        font-weight: 700;
+        position: relative;
+        transition: width 0.5s ease;
+    }
+
+    .progress-details {
+        display: flex;
+        gap: 20px;
+        flex-wrap: wrap;
+    }
+
+    .progress-item {
+        display: flex;
+        align-items: center;
+        gap: 8px;
+        font-weight: 600;
+        color: #2e3440;
+    }
+
+    [data-bs-theme="dark"] .progress-item {
+        color: #e0e0e0;
+    }
+
+    .progress-color {
+        width: 12px;
+        height: 12px;
+        border-radius: 4px;
+    }
+
+    .progress-color.present {
+        background: #1cc88a;
+    }
+
+    .progress-color.absent {
+        background: #e74c3c;
+    }
+
+    /* ============= Table Section ============= */
+    .table-section {
+        margin-bottom: 30px;
+    }
+
+    .table-card {
+        background: #f8f9fa;
+        border-radius: 16px;
+        overflow: hidden;
+        border: 1px solid #e0e0e0;
+    }
+
+    [data-bs-theme="dark"] .table-card {
+        background: #1a1d23;
+        border-color: #4a5568;
+    }
+
+    .attendance-table {
+        width: 100%;
+        border-collapse: collapse;
+        margin: 0;
+    }
+
+    .attendance-table thead {
+        background: linear-gradient(135deg, #4e73df 0%, #224abe 100%);
+        color: white;
+    }
+
+    .attendance-table thead th {
+        padding: 16px;
+        font-weight: 700;
+        font-size: 13px;
+        text-transform: uppercase;
+        letter-spacing: 0.5px;
+        border: none;
+    }
+
+    .attendance-table tbody tr {
+        border-bottom: 1px solid #e0e0e0;
+        transition: all 0.3s ease;
+    }
+
+    [data-bs-theme="dark"] .attendance-table tbody tr {
+        border-bottom-color: #4a5568;
+    }
+
+    .attendance-table tbody tr:hover {
+        background: #f0f0f0;
+    }
+
+    [data-bs-theme="dark"] .attendance-table tbody tr:hover {
+        background: #3a3f52;
+    }
+
+    .attendance-table td {
+        padding: 14px 16px;
+        color: #2e3440;
+        font-size: 14px;
+    }
+
+    [data-bs-theme="dark"] .attendance-table td {
+        color: #e0e0e0;
+    }
+
+    .attendance-table tfoot tr {
+        background: linear-gradient(135deg, #f0f0f0 0%, #e8e8e8 100%);
+        font-weight: 700;
+    }
+
+    [data-bs-theme="dark"] .attendance-table tfoot tr {
+        background: linear-gradient(135deg, #3a3f52 0%, #2d3142 100%);
+    }
+
+    .attendance-table tfoot th {
+        padding: 14px 16px;
+        color: #2e3440;
+    }
+
+    [data-bs-theme="dark"] .attendance-table tfoot th {
+        color: #e0e0e0;
+    }
+
+    /* ============= Status Badges ============= */
+    .status-badge {
+        display: inline-flex;
+        align-items: center;
+        gap: 6px;
+        padding: 6px 12px;
+        border-radius: 8px;
+        font-size: 12px;
+        font-weight: 700;
+    }
+
+    .status-badge.present-badge {
+        background: rgba(28, 200, 138, 0.15);
+        color: #1cc88a;
+    }
+
+    .status-badge.absent-badge {
+        background: rgba(231, 76, 60, 0.15);
+        color: #e74c3c;
+    }
+
+    .status-badge.late-badge {
+        background: rgba(246, 194, 62, 0.15);
+        color: #f6c23e;
+    }
+
+    .status-badge.good-badge {
+        background: rgba(28, 200, 138, 0.15);
+        color: #1cc88a;
+    }
+
+    .status-badge.avg-badge {
+        background: rgba(246, 194, 62, 0.15);
+        color: #f6c23e;
+    }
+
+    .status-badge.poor-badge {
+        background: rgba(231, 76, 60, 0.15);
+        color: #e74c3c;
+    }
+
+    .record-badge {
+        display: inline-flex;
+        align-items: center;
+        gap: 4px;
+        padding: 4px 10px;
+        border-radius: 6px;
+        font-size: 12px;
+        font-weight: 700;
+    }
+
+    .record-badge.present-badge {
+        background: rgba(28, 200, 138, 0.15);
+        color: #1cc88a;
+    }
+
+    .record-badge.absent-badge {
+        background: rgba(231, 76, 60, 0.15);
+        color: #e74c3c;
+    }
+
+    .record-badge.late-badge {
+        background: rgba(246, 194, 62, 0.15);
+        color: #f6c23e;
+    }
+
+    .warn-badge {
+        display: inline-block;
+        padding: 4px 10px;
+        background: rgba(246, 194, 62, 0.15);
+        color: #f6c23e;
+        border-radius: 6px;
+        font-weight: 700;
+        font-size: 12px;
+    }
+
+    .critical-badge {
+        display: inline-block;
+        padding: 4px 10px;
+        background: rgba(231, 76, 60, 0.15);
+        color: #e74c3c;
+        border-radius: 6px;
+        font-weight: 700;
+        font-size: 12px;
+    }
+
+    /* ============= Mini Progress Bar ============= */
+    .mini-progress {
+        height: 8px;
+        background: #e0e0e0;
+        border-radius: 4px;
+        overflow: hidden;
+        margin-bottom: 4px;
+    }
+
+    [data-bs-theme="dark"] .mini-progress {
+        background: #4a5568;
+    }
+
+    .mini-progress-bar {
+        height: 100%;
+        border-radius: 4px;
+        transition: width 0.5s ease;
+    }
+
+    /* ============= Period Header ============= */
+    .period-header {
+        padding: 25px;
+        background: linear-gradient(135deg, #f5f7fa 0%, #e9ecef 100%);
+        border-radius: 16px;
+        margin-bottom: 30px;
+    }
+
+    [data-bs-theme="dark"] .period-header {
+        background: linear-gradient(135deg, #3a3f52 0%, #2d3142 100%);
+    }
+
+    .period-header h3 {
+        font-size: 18px;
+        font-weight: 700;
+        color: #2e3440;
+        margin: 0;
+        display: flex;
+        align-items: center;
+        gap: 12px;
+    }
+
+    [data-bs-theme="dark"] .period-header h3 {
+        color: #e0e0e0;
+    }
+
+    /* ============= Chart Section ============= */
+    .chart-section {
+        margin-bottom: 30px;
+    }
+
+    .chart-container {
+        background: #f8f9fa;
+        border-radius: 16px;
+        padding: 25px;
+        border: 1px solid #e0e0e0;
+        height: 350px;
+        position: relative;
+    }
+
+    [data-bs-theme="dark"] .chart-container {
+        background: #1a1d23;
+        border-color: #4a5568;
+    }
+
+    /* ============= Report Actions ============= */
+    .report-actions {
+        display: flex;
+        gap: 12px;
+        flex-wrap: wrap;
+        justify-content: center;
+        padding-top: 30px;
+    }
+
+    .action-btn {
+        padding: 14px 28px;
+        border: none;
+        border-radius: 12px;
+        font-weight: 600;
+        cursor: pointer;
+        transition: all 0.3s ease;
+        display: flex;
+        align-items: center;
+        gap: 10px;
+        font-size: 14px;
+        text-decoration: none;
+        white-space: nowrap;
+    }
+
+    .action-btn.primary {
+        background: linear-gradient(135deg, #4e73df 0%, #224abe 100%);
+        color: white;
+    }
+
+    .action-btn.primary:hover {
+        transform: translateY(-2px);
+        box-shadow: 0 8px 24px rgba(78, 115, 223, 0.3);
+        text-decoration: none;
+    }
+
+    .action-btn.secondary {
+        background: linear-gradient(135deg, #1cc88a 0%, #13a86b 100%);
+        color: white;
+    }
+
+    .action-btn.secondary:hover {
+        transform: translateY(-2px);
+        box-shadow: 0 8px 24px rgba(28, 200, 138, 0.3);
+        text-decoration: none;
+    }
+
+    .action-btn.tertiary {
+        background: #f0f0f0;
+        color: #2e3440;
+        border: 2px solid #e0e0e0;
+    }
+
+    [data-bs-theme="dark"] .action-btn.tertiary {
+        background: #2d3142;
+        color: #e0e0e0;
+        border-color: #4a5568;
+    }
+
+    .action-btn.tertiary:hover {
+        background: #e8e8e8;
+        text-decoration: none;
+    }
+
+    [data-bs-theme="dark"] .action-btn.tertiary:hover {
+        background: #3a3f52;
+        text-decoration: none;
+    }
+
+    /* ============= Empty State ============= */
+    .empty-state {
+        text-align: center;
+        padding: 60px 20px;
+        background: white;
+        border-radius: 20px;
+        margin-bottom: 30px;
+        animation: slideInUp 0.4s ease-out;
+    }
+
+    [data-bs-theme="dark"] .empty-state {
+        background: #2d3142;
+    }
+
+    .empty-icon {
+        font-size: 64px;
+        color: #4e73df;
+        margin-bottom: 20px;
+        opacity: 0.5;
+    }
+
+    .empty-title {
+        font-size: 24px;
+        font-weight: 700;
+        color: #2e3440;
+        margin-bottom: 12px;
+    }
+
+    [data-bs-theme="dark"] .empty-title {
+        color: #e0e0e0;
+    }
+
+    .empty-message {
+        font-size: 14px;
+        color: #6c757d;
+        margin: 0;
+    }
+
+    [data-bs-theme="dark"] .empty-message {
+        color: #b0b0b0;
+    }
+
+    /* ============= Animations ============= */
+    @keyframes slideInDown {
+        from {
+            opacity: 0;
+            transform: translateY(-30px);
+        }
+        to {
+            opacity: 1;
+            transform: translateY(0);
+        }
+    }
+
+    @keyframes slideInUp {
+        from {
+            opacity: 0;
+            transform: translateY(30px);
+        }
+        to {
+            opacity: 1;
+            transform: translateY(0);
+        }
+    }
+
+    /* ============= Responsive Design ============= */
+    @media (max-width: 1024px) {
+        .attendance-report-container {
+            padding: 15px;
+        }
+
+        .hero-section {
+            padding: 30px 15px;
+        }
+
+        .attendance-title {
+            font-size: 32px;
+        }
+
+        .filter-card {
+            padding: 20px;
+        }
+
+        .report-content-wrapper {
+            padding: 25px;
+        }
+
+        .stats-grid {
+            grid-template-columns: repeat(2, 1fr);
+        }
+
+        .attendance-table {
+            font-size: 13px;
+        }
+
+        .attendance-table td,
+        .attendance-table th {
+            padding: 10px 12px;
+        }
+    }
+
+    @media (max-width: 768px) {
+        .attendance-report-container {
+            padding: 10px;
+        }
+
+        .hero-section {
+            padding: 25px 15px;
+            border-radius: 16px;
+        }
+
+        .attendance-title {
+            font-size: 24px;
+        }
+
+        .attendance-subtitle {
+            font-size: 14px;
+        }
+
+        .filter-grid {
+            grid-template-columns: 1fr;
+            gap: 15px;
+        }
+
+        .filter-actions {
+            flex-direction: column;
+        }
+
+        .filter-btn {
+            width: 100%;
+            justify-content: center;
+        }
+
+        .report-content-wrapper {
+            padding: 20px;
+            border-radius: 16px;
+        }
+
+        .report-title {
+            font-size: 20px;
+        }
+
+        .report-meta {
+            flex-direction: column;
+            gap: 10px;
+        }
+
+        .meta-badge {
+            width: 100%;
+        }
+
+        .info-card {
+            flex-direction: column;
+            text-align: center;
+        }
+
+        .card-icon {
+            width: 60px;
+            height: 60px;
+            font-size: 28px;
+        }
+
+        .stats-grid {
+            grid-template-columns: 1fr;
+        }
+
+        .attendance-table {
+            font-size: 12px;
+            display: block;
+            overflow-x: auto;
+        }
+
+        .attendance-table td,
+        .attendance-table th {
+            padding: 8px 10px;
+            white-space: nowrap;
+        }
+
+        .section-title {
+            font-size: 14px;
+        }
+
+        .progress-details {
+            flex-direction: column;
+            gap: 10px;
+        }
+
+        .report-actions {
+            flex-direction: column;
+        }
+
+        .action-btn {
+            width: 100%;
+            justify-content: center;
+        }
+
+        .chart-container {
+            height: 300px;
+        }
+    }
+
+    @media (max-width: 480px) {
+        .attendance-badge {
+            font-size: 10px;
+            padding: 6px 12px;
+        }
+
+        .attendance-title {
+            font-size: 20px;
+            margin-bottom: 8px;
+        }
+
+        .filter-label {
+            font-size: 12px;
+        }
+
+        .filter-select {
+            font-size: 13px;
+            padding: 10px 12px;
+        }
+
+        .card-title {
+            font-size: 18px;
+        }
+
+        .stat-value {
+            font-size: 24px;
+        }
+
+        .stat-label {
+            font-size: 11px;
+        }
+
+        .report-title {
+            font-size: 18px;
+        }
+
+        .meta-badge {
+            font-size: 12px;
+            padding: 6px 12px;
+        }
+
+        .table-card {
+            border-radius: 12px;
+        }
+
+        .attendance-table {
+            font-size: 11px;
+        }
+
+        .attendance-table td,
+        .attendance-table th {
+            padding: 6px 8px;
+        }
+
+        .chart-container {
+            height: 250px;
+            padding: 15px;
+        }
+    }
+
+    /* ============= Print Optimization ============= */
+    @media print {
+        .attendance-report-container {
+            background: white;
+        }
+
+        .filter-card,
+        .report-actions,
+        .page-title,
+        .page-actions {
+            display: none !important;
+        }
+
+        .report-content-wrapper {
+            box-shadow: none;
+            border: 1px solid #ddd;
+        }
+
+        .attendance-table {
+            page-break-inside: avoid;
+        }
+
+        .hero-section {
+            break-after: avoid;
+        }
+
+        body {
+            background: white;
+            color: black;
+        }
+
+        .attendance-title,
+        .report-title,
+        .section-title,
+        .card-title,
+        .stat-value {
+            color: black !important;
+        }
+
+        .stat-card,
+        .info-card,
+        .progress-section {
+            page-break-inside: avoid;
+        }
+    }
+</style>
+{% endblock %}

@@ -1,0 +1,628 @@
+{% extends 'base.html' %}
+
+{% block title %}Student Dashboard{% endblock %}
+{% block page_title %}Student Dashboard{% endblock %}
+
+{% block content %}
+<style>
+    /* Modern Glass-morphism Theme */
+    .welcome-banner {
+        background: linear-gradient(135deg, rgba(255, 255, 255, 0.08) 0%, rgba(255, 255, 255, 0.03) 100%);
+        border: 1px solid rgba(78, 115, 223, 0.15);
+        border-radius: 20px;
+        backdrop-filter: blur(10px);
+        padding: 3rem 2rem !important;
+        margin-bottom: 2.5rem;
+        box-shadow: 0 8px 32px rgba(0, 0, 0, 0.08);
+        animation: slideDown 0.6s ease;
+        position: relative;
+        overflow: hidden;
+    }
+
+    @keyframes slideDown {
+        from { opacity: 0; transform: translateY(-20px); }
+        to { opacity: 1; transform: translateY(0); }
+    }
+
+    .welcome-banner .text-gradient {
+        color: #4e73df;
+        font-weight: 700;
+        letter-spacing: -0.02em;
+    }
+
+    .welcome-banner .text-muted-light {
+        color: rgba(0, 0, 0, 0.6);
+    }
+
+    [data-bs-theme="dark"] .welcome-banner .text-muted-light {
+        color: rgba(255, 255, 255, 0.6);
+    }
+
+    /* Profile Card */
+    .glass-card {
+        background: linear-gradient(135deg, rgba(255, 255, 255, 0.06) 0%, rgba(255, 255, 255, 0.02) 100%);
+        border: 1px solid rgba(78, 115, 223, 0.12) !important;
+        border-radius: 16px !important;
+        backdrop-filter: blur(10px);
+        transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+        overflow: hidden;
+        box-shadow: 0 8px 32px rgba(0, 0, 0, 0.08);
+        animation: popIn 0.5s cubic-bezier(0.34, 1.56, 0.64, 1) forwards;
+        opacity: 0;
+    }
+
+    @keyframes popIn {
+        0% { opacity: 0; transform: scale(0.95); }
+        100% { opacity: 1; transform: scale(1); }
+    }
+
+    .glass-card:nth-child(1) { animation-delay: 0.1s; }
+    .glass-card:nth-child(2) { animation-delay: 0.15s; }
+    .glass-card:nth-child(3) { animation-delay: 0.2s; }
+
+    .glass-card:hover {
+        transform: translateY(-12px);
+        border-color: rgba(78, 115, 223, 0.3) !important;
+        box-shadow: 0 25px 50px rgba(78, 115, 223, 0.2), inset 0 1px 0 rgba(255, 255, 255, 0.1);
+    }
+
+    .glass-card .card-header {
+        background: transparent !important;
+        border-bottom: 1px solid rgba(78, 115, 223, 0.08) !important;
+    }
+
+    .glass-card .card-header h5 {
+        color: #4e73df;
+        font-weight: 700;
+        text-transform: uppercase;
+        letter-spacing: 0.05em;
+        font-size: 0.95rem;
+    }
+
+    /* Avatar Styles */
+    .student-avatar {
+        width: 120px;
+        height: 120px;
+        border-radius: 14px;
+        border: 2px solid #4e73df;
+        object-fit: cover;
+        box-shadow: 0 4px 15px rgba(78, 115, 223, 0.3);
+        animation: fadeInScale 0.6s ease;
+    }
+
+    @keyframes fadeInScale {
+        from { opacity: 0; transform: scale(0.9); }
+        to { opacity: 1; transform: scale(1); }
+    }
+
+    .student-avatar-placeholder {
+        width: 120px;
+        height: 120px;
+        border-radius: 14px;
+        background: linear-gradient(135deg, #4e73df, #1cc88a);
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        color: white;
+        font-size: 3rem;
+        border: 2px solid #4e73df;
+        box-shadow: 0 4px 15px rgba(78, 115, 223, 0.3);
+        animation: fadeInScale 0.6s ease;
+    }
+
+    .student-name {
+        font-weight: 700;
+        font-size: 1.35rem;
+        color: #4e73df;
+        margin-bottom: 0.25rem;
+    }
+
+    [data-bs-theme="dark"] .student-name {
+        color: #5a8eff;
+    }
+
+    .student-admission {
+        font-size: 0.85rem;
+        color: rgba(0, 0, 0, 0.5);
+        font-weight: 500;
+        margin-bottom: 1rem;
+    }
+
+    [data-bs-theme="dark"] .student-admission {
+        color: rgba(255, 255, 255, 0.6);
+    }
+
+    /* Status Badge */
+    .status-badge-active {
+        background: linear-gradient(135deg, #1cc88a, #0da860);
+        color: white;
+        padding: 0.5rem 1.2rem;
+        border-radius: 50px;
+        font-size: 0.75rem;
+        font-weight: 700;
+        text-transform: uppercase;
+        box-shadow: 0 4px 12px rgba(28, 200, 138, 0.3);
+        display: inline-block;
+        margin-bottom: 1rem;
+    }
+
+    /* Stat Cards */
+    .stat-card {
+        background: linear-gradient(135deg, rgba(78, 115, 223, 0.08) 0%, rgba(28, 200, 138, 0.04) 100%);
+        border: 1px solid rgba(78, 115, 223, 0.15) !important;
+        border-radius: 16px !important;
+        padding: 2rem !important;
+        text-align: center;
+        backdrop-filter: blur(10px);
+        transition: all 0.3s ease;
+        position: relative;
+        overflow: hidden;
+        animation: slideUp 0.6s ease forwards;
+        opacity: 0;
+    }
+
+    @keyframes slideUp {
+        from { opacity: 0; transform: translateY(20px); }
+        to { opacity: 1; transform: translateY(0); }
+    }
+
+    .stat-card:nth-child(1) { animation-delay: 0.2s; }
+    .stat-card:nth-child(2) { animation-delay: 0.3s; }
+
+    .stat-card:hover {
+        transform: translateY(-10px);
+        border-color: rgba(78, 115, 223, 0.3) !important;
+        box-shadow: 0 20px 50px rgba(78, 115, 223, 0.2);
+    }
+
+    .stat-card .text-gradient-primary,
+    .stat-card .text-gradient-success {
+        color: #4e73df !important;
+    }
+
+    .stat-card h3 {
+        font-weight: 700;
+        font-size: 2.5rem;
+    }
+
+    /* Data Table */
+    .table-responsive {
+        background: transparent;
+    }
+
+    .table {
+        background: transparent;
+        margin-bottom: 0;
+    }
+
+    .table thead {
+        background: rgba(78, 115, 223, 0.08);
+        border-bottom: 2px solid rgba(78, 115, 223, 0.2);
+    }
+
+    .table thead th {
+        color: #4e73df;
+        font-weight: 700;
+        text-transform: uppercase;
+        letter-spacing: 0.05em;
+        font-size: 0.8rem;
+        border: none;
+        padding: 1rem;
+    }
+
+    .table tbody tr {
+        border-bottom: 1px solid rgba(78, 115, 223, 0.08);
+        transition: all 0.3s ease;
+    }
+
+    .table tbody tr:hover {
+        background: rgba(78, 115, 223, 0.05);
+    }
+
+    .table tbody td {
+        padding: 1rem;
+        vertical-align: middle;
+        color: inherit;
+    }
+
+    /* Badge Styles */
+    .badge {
+        background: linear-gradient(135deg, rgba(78, 115, 223, 0.2), rgba(28, 200, 138, 0.1));
+        color: #4e73df;
+        padding: 0.35rem 0.8rem;
+        border-radius: 8px;
+        border: 1px solid rgba(78, 115, 223, 0.2);
+        font-weight: 600;
+        font-size: 0.8rem;
+    }
+
+    .badge.bg-success {
+        background: rgba(28, 200, 138, 0.15) !important;
+        color: #1cc88a !important;
+        border: 1px solid rgba(28, 200, 138, 0.3);
+    }
+
+    .badge.bg-danger {
+        background: rgba(248, 113, 113, 0.15) !important;
+        color: #f87171 !important;
+        border: 1px solid rgba(248, 113, 113, 0.3);
+    }
+
+    .badge.bg-warning {
+        background: rgba(251, 191, 36, 0.15) !important;
+        color: #fbbf24 !important;
+        border: 1px solid rgba(251, 191, 36, 0.3);
+    }
+
+    /* Button Styles */
+    .btn-glass {
+        background: linear-gradient(135deg, #4e73df, #1cc88a);
+        border: 1px solid rgba(78, 115, 223, 0.3);
+        color: white !important;
+        border-radius: 12px;
+        padding: 0.75rem 1.5rem;
+        font-weight: 600;
+        font-size: 0.9rem;
+        transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+        overflow: hidden;
+        position: relative;
+    }
+
+    .btn-glass:hover {
+        transform: translateY(-3px);
+        box-shadow: 0 15px 35px rgba(78, 115, 223, 0.3);
+        color: white !important;
+    }
+
+    .btn-glass::before {
+        content: '';
+        position: absolute;
+        top: 0;
+        left: -100%;
+        width: 100%;
+        height: 100%;
+        background: rgba(255, 255, 255, 0.1);
+        transition: left 0.5s ease;
+    }
+
+    .btn-glass:hover::before {
+        left: 100%;
+    }
+
+    /* List Group */
+    .list-group-item {
+        background: rgba(255, 255, 255, 0.02);
+        border: 1px solid rgba(78, 115, 223, 0.08);
+        transition: all 0.3s ease;
+    }
+
+    .list-group-item:hover {
+        background: rgba(78, 115, 223, 0.05);
+    }
+
+    /* Calendar Icon */
+    .calendar-icon {
+        background: linear-gradient(135deg, #4e73df, #1cc88a);
+        color: white !important;
+        border-radius: 12px;
+        min-width: 70px !important;
+        box-shadow: 0 4px 15px rgba(78, 115, 223, 0.3);
+    }
+
+    .calendar-icon .text-gradient-warning {
+        color: #fbbf24 !important;
+    }
+
+    /* Quick Action Button */
+    .quick-action-btn {
+        background: linear-gradient(135deg, rgba(78, 115, 223, 0.06) 0%, rgba(255, 255, 255, 0.02) 100%);
+        border: 1px solid rgba(78, 115, 223, 0.15);
+        border-radius: 12px;
+        transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+        position: relative;
+        overflow: hidden;
+        color: #4e73df;
+        text-decoration: none;
+    }
+
+    .quick-action-btn::before {
+        content: '';
+        position: absolute;
+        top: 0;
+        left: -100%;
+        width: 100%;
+        height: 100%;
+        background: rgba(78, 115, 223, 0.08);
+        transition: left 0.4s ease;
+        z-index: -1;
+    }
+
+    .quick-action-btn:hover::before {
+        left: 100%;
+    }
+
+    .quick-action-btn:hover {
+        transform: translateY(-6px);
+        border-color: rgba(78, 115, 223, 0.3);
+        box-shadow: 0 15px 35px rgba(78, 115, 223, 0.2);
+        color: #4e73df;
+    }
+
+    .quick-action-btn i {
+        color: #4e73df;
+    }
+
+    /* Empty State */
+    .empty-state {
+        text-align: center;
+        color: rgba(0, 0, 0, 0.5);
+        padding: 2rem;
+    }
+
+    [data-bs-theme="dark"] .empty-state {
+        color: rgba(255, 255, 255, 0.5);
+    }
+
+    /* Row Spacing */
+    .row {
+        margin-bottom: 1.5rem;
+    }
+
+    .mb-4 {
+        margin-bottom: 2.5rem !important;
+    }
+</style>
+
+<div class="row mb-4">
+    <div class="col-12">
+        <div class="welcome-banner p-4 p-md-5 position-relative overflow-hidden">
+            <div class="position-relative z-1">
+                <h2 class="fw-bold mb-1 display-6 text-gradient">Student Portal</h2>
+                <p class="mb-0 text-muted-light lead">My Academic Journey & Performance</p>
+            </div>
+        </div>
+    </div>
+</div>
+
+<div class="row g-4 mb-4">
+    <!-- Student Info Card -->
+    <div class="col-lg-4">
+        <div class="card glass-card border-0 mb-4">
+            <div class="card-header bg-transparent border-0 pt-4 px-4">
+                <h5 class="mb-0 fw-bold">My Profile</h5>
+            </div>
+            <div class="card-body text-center position-relative">
+                <div class="mb-4 position-relative d-inline-block">
+                {% if student.user.profile_picture %}
+                <img src="{{ student.user.profile_picture.url }}" alt="Profile" class="student-avatar">
+                {% else %}
+                <div class="student-avatar-placeholder">
+                    <i class="fas fa-user"></i>
+                </div>
+                {% endif %}
+                </div>
+                
+                <h4 class="student-name">{{ student.user.get_full_name }}</h4>
+                <p class="student-admission">{{ student.admission_number }}</p>
+                <div class="status-badge-active" style="display: inline-block;">
+                    {{ student.class_enrolled.name }} - Sec {{ student.section }}
+                </div>
+                
+                <div style="padding: 1rem 0; border-top: 1px solid rgba(78, 115, 223, 0.08); border-bottom: 1px solid rgba(78, 115, 223, 0.08); margin: 1rem 0;">
+                    <small style="color: rgba(0, 0, 0, 0.6); text-transform: uppercase; letter-spacing: 0.05em; font-weight: 600;">Roll Number</small>
+                    <p style="color: #4e73df; font-weight: 700; font-size: 1.1rem; margin: 0.5rem 0 0 0;">{{ student.roll_number }}</p>
+                </div>
+                
+                <div class="d-grid gap-2">
+                    <a href="{% url 'profile' %}" class="btn btn-glass">
+                        <i class="fas fa-edit me-2"></i>Edit Profile
+                    </a>
+                </div>
+            </div>
+        </div>
+
+        <!-- Recent Attendance -->
+        <div class="card glass-card border-0">
+            <div class="card-header bg-transparent border-0 pt-4 px-4 d-flex justify-content-between align-items-center">
+                <h5 class="mb-0 fw-bold">Recent Attendance</h5>
+                <a href="{% url 'attendance_report' %}" class="btn btn-sm btn-glass">Report</a>
+            </div>
+            <div class="card-body p-0">
+                <div class="table-responsive">
+                    <table class="table align-middle mb-0">
+                        <thead>
+                            <tr>
+                                <th class="ps-4">Date</th>
+                                <th>Status</th>
+                                <th class="pe-4 text-end">Subject</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            {% for record in recent_attendance %}
+                            <tr>
+                                <td class="ps-4">{{ record.date|date:"d M" }}</td>
+                                <td>
+                                    {% if record.status == 'Present' %}
+                                    <span class="badge bg-success">✓ Present</span>
+                                    {% elif record.status == 'Absent' %}
+                                    <span class="badge bg-danger">✗ Absent</span>
+                                    {% elif record.status == 'Late' %}
+                                    <span class="badge bg-warning">⏰ Late</span>
+                                    {% else %}
+                                    <span class="badge">{{ record.status }}</span>
+                                    {% endif %}
+                                </td>
+                                <td class="pe-4 text-end">{{ record.subject.name|default:"-" }}</td>
+                            </tr>
+                            {% empty %}
+                            <tr>
+                                <td colspan="3" class="empty-state">No records found.</td>
+                            </tr>
+                            {% endfor %}
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Performance Stats -->
+    <div class="col-lg-8">
+        <div class="row g-4 mb-4">
+            <div class="col-md-6">
+                <div class="card stat-card h-100 border-0">
+                    <div class="card-body">
+                        <div class="text-center">
+                            <i class="fas fa-chart-line" style="font-size: 2.5rem; color: #4e73df; margin-bottom: 1rem; display: block;"></i>
+                            <div class="text-uppercase tracking-wider text-xs mb-1" style="color: rgba(0, 0, 0, 0.6); font-weight: 600;">Overall Grade</div>
+                            <h3 class="mb-0 fw-bold text-gradient-primary">{{ student.overall_grade|default:"-" }}</h3>
+                            <div class="mt-2 mb-0 text-xs" style="color: rgba(0, 0, 0, 0.5);">Current performance</div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <div class="col-md-6">
+                <div class="card stat-card h-100 border-0">
+                    <div class="card-body">
+                        <div class="text-center">
+                            <i class="fas fa-calendar-check" style="font-size: 2.5rem; color: #1cc88a; margin-bottom: 1rem; display: block;"></i>
+                            <div class="text-uppercase tracking-wider text-xs mb-1" style="color: rgba(0, 0, 0, 0.6); font-weight: 600;">Attendance</div>
+                            <h3 class="mb-0 fw-bold" style="color: #1cc88a;">{{ attendance_rate|default:0|floatformat:1 }}%</h3>
+                            <div class="mt-2 mb-0 text-xs" style="color: rgba(0, 0, 0, 0.5);">Present rate</div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Recent Grades -->
+        <div class="card glass-card border-0 mb-4">
+            <div class="card-header bg-transparent border-0 pt-4 px-4 d-flex justify-content-between align-items-center">
+                <h5 class="mb-0 fw-bold">Recent Grades</h5>
+                <a href="#" class="btn btn-sm btn-glass">View All</a>
+            </div>
+            <div class="card-body p-0">
+                <div class="table-responsive">
+                    <table class="table align-middle mb-0">
+                        <thead>
+                            <tr>
+                                <th class="ps-4">Subject</th>
+                                <th>Exam</th>
+                                <th>Marks</th>
+                                <th class="pe-4 text-end">Grade</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            {% for grade in grades %}
+                            <tr>
+                                <td class="ps-4 fw-bold">{{ grade.exam.subject.name }}</td>
+                                <td>{{ grade.exam.name }}</td>
+                                <td>{{ grade.marks_obtained }}<span style="opacity: 0.6;">/{{ grade.exam.total_marks }}</span></td>
+                                <td class="pe-4 text-end">
+                                    <span class="badge">
+                                        {{ grade.grade }}
+                                    </span>
+                                </td>
+                            </tr>
+                            {% empty %}
+                            <tr>
+                                <td colspan="4" class="empty-state">No grades recorded yet.</td>
+                            </tr>
+                            {% endfor %}
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+        </div>
+
+        <!-- Upcoming Exams -->
+        <div class="card glass-card border-0">
+            <div class="card-header bg-transparent border-0 pt-4 px-4">
+                <h5 class="mb-0 fw-bold">Upcoming Exams</h5>
+            </div>
+            <div class="card-body p-0">
+                <div class="list-group list-group-flush bg-transparent">
+                    {% for exam in upcoming_exams %}
+                    <div class="list-group-item bg-transparent border-0 px-4 py-3">
+                        <div class="d-flex align-items-center">
+                            <div class="calendar-icon me-3 text-center rounded-3 p-2" style="min-width: 70px;">
+                                <small class="d-block text-uppercase fw-bold" style="font-size: 0.7rem; color: #fbbf24;">{{ exam.date_conducted|date:"M" }}</small>
+                                <h5 class="mb-0 fw-bold" style="color: white;">{{ exam.date_conducted|date:"d" }}</h5>
+                            </div>
+                            <div class="flex-grow-1">
+                                <h6 class="mb-1 fw-bold" style="color: #4e73df;">{{ exam.name }}</h6>
+                                <div class="small" style="color: rgba(0, 0, 0, 0.6);">
+                                    <span class="badge me-2">{{ exam.subject.name }}</span>
+                                    <span>{{ exam.exam_type }}</span>
+                                </div>
+                            </div>
+                            <div class="text-end d-none d-sm-block" style="font-size: 0.9rem; color: #4e73df;">
+                                <small class="d-block" style="color: rgba(0, 0, 0, 0.5);">In:</small>
+                                <small class="d-block fw-bold">{{ exam.date_conducted|timeuntil }}</small>
+                            </div>
+                        </div>
+                    </div>
+                    {% empty %}
+                    <div class="empty-state">
+                        <i class="fas fa-calendar-times fa-2x mb-2"></i>
+                        <p class="mb-0">No upcoming exams</p>
+                    </div>
+                    {% endfor %}
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Quick Links -->
+<div class="row">
+    <div class="col-12">
+        <div class="card glass-card border-0">
+            <div class="card-header bg-transparent border-0 pt-4 px-4">
+                <h5 class="mb-0 fw-bold">Quick Links</h5>
+            </div>
+            <div class="card-body p-4">
+                <div class="row g-3">
+                    <div class="col-md-3 col-sm-6">
+                        <a href="#" class="btn btn-glass w-100 h-100 p-4 text-start d-flex flex-column justify-content-between quick-action-btn">
+                            <div class="mb-3"><i class="fas fa-file-pdf fa-2x"></i></div>
+                            <div>
+                                <h6 class="fw-bold mb-1">Report Cards</h6>
+                                <small>Download reports</small>
+                            </div>
+                        </a>
+                    </div>
+                    <div class="col-md-3 col-sm-6">
+                        <a href="{% url 'timetable' %}" class="btn btn-glass w-100 h-100 p-4 text-start d-flex flex-column justify-content-between quick-action-btn">
+                            <div class="mb-3"><i class="fas fa-calendar-alt fa-2x"></i></div>
+                            <div>
+                                <h6 class="fw-bold mb-1">Timetable</h6>
+                                <small>View schedule</small>
+                            </div>
+                        </a>
+                    </div>
+                    <div class="col-md-3 col-sm-6">
+                        <a href="{% url 'subject_list' %}" class="btn btn-glass w-100 h-100 p-4 text-start d-flex flex-column justify-content-between quick-action-btn">
+                            <div class="mb-3"><i class="fas fa-book fa-2x"></i></div>
+                            <div>
+                                <h6 class="fw-bold mb-1">Subjects</h6>
+                                <small>View all subjects</small>
+                            </div>
+                        </a>
+                    </div>
+                    <div class="col-md-3 col-sm-6">
+                        <a href="{% url 'profile' %}" class="btn btn-glass w-100 h-100 p-4 text-start d-flex flex-column justify-content-between quick-action-btn">
+                            <div class="mb-3"><i class="fas fa-user-edit fa-2x"></i></div>
+                            <div>
+                                <h6 class="fw-bold mb-1">Edit Profile</h6>
+                                <small>Update info</small>
+                            </div>
+                        </a>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}

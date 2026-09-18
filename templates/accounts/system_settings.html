@@ -1,0 +1,155 @@
+{% extends 'base.html' %}
+{% load crispy_forms_tags %}
+
+{% block title %}System Settings{% endblock %}
+{% block page_title %}System Settings{% endblock %}
+
+{% block breadcrumb %}
+<li class="breadcrumb-item active">Settings</li>
+{% endblock %}
+
+{% block content %}
+<div class="row mb-3">
+    <div class="col-12">
+        <div class="card glass-card border-0 p-3">
+            <div class="d-flex align-items-center gap-2">
+                <i class="fas fa-cog fa-2x text-primary"></i>
+                <div>
+                    <h5 class="mb-0 fw-bold">System Settings</h5>
+                    <small class="text-muted">Manage school configurations</small>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<div class="row">
+    <div class="col-lg-10 mx-auto">
+        <div class="card glass-card border-0">
+            <div class="card-header bg-transparent border-bottom py-3 px-4">
+                <ul class="nav nav-tabs nav-tabs-custom mb-0" id="settingsTabs" role="tablist">
+                    <li class="nav-item" role="presentation">
+                        <button class="nav-link active fw-500 small" id="general-tab" data-bs-toggle="tab" data-bs-target="#general" type="button" role="tab">
+                            <i class="fas fa-school me-1"></i> General
+                        </button>
+                    </li>
+                    <li class="nav-item" role="presentation">
+                        <button class="nav-link fw-500 small" id="academic-tab" data-bs-toggle="tab" data-bs-target="#academic" type="button" role="tab">
+                            <i class="fas fa-calendar-alt me-1"></i> Academic
+                        </button>
+                    </li>
+                    <li class="nav-item" role="presentation">
+                        <button class="nav-link fw-500 small" id="appearance-tab" data-bs-toggle="tab" data-bs-target="#appearance" type="button" role="tab">
+                            <i class="fas fa-paint-brush me-1"></i> Appearance
+                        </button>
+                    </li>
+                </ul>
+            </div>
+
+            <div class="card-body p-4">
+                <form method="post" enctype="multipart/form-data">
+                    {% csrf_token %}
+                    <div class="tab-content" id="settingsTabContent">
+                        <!-- General Settings Tab -->
+                        <div class="tab-pane fade show active" id="general" role="tabpanel">
+                            <h6 class="fw-bold mb-3 text-uppercase text-xs opacity-75">School Information</h6>
+                            
+                            <!-- Logo Upload Section -->
+                            <div class="row mb-3">
+                                <div class="col-12">
+                                    <label class="form-label small fw-bold mb-2">Logo</label>
+                                    <div class="d-flex align-items-center gap-3">
+                                        <div class="position-relative">
+                                            {% if form.instance.school_logo %}
+                                                <img src="{{ form.instance.school_logo.url }}" alt="Logo" class="rounded-circle" style="width: 60px; height: 60px; object-fit: cover; border: 2px solid #4e73df;">
+                                            {% else %}
+                                                <div class="rounded-circle bg-light d-flex align-items-center justify-content-center" style="width: 60px; height: 60px; border: 2px dashed #dee2e6;">
+                                                    <i class="fas fa-image text-muted" style="font-size: 1.5rem;"></i>
+                                                </div>
+                                            {% endif %}
+                                            <label for="id_school_logo" class="position-absolute bottom-0 end-0 bg-primary text-white rounded-circle d-flex align-items-center justify-content-center cursor-pointer" style="width: 24px; height: 24px; font-size: 0.7rem; border: 2px solid white; cursor: pointer;">
+                                                <i class="fas fa-pencil"></i>
+                                            </label>
+                                        </div>
+                                        <div class="flex-grow-1">
+                                            <small class="text-muted d-block">Click the pencil icon to change logo</small>
+                                            <div class="mt-2">
+                                                {{ form.school_logo }}
+                                            </div>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+
+                            <!-- School Details -->
+                            <div class="row g-2">
+                                <div class="col-md-6">
+                                    {{ form.school_name|as_crispy_field }}
+                                </div>
+                                <div class="col-md-6">
+                                    {{ form.school_email|as_crispy_field }}
+                                </div>
+                                <div class="col-md-6">
+                                    {{ form.school_phone|as_crispy_field }}
+                                </div>
+                                <div class="col-12">
+                                    {{ form.school_address|as_crispy_field }}
+                                </div>
+                            </div>
+                        </div>
+
+                        <!-- Academic Settings Tab -->
+                        <div class="tab-pane fade" id="academic" role="tabpanel">
+                            <h6 class="fw-bold mb-3 text-uppercase text-xs opacity-75">Academic Settings</h6>
+                            
+                            <div class="alert alert-warning alert-sm small mb-3 py-2 px-3" role="alert">
+                                <small><strong>Note:</strong> Changing session or term affects all operations (attendance, grades, reports).</small>
+                            </div>
+
+                            <div class="row g-2">
+                                <div class="col-md-6">
+                                    {{ form.current_session|as_crispy_field }}
+                                </div>
+                                <div class="col-md-6">
+                                    {{ form.current_term|as_crispy_field }}
+                                </div>
+                            </div>
+                        </div>
+
+                        <!-- Appearance Tab -->
+                        <div class="tab-pane fade" id="appearance" role="tabpanel">
+                            <h6 class="fw-bold mb-3 text-uppercase text-xs opacity-75">Appearance Settings</h6>
+                            
+                            <div class="row g-2">
+                                <div class="col-md-6">
+                                    <label class="form-label small fw-bold">Primary Color</label>
+                                    <input type="color" class="form-control form-control-color" value="#4e73df" title="Primary color">
+                                </div>
+                                <div class="col-md-6">
+                                    <label class="form-label small fw-bold">Interface Mode</label>
+                                    <select class="form-select form-select-sm">
+                                        <option selected>Auto (System Default)</option>
+                                        <option value="dark">Dark Mode</option>
+                                        <option value="light">Light Mode</option>
+                                    </select>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Action Buttons -->
+                    <div class="d-flex justify-content-end gap-2 mt-4 pt-3 border-top">
+                        <button type="button" class="btn btn-sm btn-light" onclick="history.back()">
+                            <i class="fas fa-times me-1"></i> Cancel
+                        </button>
+                        <button type="submit" class="btn btn-sm btn-primary">
+                            <i class="fas fa-save me-1"></i> Save
+                        </button>
+                    </div>
+                </form>
+            </div>
+        </div>
+    </div>
+</div>
+
+{% endblock %}

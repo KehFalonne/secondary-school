@@ -1,0 +1,1742 @@
+{% extends 'base.html' %}
+
+{% block title %}Attendance Records{% endblock %}
+{% block page_title %}Attendance Records{% endblock %}
+
+{% block breadcrumb %}
+<li class="breadcrumb-item active">Attendance</li>
+{% endblock %}
+
+{% block page_actions %}
+{% endblock %}
+
+{% block content %}
+<div class="attendance-list-container">
+    <!-- Hero Section -->
+    <div class="hero-section">
+        <div class="attendance-badge">ATTENDANCE TRACKING</div>
+        <h1 class="attendance-title">Attendance Records</h1>
+        <p class="attendance-subtitle">View, manage, and track all attendance records across your institution</p>
+    </div>
+
+    <!-- Action Cards -->
+    <div class="action-cards" style="animation: slideInUp 0.3s ease-out;">
+        <a href="{% url 'take_attendance' %}" class="action-card primary">
+            <div class="action-icon">
+                <i class="fas fa-plus-circle"></i>
+            </div>
+            <div class="action-content">
+                <h4>Take Attendance</h4>
+                <p>Record attendance for students</p>
+            </div>
+        </a>
+        <button class="action-card secondary" onclick="alert('Export functionality coming soon')">
+            <div class="action-icon">
+                <i class="fas fa-file-export"></i>
+            </div>
+            <div class="action-content">
+                <h4>Export Records</h4>
+                <p>Download attendance data</p>
+            </div>
+        </button>
+        <button class="action-card tertiary" onclick="window.print()">
+            <div class="action-icon">
+                <i class="fas fa-print"></i>
+            </div>
+            <div class="action-content">
+                <h4>Print Report</h4>
+                <p>Print attendance records</p>
+            </div>
+        </button>
+    </div>
+
+    <!-- Statistics Grid -->
+    <div class="stats-grid" style="animation: slideInUp 0.4s ease-out;">
+        <div class="stat-card present-stat">
+            <div class="stat-icon">
+                <i class="fas fa-check-circle"></i>
+            </div>
+            <div class="stat-content">
+                <div class="stat-value">{{ total_present }}</div>
+                <div class="stat-label">Present Days</div>
+            </div>
+        </div>
+        <div class="stat-card absent-stat">
+            <div class="stat-icon">
+                <i class="fas fa-times-circle"></i>
+            </div>
+            <div class="stat-content">
+                <div class="stat-value">{{ total_absent }}</div>
+                <div class="stat-label">Absent Days</div>
+            </div>
+        </div>
+        <div class="stat-card late-stat">
+            <div class="stat-icon">
+                <i class="fas fa-hourglass-end"></i>
+            </div>
+            <div class="stat-content">
+                <div class="stat-value">{{ total_late }}</div>
+                <div class="stat-label">Late Days</div>
+            </div>
+        </div>
+        <div class="stat-card avg-stat">
+            <div class="stat-icon">
+                <i class="fas fa-chart-line"></i>
+            </div>
+            <div class="stat-content">
+                <div class="stat-value">{{ overall_percentage|floatformat:1 }}%</div>
+                <div class="stat-label">Overall Attendance</div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Filter Card -->
+    <div class="filter-card" style="animation: slideInUp 0.5s ease-out;">
+        <h3 class="filter-title">
+            <i class="fas fa-sliders-h"></i> Advanced Filters
+        </h3>
+        <form method="get" class="filter-form">
+            <div class="filter-grid">
+                <div class="filter-group">
+                    <label class="filter-label">Start Date</label>
+                    <input type="date" name="start_date" class="filter-input" value="{{ start_date|date:'Y-m-d' }}">
+                </div>
+                <div class="filter-group">
+                    <label class="filter-label">End Date</label>
+                    <input type="date" name="end_date" class="filter-input" value="{{ end_date|date:'Y-m-d' }}">
+                </div>
+                <div class="filter-group">
+                    <label class="filter-label">Class</label>
+                    <select name="class_id" class="filter-select">
+                        <option value="">All Classes</option>
+                        {% for class in classes %}
+                        <option value="{{ class.id }}" {% if class_filter == class.id %}selected{% endif %}>
+                            {{ class.name }} - {{ class.section }}
+                        </option>
+                        {% endfor %}
+                    </select>
+                </div>
+                <div class="filter-group">
+                    <label class="filter-label">Student</label>
+                    <select name="student_id" class="filter-select">
+                        <option value="">All Students</option>
+                        {% for student in students %}
+                        <option value="{{ student.id }}" {% if student_filter == student.id %}selected{% endif %}>
+                            {{ student.user.get_full_name }}
+                        </option>
+                        {% endfor %}
+                    </select>
+                </div>
+            </div>
+            <div class="filter-actions">
+                <button type="submit" class="filter-btn primary">
+                    <i class="fas fa-search"></i> Apply Filters
+                </button>
+                <a href="{% url 'attendance_list' %}" class="filter-btn secondary">
+                    <i class="fas fa-redo"></i> Reset
+                </a>
+            </div>
+        </form>
+    </div>
+
+    <!-- Records Card -->
+    <div class="records-card" style="animation: slideInUp 0.6s ease-out;">
+        <div class="records-header">
+            <h3 class="records-title">
+                <i class="fas fa-clipboard-list"></i> Attendance Records
+                <span class="record-count">{{ attendance_records.paginator.count }} total</span>
+            </h3>
+        </div>
+
+        {% if attendance_records %}
+        <div class="table-card">
+            <table class="attendance-table">
+                <thead>
+                    <tr>
+                        <th>Date</th>
+                        <th>Student</th>
+                        <th>Class</th>
+                        <th>Status</th>
+                        <th>Subject</th>
+                        <th>Teacher</th>
+                        <th>Remarks</th>
+                        <th>Marked By</th>
+                        <th>Actions</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% for record in attendance_records %}
+                    <tr>
+                        <td>
+                            <strong>{{ record.date|date:"d M Y" }}</strong>
+                            <br>
+                            <small class="text-muted">{{ record.date|date:"l" }}</small>
+                        </td>
+                        <td>
+                            <div class="student-cell">
+                                {% if record.student.user.profile_picture %}
+                                <img src="{{ record.student.user.profile_picture.url }}" alt="Avatar" class="student-avatar">
+                                {% else %}
+                                <div class="student-avatar-placeholder">
+                                    {{ record.student.user.get_full_name|first }}
+                                </div>
+                                {% endif %}
+                                <div class="student-info">
+                                    <strong>{{ record.student.user.get_full_name }}</strong>
+                                    <br>
+                                    <small>{{ record.student.admission_number }}</small>
+                                </div>
+                            </div>
+                        </td>
+                        <td>
+                            <span class="class-badge">{{ record.student.class_enrolled.name }}</span>
+                        </td>
+                        <td>
+                            {% if record.status == 'Present' %}
+                            <span class="status-badge present-badge"><i class="fas fa-check"></i> Present</span>
+                            {% elif record.status == 'Absent' %}
+                            <span class="status-badge absent-badge"><i class="fas fa-times"></i> Absent</span>
+                            {% elif record.status == 'Late' %}
+                            <span class="status-badge late-badge"><i class="fas fa-hourglass-end"></i> Late</span>
+                            {% elif record.status == 'Half Day' %}
+                            <span class="status-badge halfday-badge"><i class="fas fa-calendar-check"></i> Half Day</span>
+                            {% elif record.status == 'Excused' %}
+                            <span class="status-badge excused-badge"><i class="fas fa-file-alt"></i> Excused</span>
+                            {% elif record.status == 'Sick' %}
+                            <span class="status-badge sick-badge"><i class="fas fa-heart"></i> Sick</span>
+                            {% endif %}
+                        </td>
+                        <td>
+                            {% if record.subject %}
+                            <span class="subject-tag">{{ record.subject.name }}</span>
+                            {% else %}
+                            <span class="text-muted">-</span>
+                            {% endif %}
+                        </td>
+                        <td>
+                            {% if record.teacher %}
+                            <small>{{ record.teacher.user.get_full_name }}</small>
+                            {% else %}
+                            <span class="text-muted">-</span>
+                            {% endif %}
+                        </td>
+                        <td>
+                            {% if record.remarks %}
+                            <small class="remarks-text" title="{{ record.remarks }}">{{ record.remarks|truncatechars:30 }}</small>
+                            {% else %}
+                            <span class="text-muted">-</span>
+                            {% endif %}
+                        </td>
+                        <td>
+                            <div class="marked-info">
+                                <small><strong>{{ record.marked_by.get_full_name }}</strong></small>
+                                <br>
+                                <small class="text-muted">{{ record.marked_at|time:"g:i A" }}</small>
+                            </div>
+                        </td>
+                        <td>
+                            <div class="action-buttons">
+                                <button class="action-btn edit-btn" data-bs-toggle="modal" data-bs-target="#editModal{{ record.id }}" title="Edit">
+                                    <i class="fas fa-edit"></i>
+                                </button>
+                                <a href="{% url 'attendance_delete' record.id %}" class="action-btn delete-btn" title="Delete" onclick="return confirm('Are you sure?')">
+                                    <i class="fas fa-trash"></i>
+                                </a>
+                            </div>
+                        </td>
+                    </tr>
+
+                    <!-- Edit Modal -->
+                    <div class="modal fade" id="editModal{{ record.id }}" tabindex="-1">
+                        <div class="modal-dialog modal-dialog-centered">
+                            <div class="modal-content modern-modal">
+                                <div class="modal-header modern-modal-header">
+                                    <h5 class="modal-title">
+                                        <i class="fas fa-edit"></i> Edit Attendance Record
+                                    </h5>
+                                    <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+                                </div>
+                                <form method="post" action="{% url 'attendance_update' record.id %}">
+                                    {% csrf_token %}
+                                    <div class="modal-body">
+                                        <div class="form-group mb-3">
+                                            <label class="form-label">Student</label>
+                                            <input type="text" class="form-control" value="{{ record.student.user.get_full_name }}" disabled>
+                                        </div>
+                                        <div class="form-group mb-3">
+                                            <label class="form-label">Status</label>
+                                            <select name="status" class="form-select">
+                                                <option value="Present" {% if record.status == 'Present' %}selected{% endif %}>Present</option>
+                                                <option value="Absent" {% if record.status == 'Absent' %}selected{% endif %}>Absent</option>
+                                                <option value="Late" {% if record.status == 'Late' %}selected{% endif %}>Late</option>
+                                                <option value="Half Day" {% if record.status == 'Half Day' %}selected{% endif %}>Half Day</option>
+                                                <option value="Excused" {% if record.status == 'Excused' %}selected{% endif %}>Excused</option>
+                                                <option value="Sick" {% if record.status == 'Sick' %}selected{% endif %}>Sick</option>
+                                            </select>
+                                        </div>
+                                        <div class="form-group mb-3">
+                                            <label class="form-label">Remarks</label>
+                                            <textarea name="remarks" class="form-control" rows="3" placeholder="Add any remarks...">{{ record.remarks }}</textarea>
+                                        </div>
+                                    </div>
+                                    <div class="modal-footer modern-modal-footer">
+                                        <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancel</button>
+                                        <button type="submit" class="btn btn-primary">Save Changes</button>
+                                    </div>
+                                </form>
+                            </div>
+                        </div>
+                    </div>
+                    {% endfor %}
+                </tbody>
+            </table>
+        </div>
+
+        <!-- Pagination -->
+        {% if attendance_records.paginator.num_pages > 1 %}
+        <div class="pagination-container">
+            <nav aria-label="Pagination">
+                <ul class="pagination-list">
+                    {% if attendance_records.has_previous %}
+                    <li class="pagination-item">
+                        <a href="?page=1{% include 'attendance/pagination_params.html' %}" class="pagination-link" title="First Page">
+                            <i class="fas fa-angle-double-left"></i>
+                        </a>
+                    </li>
+                    <li class="pagination-item">
+                        <a href="?page={{ attendance_records.previous_page_number }}{% include 'attendance/pagination_params.html' %}" class="pagination-link" title="Previous Page">
+                            <i class="fas fa-angle-left"></i>
+                        </a>
+                    </li>
+                    {% endif %}
+                    
+                    {% for num in attendance_records.paginator.page_range %}
+                        {% if attendance_records.number == num %}
+                        <li class="pagination-item active">
+                            <span class="pagination-link">{{ num }}</span>
+                        </li>
+                        {% elif num > attendance_records.number|add:'-3' and num < attendance_records.number|add:'3' %}
+                        <li class="pagination-item">
+                            <a href="?page={{ num }}{% include 'attendance/pagination_params.html' %}" class="pagination-link">{{ num }}</a>
+                        </li>
+                        {% endif %}
+                    {% endfor %}
+                    
+                    {% if attendance_records.has_next %}
+                    <li class="pagination-item">
+                        <a href="?page={{ attendance_records.next_page_number }}{% include 'attendance/pagination_params.html' %}" class="pagination-link" title="Next Page">
+                            <i class="fas fa-angle-right"></i>
+                        </a>
+                    </li>
+                    <li class="pagination-item">
+                        <a href="?page={{ attendance_records.paginator.num_pages }}{% include 'attendance/pagination_params.html' %}" class="pagination-link" title="Last Page">
+                            <i class="fas fa-angle-double-right"></i>
+                        </a>
+                    </li>
+                    {% endif %}
+                </ul>
+            </nav>
+            <div class="pagination-info">
+                Page <strong>{{ attendance_records.number }}</strong> of <strong>{{ attendance_records.paginator.num_pages }}</strong>
+            </div>
+        </div>
+        {% endif %}
+        {% else %}
+        <div class="empty-state">
+            <div class="empty-icon">
+                <i class="fas fa-inbox"></i>
+            </div>
+            <h3 class="empty-title">No Records Found</h3>
+            <p class="empty-message">No attendance records match your filters. Try adjusting your search criteria or take new attendance.</p>
+            <a href="{% url 'take_attendance' %}" class="empty-action-btn">
+                <i class="fas fa-plus"></i> Take Attendance
+            </a>
+        </div>
+        {% endif %}
+    </div>
+</div>
+
+<style>
+    /* ============= Attendance List Container ============= */
+    .attendance-list-container {
+        max-width: 1400px;
+        margin: 0 auto;
+        padding: 20px;
+        background: linear-gradient(135deg, #f5f7fa 0%, #e9ecef 100%);
+        min-height: 100vh;
+    }
+
+    [data-bs-theme="dark"] .attendance-list-container {
+        background: linear-gradient(135deg, #1a1d23 0%, #2d3142 100%);
+    }
+
+    /* ============= Hero Section ============= */
+    .hero-section {
+        text-align: center;
+        margin-bottom: 40px;
+        padding: 40px 20px;
+        background: linear-gradient(135deg, #4e73df 0%, #1cc88a 100%);
+        border-radius: 20px;
+        color: white;
+        position: relative;
+        overflow: hidden;
+        animation: slideInDown 0.6s ease-out;
+    }
+
+    .hero-section::before {
+        content: '';
+        position: absolute;
+        top: -50%;
+        right: -10%;
+        width: 400px;
+        height: 400px;
+        background: rgba(255, 255, 255, 0.1);
+        border-radius: 50%;
+    }
+
+    .attendance-badge {
+        display: inline-block;
+        padding: 8px 20px;
+        background: rgba(255, 255, 255, 0.25);
+        border-radius: 50px;
+        font-size: 12px;
+        font-weight: 700;
+        letter-spacing: 1.5px;
+        margin-bottom: 15px;
+        backdrop-filter: blur(10px);
+        animation: slideInDown 0.7s ease-out;
+    }
+
+    .attendance-title {
+        font-size: 42px;
+        font-weight: 800;
+        margin-bottom: 10px;
+        animation: slideInDown 0.8s ease-out;
+    }
+
+    .attendance-subtitle {
+        font-size: 16px;
+        opacity: 0.9;
+        margin: 0;
+        animation: slideInDown 0.9s ease-out;
+    }
+
+    /* ============= Action Cards ============= */
+    .action-cards {
+        display: grid;
+        grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
+        gap: 20px;
+        margin-bottom: 40px;
+    }
+
+    .action-card {
+        display: flex;
+        gap: 15px;
+        padding: 20px;
+        background: rgba(255, 255, 255, 0.95);
+        border: none;
+        border-radius: 16px;
+        border-left: 5px solid #4e73df;
+        cursor: pointer;
+        transition: all 0.3s ease;
+        text-decoration: none;
+        color: inherit;
+    }
+
+    [data-bs-theme="dark"] .action-card {
+        background: rgba(45, 49, 66, 0.95);
+    }
+
+    .action-card:hover {
+        transform: translateY(-5px);
+        box-shadow: 0 12px 32px rgba(0, 0, 0, 0.15);
+    }
+
+    .action-card.secondary {
+        border-left-color: #1cc88a;
+    }
+
+    .action-card.tertiary {
+        border-left-color: #f6c23e;
+    }
+
+    .action-icon {
+        width: 50px;
+        height: 50px;
+        border-radius: 12px;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        font-size: 24px;
+        flex-shrink: 0;
+    }
+
+    .action-card.primary .action-icon {
+        background: rgba(78, 115, 223, 0.1);
+        color: #4e73df;
+    }
+
+    .action-card.secondary .action-icon {
+        background: rgba(28, 200, 138, 0.1);
+        color: #1cc88a;
+    }
+
+    .action-card.tertiary .action-icon {
+        background: rgba(246, 194, 62, 0.1);
+        color: #f6c23e;
+    }
+
+    .action-content h4 {
+        margin: 0 0 5px 0;
+        font-size: 16px;
+        font-weight: 700;
+        color: #2e3440;
+    }
+
+    [data-bs-theme="dark"] .action-content h4 {
+        color: #e0e0e0;
+    }
+
+    .action-content p {
+        margin: 0;
+        font-size: 13px;
+        color: #6c757d;
+    }
+
+    [data-bs-theme="dark"] .action-content p {
+        color: #b0b0b0;
+    }
+
+    /* ============= Stats Grid ============= */
+    .stats-grid {
+        display: grid;
+        grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+        gap: 20px;
+        margin-bottom: 40px;
+    }
+
+    .stat-card {
+        display: flex;
+        align-items: center;
+        gap: 15px;
+        padding: 20px;
+        background: rgba(255, 255, 255, 0.95);
+        border-radius: 16px;
+        border-left: 4px solid #4e73df;
+        backdrop-filter: blur(10px);
+        transition: all 0.3s ease;
+    }
+
+    [data-bs-theme="dark"] .stat-card {
+        background: rgba(45, 49, 66, 0.95);
+    }
+
+    .stat-card:hover {
+        transform: translateY(-4px);
+        box-shadow: 0 8px 24px rgba(0, 0, 0, 0.1);
+    }
+
+    .stat-card.present-stat {
+        border-left-color: #1cc88a;
+    }
+
+    .stat-card.absent-stat {
+        border-left-color: #e74c3c;
+    }
+
+    .stat-card.late-stat {
+        border-left-color: #f6c23e;
+    }
+
+    .stat-card.avg-stat {
+        border-left-color: #4e73df;
+    }
+
+    .stat-icon {
+        width: 45px;
+        height: 45px;
+        border-radius: 12px;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        font-size: 22px;
+        flex-shrink: 0;
+    }
+
+    .stat-card.present-stat .stat-icon {
+        background: rgba(28, 200, 138, 0.1);
+        color: #1cc88a;
+    }
+
+    .stat-card.absent-stat .stat-icon {
+        background: rgba(231, 76, 60, 0.1);
+        color: #e74c3c;
+    }
+
+    .stat-card.late-stat .stat-icon {
+        background: rgba(246, 194, 62, 0.1);
+        color: #f6c23e;
+    }
+
+    .stat-card.avg-stat .stat-icon {
+        background: rgba(78, 115, 223, 0.1);
+        color: #4e73df;
+    }
+
+    .stat-content {
+        flex: 1;
+    }
+
+    .stat-value {
+        font-size: 28px;
+        font-weight: 800;
+        color: #2e3440;
+        line-height: 1;
+        margin-bottom: 4px;
+    }
+
+    [data-bs-theme="dark"] .stat-value {
+        color: #e0e0e0;
+    }
+
+    .stat-label {
+        font-size: 12px;
+        font-weight: 600;
+        color: #6c757d;
+        text-transform: uppercase;
+        letter-spacing: 0.5px;
+    }
+
+    [data-bs-theme="dark"] .stat-label {
+        color: #b0b0b0;
+    }
+
+    /* ============= Filter Card ============= */
+    .filter-card {
+        background: rgba(255, 255, 255, 0.95);
+        backdrop-filter: blur(10px);
+        border-radius: 20px;
+        padding: 30px;
+        margin-bottom: 30px;
+        box-shadow: 0 8px 32px rgba(0, 0, 0, 0.1);
+        border: 1px solid rgba(255, 255, 255, 0.3);
+    }
+
+    [data-bs-theme="dark"] .filter-card {
+        background: rgba(45, 49, 66, 0.95);
+        border-color: rgba(255, 255, 255, 0.1);
+    }
+
+    .filter-title {
+        font-size: 18px;
+        font-weight: 700;
+        margin-bottom: 25px;
+        color: #2e3440;
+        display: flex;
+        align-items: center;
+        gap: 10px;
+    }
+
+    [data-bs-theme="dark"] .filter-title {
+        color: #e0e0e0;
+    }
+
+    .filter-grid {
+        display: grid;
+        grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+        gap: 20px;
+        margin-bottom: 20px;
+    }
+
+    .filter-group {
+        display: flex;
+        flex-direction: column;
+    }
+
+    .filter-label {
+        font-size: 13px;
+        font-weight: 600;
+        margin-bottom: 8px;
+        color: #495057;
+        text-transform: uppercase;
+        letter-spacing: 0.5px;
+    }
+
+    [data-bs-theme="dark"] .filter-label {
+        color: #b0b0b0;
+    }
+
+    .filter-input,
+    .filter-select {
+        padding: 12px 15px;
+        border: 2px solid #e0e0e0;
+        border-radius: 12px;
+        font-size: 14px;
+        background: white;
+        color: #2e3440;
+        transition: all 0.3s ease;
+        font-weight: 500;
+    }
+
+    [data-bs-theme="dark"] .filter-input,
+    [data-bs-theme="dark"] .filter-select {
+        background: #1a1d23;
+        border-color: #4a5568;
+        color: #e0e0e0;
+    }
+
+    .filter-input:focus,
+    .filter-select:focus {
+        outline: none;
+        border-color: #1cc88a;
+        box-shadow: 0 0 0 3px rgba(28, 200, 138, 0.1);
+    }
+
+    .filter-actions {
+        display: flex;
+        gap: 12px;
+        flex-wrap: wrap;
+    }
+
+    .filter-btn {
+        padding: 12px 28px;
+        border: none;
+        border-radius: 12px;
+        font-weight: 600;
+        cursor: pointer;
+        transition: all 0.3s ease;
+        display: flex;
+        align-items: center;
+        gap: 8px;
+        font-size: 14px;
+        text-decoration: none;
+    }
+
+    .filter-btn.primary {
+        background: linear-gradient(135deg, #4e73df 0%, #224abe 100%);
+        color: white;
+    }
+
+    .filter-btn.primary:hover {
+        transform: translateY(-2px);
+        box-shadow: 0 8px 24px rgba(78, 115, 223, 0.3);
+    }
+
+    .filter-btn.secondary {
+        background: #f0f0f0;
+        color: #2e3440;
+        border: 2px solid #e0e0e0;
+    }
+
+    [data-bs-theme="dark"] .filter-btn.secondary {
+        background: #2d3142;
+        color: #e0e0e0;
+        border-color: #4a5568;
+    }
+
+    .filter-btn.secondary:hover {
+        background: #e8e8e8;
+    }
+
+    [data-bs-theme="dark"] .filter-btn.secondary:hover {
+        background: #3a3f52;
+    }
+
+    /* ============= Records Card ============= */
+    .records-card {
+        background: white;
+        border-radius: 20px;
+        padding: 30px;
+        box-shadow: 0 8px 32px rgba(0, 0, 0, 0.1);
+        margin-bottom: 30px;
+    }
+
+    [data-bs-theme="dark"] .records-card {
+        background: #2d3142;
+        color: #e0e0e0;
+    }
+
+    .records-header {
+        margin-bottom: 25px;
+        padding-bottom: 20px;
+        border-bottom: 2px solid #f0f0f0;
+    }
+
+    [data-bs-theme="dark"] .records-header {
+        border-bottom-color: #4a5568;
+    }
+
+    .records-title {
+        font-size: 20px;
+        font-weight: 800;
+        color: #2e3440;
+        margin: 0;
+        display: flex;
+        align-items: center;
+        gap: 12px;
+    }
+
+    [data-bs-theme="dark"] .records-title {
+        color: #e0e0e0;
+    }
+
+    .records-title i {
+        color: #4e73df;
+    }
+
+    .record-count {
+        background: #f0f0f0;
+        color: #6c757d;
+        padding: 2px 12px;
+        border-radius: 20px;
+        font-size: 12px;
+        font-weight: 600;
+        margin-left: auto;
+    }
+
+    [data-bs-theme="dark"] .record-count {
+        background: #3a3f52;
+        color: #b0b0b0;
+    }
+
+    /* ============= Table ============= */
+    .table-card {
+        overflow-x: auto;
+        border-radius: 12px;
+        margin-bottom: 20px;
+    }
+
+    .attendance-table {
+        width: 100%;
+        border-collapse: collapse;
+        margin: 0;
+    }
+
+    .attendance-table thead {
+        background: linear-gradient(135deg, #4e73df 0%, #224abe 100%);
+        color: white;
+    }
+
+    .attendance-table thead th {
+        padding: 16px;
+        font-weight: 700;
+        font-size: 13px;
+        text-transform: uppercase;
+        letter-spacing: 0.5px;
+        border: none;
+    }
+
+    .attendance-table tbody tr {
+        border-bottom: 1px solid #f0f0f0;
+        transition: all 0.3s ease;
+    }
+
+    [data-bs-theme="dark"] .attendance-table tbody tr {
+        border-bottom-color: #4a5568;
+    }
+
+    .attendance-table tbody tr:hover {
+        background: #f8f9fa;
+    }
+
+    [data-bs-theme="dark"] .attendance-table tbody tr:hover {
+        background: #3a3f52;
+    }
+
+    .attendance-table td {
+        padding: 14px 16px;
+        color: #2e3440;
+        font-size: 14px;
+    }
+
+    [data-bs-theme="dark"] .attendance-table td {
+        color: #e0e0e0;
+    }
+
+    /* ============= Student Cell ============= */
+    .student-cell {
+        display: flex;
+        align-items: center;
+        gap: 12px;
+    }
+
+    .student-avatar {
+        width: 40px;
+        height: 40px;
+        border-radius: 50%;
+        object-fit: cover;
+        flex-shrink: 0;
+    }
+
+    .student-avatar-placeholder {
+        width: 40px;
+        height: 40px;
+        border-radius: 50%;
+        background: linear-gradient(135deg, #4e73df 0%, #224abe 100%);
+        color: white;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        font-weight: 700;
+        font-size: 16px;
+        flex-shrink: 0;
+    }
+
+    .student-info strong {
+        display: block;
+        margin-bottom: 3px;
+    }
+
+    .student-info small {
+        color: #6c757d;
+    }
+
+    [data-bs-theme="dark"] .student-info small {
+        color: #b0b0b0;
+    }
+
+    /* ============= Badges ============= */
+    .class-badge {
+        display: inline-block;
+        padding: 6px 12px;
+        background: rgba(78, 115, 223, 0.15);
+        color: #4e73df;
+        border-radius: 8px;
+        font-size: 12px;
+        font-weight: 700;
+    }
+
+    .status-badge {
+        display: inline-flex;
+        align-items: center;
+        gap: 6px;
+        padding: 6px 12px;
+        border-radius: 8px;
+        font-size: 12px;
+        font-weight: 700;
+    }
+
+    .status-badge.present-badge {
+        background: rgba(28, 200, 138, 0.15);
+        color: #1cc88a;
+    }
+
+    .status-badge.absent-badge {
+        background: rgba(231, 76, 60, 0.15);
+        color: #e74c3c;
+    }
+
+    .status-badge.late-badge {
+        background: rgba(246, 194, 62, 0.15);
+        color: #f6c23e;
+    }
+
+    .status-badge.halfday-badge {
+        background: rgba(127, 179, 255, 0.15);
+        color: #7fb3ff;
+    }
+
+    .status-badge.excused-badge {
+        background: rgba(108, 117, 125, 0.15);
+        color: #6c757d;
+    }
+
+    .status-badge.sick-badge {
+        background: rgba(220, 53, 69, 0.15);
+        color: #dc3545;
+    }
+
+    .subject-tag {
+        display: inline-block;
+        padding: 4px 10px;
+        background: #f0f0f0;
+        color: #6c757d;
+        border-radius: 6px;
+        font-size: 12px;
+        font-weight: 600;
+    }
+
+    [data-bs-theme="dark"] .subject-tag {
+        background: #3a3f52;
+        color: #b0b0b0;
+    }
+
+    /* ============= Remarks ============= */
+    .remarks-text {
+        display: block;
+        color: #6c757d;
+        word-break: break-word;
+    }
+
+    [data-bs-theme="dark"] .remarks-text {
+        color: #b0b0b0;
+    }
+
+    .marked-info {
+        font-size: 13px;
+    }
+
+    .marked-info small strong {
+        color: #2e3440;
+    }
+
+    [data-bs-theme="dark"] .marked-info small strong {
+        color: #e0e0e0;
+    }
+
+    /* ============= Action Buttons ============= */
+    .action-buttons {
+        display: flex;
+        gap: 6px;
+    }
+
+    .action-btn {
+        width: 36px;
+        height: 36px;
+        border-radius: 8px;
+        border: none;
+        cursor: pointer;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        font-size: 14px;
+        transition: all 0.3s ease;
+        text-decoration: none;
+    }
+
+    .action-btn.edit-btn {
+        background: rgba(255, 193, 7, 0.15);
+        color: #ffc107;
+    }
+
+    .action-btn.edit-btn:hover {
+        background: #ffc107;
+        color: white;
+    }
+
+    .action-btn.delete-btn {
+        background: rgba(220, 53, 69, 0.15);
+        color: #dc3545;
+    }
+
+    .action-btn.delete-btn:hover {
+        background: #dc3545;
+        color: white;
+    }
+
+    /* ============= Modal ============= */
+    .modern-modal {
+        background: white;
+        border: none;
+        border-radius: 16px;
+        box-shadow: 0 20px 60px rgba(0, 0, 0, 0.3);
+    }
+
+    [data-bs-theme="dark"] .modern-modal {
+        background: #2d3142;
+    }
+
+    .modern-modal-header {
+        background: linear-gradient(135deg, #4e73df 0%, #224abe 100%);
+        color: white;
+        border: none;
+        border-radius: 16px 16px 0 0;
+        padding: 20px 24px;
+    }
+
+    .modern-modal-header .modal-title {
+        font-weight: 700;
+        font-size: 16px;
+        display: flex;
+        align-items: center;
+        gap: 10px;
+    }
+
+    .modern-modal-footer {
+        border-top: 2px solid #f0f0f0;
+        padding: 20px 24px;
+    }
+
+    [data-bs-theme="dark"] .modern-modal-footer {
+        border-top-color: #4a5568;
+    }
+
+    .modal-body .form-group label {
+        font-weight: 600;
+        color: #2e3440;
+        margin-bottom: 8px;
+    }
+
+    [data-bs-theme="dark"] .modal-body .form-group label {
+        color: #e0e0e0;
+    }
+
+    .modal-body .form-control,
+    .modal-body .form-select {
+        border: 2px solid #e0e0e0;
+        border-radius: 8px;
+        padding: 10px 12px;
+    }
+
+    [data-bs-theme="dark"] .modal-body .form-control,
+    [data-bs-theme="dark"] .modal-body .form-select {
+        background: #1a1d23;
+        border-color: #4a5568;
+        color: #e0e0e0;
+    }
+
+    /* ============= Pagination ============= */
+    .pagination-container {
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        flex-wrap: wrap;
+        gap: 20px;
+        padding: 20px;
+        background: #f8f9fa;
+        border-radius: 12px;
+    }
+
+    [data-bs-theme="dark"] .pagination-container {
+        background: #3a3f52;
+    }
+
+    .pagination-list {
+        display: flex;
+        gap: 8px;
+        margin: 0;
+        padding: 0;
+        list-style: none;
+    }
+
+    .pagination-item {
+        display: inline-block;
+    }
+
+    .pagination-link {
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        width: 36px;
+        height: 36px;
+        border-radius: 8px;
+        border: 2px solid #e0e0e0;
+        background: white;
+        color: #2e3440;
+        cursor: pointer;
+        transition: all 0.3s ease;
+        text-decoration: none;
+        font-weight: 600;
+        font-size: 13px;
+    }
+
+    [data-bs-theme="dark"] .pagination-link {
+        background: #2d3142;
+        border-color: #4a5568;
+        color: #e0e0e0;
+    }
+
+    .pagination-link:hover {
+        background: #4e73df;
+        border-color: #4e73df;
+        color: white;
+    }
+
+    .pagination-item.active .pagination-link {
+        background: #4e73df;
+        border-color: #4e73df;
+        color: white;
+    }
+
+    .pagination-info {
+        font-size: 13px;
+        font-weight: 600;
+        color: #6c757d;
+    }
+
+    [data-bs-theme="dark"] .pagination-info {
+        color: #b0b0b0;
+    }
+
+    /* ============= Empty State ============= */
+    .empty-state {
+        text-align: center;
+        padding: 60px 20px;
+    }
+
+    .empty-icon {
+        font-size: 64px;
+        color: #4e73df;
+        margin-bottom: 20px;
+        opacity: 0.5;
+    }
+
+    .empty-title {
+        font-size: 24px;
+        font-weight: 700;
+        color: #2e3440;
+        margin-bottom: 12px;
+    }
+
+    [data-bs-theme="dark"] .empty-title {
+        color: #e0e0e0;
+    }
+
+    .empty-message {
+        font-size: 14px;
+        color: #6c757d;
+        margin-bottom: 25px;
+    }
+
+    [data-bs-theme="dark"] .empty-message {
+        color: #b0b0b0;
+    }
+
+    .empty-action-btn {
+        display: inline-flex;
+        align-items: center;
+        gap: 8px;
+        padding: 12px 28px;
+        background: linear-gradient(135deg, #4e73df 0%, #224abe 100%);
+        color: white;
+        border-radius: 12px;
+        font-weight: 600;
+        text-decoration: none;
+        transition: all 0.3s ease;
+    }
+
+    .empty-action-btn:hover {
+        transform: translateY(-2px);
+        box-shadow: 0 8px 24px rgba(78, 115, 223, 0.3);
+    }
+
+    /* ============= Animations ============= */
+    @keyframes slideInDown {
+        from {
+            opacity: 0;
+            transform: translateY(-30px);
+        }
+        to {
+            opacity: 1;
+            transform: translateY(0);
+        }
+    }
+
+    @keyframes slideInUp {
+        from {
+            opacity: 0;
+            transform: translateY(30px);
+        }
+        to {
+            opacity: 1;
+            transform: translateY(0);
+        }
+    }
+
+    /* ============= Responsive Design ============= */
+    @media (max-width: 1024px) {
+        .attendance-list-container {
+            padding: 15px;
+        }
+
+        .hero-section {
+            padding: 30px 15px;
+        }
+
+        .attendance-title {
+            font-size: 32px;
+        }
+
+        .stats-grid {
+            grid-template-columns: repeat(2, 1fr);
+        }
+
+        .action-cards {
+            grid-template-columns: 1fr;
+        }
+
+        .filter-grid {
+            grid-template-columns: repeat(2, 1fr);
+        }
+
+        .attendance-table {
+            font-size: 13px;
+        }
+
+        .attendance-table td,
+        .attendance-table th {
+            padding: 10px 12px;
+        }
+    }
+
+    @media (max-width: 768px) {
+        .attendance-list-container {
+            padding: 10px;
+        }
+
+        .hero-section {
+            padding: 25px 15px;
+            border-radius: 16px;
+        }
+
+        .attendance-title {
+            font-size: 24px;
+        }
+
+        .attendance-subtitle {
+            font-size: 14px;
+        }
+
+        .stats-grid {
+            grid-template-columns: repeat(2, 1fr);
+            gap: 15px;
+        }
+
+        .stat-card {
+            flex-direction: column;
+            text-align: center;
+        }
+
+        .filter-card {
+            padding: 20px;
+        }
+
+        .filter-grid {
+            grid-template-columns: 1fr;
+            gap: 15px;
+        }
+
+        .filter-actions {
+            flex-direction: column;
+        }
+
+        .filter-btn {
+            width: 100%;
+            justify-content: center;
+        }
+
+        .records-card {
+            padding: 20px;
+        }
+
+        .records-header {
+            flex-direction: column;
+        }
+
+        .record-count {
+            margin-left: 0;
+            margin-top: 10px;
+        }
+
+        .attendance-table {
+            font-size: 12px;
+            display: block;
+            overflow-x: auto;
+        }
+
+        .attendance-table td,
+        .attendance-table th {
+            padding: 8px 10px;
+            white-space: nowrap;
+        }
+
+        .student-cell {
+            flex-direction: column;
+            text-align: center;
+            gap: 8px;
+        }
+
+        .pagination-container {
+            flex-direction: column;
+            align-items: center;
+        }
+
+        .pagination-list {
+            flex-wrap: wrap;
+        }
+    }
+
+    @media (max-width: 480px) {
+        .attendance-badge {
+            font-size: 10px;
+            padding: 6px 12px;
+        }
+
+        .attendance-title {
+            font-size: 20px;
+            margin-bottom: 8px;
+        }
+
+        .stats-grid {
+            grid-template-columns: 1fr;
+        }
+
+        .stat-value {
+            font-size: 24px;
+        }
+
+        .filter-label {
+            font-size: 12px;
+        }
+
+        .filter-input,
+        .filter-select {
+            font-size: 13px;
+            padding: 10px 12px;
+        }
+
+        .records-title {
+            font-size: 18px;
+        }
+
+        .attendance-table {
+            font-size: 11px;
+        }
+
+        .attendance-table td,
+        .attendance-table th {
+            padding: 6px 8px;
+        }
+
+        .action-buttons {
+            gap: 4px;
+        }
+
+        .action-btn {
+            width: 32px;
+            height: 32px;
+            font-size: 12px;
+        }
+
+        .pagination-link {
+            width: 32px;
+            height: 32px;
+            font-size: 12px;
+        }
+    }
+
+    /* ============= Print Optimization ============= */
+    @media print {
+        .attendance-list-container {
+            background: white;
+        }
+
+        .hero-section,
+        .action-cards,
+        .filter-card,
+        .page-title,
+        .page-actions {
+            display: none !important;
+        }
+
+        .records-card {
+            box-shadow: none;
+            border: 1px solid #ddd;
+        }
+
+        .attendance-table {
+            page-break-inside: avoid;
+        }
+
+        body {
+            background: white;
+            color: black;
+        }
+    }
+</style>
+
+{% endblock %}
+<div class="row mb-4">
+    <div class="col-12">
+        <div class="card">
+            <div class="card-header">
+                <h6 class="m-0 font-weight-bold text-primary">
+                    <i class="fas fa-filter me-2"></i>Filter Records
+                </h6>
+            </div>
+            <div class="card-body">
+                <form method="get" class="row g-3">
+                    <div class="col-md-3">
+                        <label class="form-label">Date Range</label>
+                        <input type="date" name="start_date" class="form-control" value="{{ start_date|date:'Y-m-d' }}">
+                    </div>
+                    <div class="col-md-3">
+                        <label class="form-label">To</label>
+                        <input type="date" name="end_date" class="form-control" value="{{ end_date|date:'Y-m-d' }}">
+                    </div>
+                    <div class="col-md-3">
+                        <label class="form-label">Class</label>
+                        <select name="class_id" class="form-select">
+                            <option value="">All Classes</option>
+                            {% for class in classes %}
+                            <option value="{{ class.id }}" {% if class_filter == class.id %}selected{% endif %}>
+                                {{ class.name }} - {{ class.section }}
+                            </option>
+                            {% endfor %}
+                        </select>
+                    </div>
+                    <div class="col-md-3">
+                        <label class="form-label">Student</label>
+                        <select name="student_id" class="form-select">
+                            <option value="">All Students</option>
+                            {% for student in students %}
+                            <option value="{{ student.id }}" {% if student_filter == student.id %}selected{% endif %}>
+                                {{ student.user.get_full_name }}
+                            </option>
+                            {% endfor %}
+                        </select>
+                    </div>
+                    <div class="col-12">
+                        <button type="submit" class="btn btn-primary">
+                            <i class="fas fa-filter me-1"></i>Apply Filters
+                        </button>
+                        <a href="{% url 'attendance_list' %}" class="btn btn-secondary ms-2">
+                            <i class="fas fa-redo me-1"></i>Reset
+                        </a>
+                    </div>
+                </form>
+            </div>
+        </div>
+    </div>
+</div>
+
+<div class="row">
+    <div class="col-12">
+        <div class="card">
+            <div class="card-header d-flex justify-content-between align-items-center">
+                <h6 class="m-0 font-weight-bold text-primary">
+                    <i class="fas fa-clipboard-list me-2"></i>Attendance Records ({{ attendance_records.paginator.count }})
+                </h6>
+                <div class="d-flex">
+                    <div class="input-group input-group-sm me-2" style="width: 150px;">
+                        <span class="input-group-text">Show</span>
+                        <input type="number" class="form-control" value="25" min="10" max="100">
+                        <span class="input-group-text">entries</span>
+                    </div>
+                </div>
+            </div>
+            <div class="card-body">
+                <div class="table-responsive">
+                    <table class="table table-hover">
+                        <thead>
+                            <tr>
+                                <th>Date</th>
+                                <th>Student</th>
+                                <th>Class</th>
+                                <th>Status</th>
+                                <th>Subject</th>
+                                <th>Period</th>
+                                <th>Teacher</th>
+                                <th>Remarks</th>
+                                <th>Marked By</th>
+                                <th>Actions</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            {% for record in attendance_records %}
+                            <tr>
+                                <td>{{ record.date|date:"d M Y" }}</td>
+                                <td>
+                                    <div class="d-flex align-items-center">
+                                        {% if record.student.user.profile_picture %}
+                                        <img src="{{ record.student.user.profile_picture.url }}" alt="Avatar" 
+                                             class="rounded-circle me-2" width="32" height="32">
+                                        {% else %}
+                                        <div class="rounded-circle bg-primary text-white d-flex align-items-center justify-content-center me-2" 
+                                             style="width: 32px; height: 32px;">
+                                            <i class="fas fa-user"></i>
+                                        </div>
+                                        {% endif %}
+                                        <div>
+                                            <strong>{{ record.student.user.get_full_name }}</strong><br>
+                                            <small class="text-muted">{{ record.student.roll_number }}</small>
+                                        </div>
+                                    </div>
+                                </td>
+                                <td>
+                                    <span class="badge bg-info">{{ record.student.class_enrolled.name }}</span>
+                                </td>
+                                <td>
+                                    {% if record.status == 'Present' %}
+                                    <span class="badge badge-attendance-present">Present</span>
+                                    {% elif record.status == 'Absent' %}
+                                    <span class="badge badge-attendance-absent">Absent</span>
+                                    {% elif record.status == 'Late' %}
+                                    <span class="badge badge-attendance-late">Late</span>
+                                    {% elif record.status == 'Half Day' %}
+                                    <span class="badge bg-warning">Half Day</span>
+                                    {% elif record.status == 'Excused' %}
+                                    <span class="badge bg-secondary">Excused</span>
+                                    {% elif record.status == 'Sick' %}
+                                    <span class="badge bg-danger">Sick</span>
+                                    {% endif %}
+                                </td>
+                                <td>{{ record.subject.name|default:"-" }}</td>
+                                <td>{{ record.period|default:"-" }}</td>
+                                <td>
+                                    {% if record.teacher %}
+                                    {{ record.teacher.user.get_full_name }}
+                                    {% else %}
+                                    <span class="text-muted">-</span>
+                                    {% endif %}
+                                </td>
+                                <td>
+                                    <small class="text-muted">{{ record.remarks|truncatechars:30|default:"-" }}</small>
+                                </td>
+                                <td>
+                                    <small>{{ record.marked_by.get_full_name }}</small><br>
+                                    <small class="text-muted">{{ record.marked_at|time:"g:i A" }}</small>
+                                </td>
+                                <td>
+                                    <div class="btn-group btn-group-sm">
+                                        <button class="btn btn-warning" data-bs-toggle="modal" 
+                                                data-bs-target="#editModal{{ record.id }}" title="Edit">
+                                            <i class="fas fa-edit"></i>
+                                        </button>
+                                        <a href="{% url 'attendance_delete' record.id %}" class="btn btn-danger" title="Delete">
+                                            <i class="fas fa-trash"></i>
+                                        </a>
+                                    </div>
+                                </td>
+                            </tr>
+                            
+                            <!-- Edit Modal -->
+                            <div class="modal fade" id="editModal{{ record.id }}" tabindex="-1">
+                                <div class="modal-dialog">
+                                    <div class="modal-content">
+                                        <div class="modal-header">
+                                            <h5 class="modal-title">Edit Attendance Record</h5>
+                                            <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+                                        </div>
+                                        <form method="post" action="{% url 'attendance_update' record.id %}">
+                                            {% csrf_token %}
+                                            <div class="modal-body">
+                                                <div class="mb-3">
+                                                    <label class="form-label">Status</label>
+                                                    <select name="status" class="form-select">
+                                                        <option value="Present" {% if record.status == 'Present' %}selected{% endif %}>Present</option>
+                                                        <option value="Absent" {% if record.status == 'Absent' %}selected{% endif %}>Absent</option>
+                                                        <option value="Late" {% if record.status == 'Late' %}selected{% endif %}>Late</option>
+                                                        <option value="Half Day" {% if record.status == 'Half Day' %}selected{% endif %}>Half Day</option>
+                                                        <option value="Excused" {% if record.status == 'Excused' %}selected{% endif %}>Excused</option>
+                                                        <option value="Sick" {% if record.status == 'Sick' %}selected{% endif %}>Sick</option>
+                                                    </select>
+                                                </div>
+                                                <div class="mb-3">
+                                                    <label class="form-label">Remarks</label>
+                                                    <textarea name="remarks" class="form-control" rows="3">{{ record.remarks }}</textarea>
+                                                </div>
+                                            </div>
+                                            <div class="modal-footer">
+                                                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancel</button>
+                                                <button type="submit" class="btn btn-primary">Save Changes</button>
+                                            </div>
+                                        </form>
+                                    </div>
+                                </div>
+                            </div>
+                            {% empty %}
+                            <tr>
+                                <td colspan="10" class="text-center py-4">
+                                    <i class="fas fa-clipboard-list fa-3x text-muted mb-3"></i>
+                                    <h5 class="text-muted">No attendance records found</h5>
+                                    <p>Try adjusting your filters or take new attendance.</p>
+                                    <a href="{% url 'take_attendance' %}" class="btn btn-primary">
+                                        <i class="fas fa-plus me-1"></i>Take Attendance
+                                    </a>
+                                </td>
+                            </tr>
+                            {% endfor %}
+                        </tbody>
+                    </table>
+                </div>
+                
+                <!-- Pagination -->
+                {% if attendance_records.paginator.num_pages > 1 %}
+                <nav aria-label="Page navigation">
+                    <ul class="pagination justify-content-center">
+                        {% if attendance_records.has_previous %}
+                        <li class="page-item">
+                            <a class="page-link" href="?page=1{% if start_date %}&start_date={{ start_date }}{% endif %}{% if end_date %}&end_date={{ end_date }}{% endif %}{% if class_filter %}&class_id={{ class_filter }}{% endif %}{% if student_filter %}&student_id={{ student_filter }}{% endif %}">
+                                <i class="fas fa-angle-double-left"></i>
+                            </a>
+                        </li>
+                        <li class="page-item">
+                            <a class="page-link" href="?page={{ attendance_records.previous_page_number }}{% if start_date %}&start_date={{ start_date }}{% endif %}{% if end_date %}&end_date={{ end_date }}{% endif %}{% if class_filter %}&class_id={{ class_filter }}{% endif %}{% if student_filter %}&student_id={{ student_filter }}{% endif %}">
+                                <i class="fas fa-angle-left"></i>
+                            </a>
+                        </li>
+                        {% endif %}
+                        
+                        {% for num in attendance_records.paginator.page_range %}
+                            {% if attendance_records.number == num %}
+                            <li class="page-item active">
+                                <span class="page-link">{{ num }}</span>
+                            </li>
+                            {% elif num > attendance_records.number|add:'-3' and num < attendance_records.number|add:'3' %}
+                            <li class="page-item">
+                                <a class="page-link" href="?page={{ num }}{% if start_date %}&start_date={{ start_date }}{% endif %}{% if end_date %}&end_date={{ end_date }}{% endif %}{% if class_filter %}&class_id={{ class_filter }}{% endif %}{% if student_filter %}&student_id={{ student_filter }}{% endif %}">{{ num }}</a>
+                            </li>
+                            {% endif %}
+                        {% endfor %}
+                        
+                        {% if attendance_records.has_next %}
+                        <li class="page-item">
+                            <a class="page-link" href="?page={{ attendance_records.next_page_number }}{% if start_date %}&start_date={{ start_date }}{% endif %}{% if end_date %}&end_date={{ end_date }}{% endif %}{% if class_filter %}&class_id={{ class_filter }}{% endif %}{% if student_filter %}&student_id={{ student_filter }}{% endif %}">
+                                <i class="fas fa-angle-right"></i>
+                            </a>
+                        </li>
+                        <li class="page-item">
+                            <a class="page-link" href="?page={{ attendance_records.paginator.num_pages }}{% if start_date %}&start_date={{ start_date }}{% endif %}{% if end_date %}&end_date={{ end_date }}{% endif %}{% if class_filter %}&class_id={{ class_filter }}{% endif %}{% if student_filter %}&student_id={{ student_filter }}{% endif %}">
+                                <i class="fas fa-angle-double-right"></i>
+                            </a>
+                        </li>
+                        {% endif %}
+                    </ul>
+                </nav>
+                {% endif %}
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Statistics -->
+<div class="row mt-4">
+    <div class="col-md-3">
+        <div class="card">
+            <div class="card-body text-center">
+                <i class="fas fa-calendar-check fa-3x text-success mb-3"></i>
+                <h3>{{ total_present }}</h3>
+                <p class="text-muted">Present Days</p>
+            </div>
+        </div>
+    </div>
+    <div class="col-md-3">
+        <div class="card">
+            <div class="card-body text-center">
+                <i class="fas fa-calendar-times fa-3x text-danger mb-3"></i>
+                <h3>{{ total_absent }}</h3>
+                <p class="text-muted">Absent Days</p>
+            </div>
+        </div>
+    </div>
+    <div class="col-md-3">
+        <div class="card">
+            <div class="card-body text-center">
+                <i class="fas fa-clock fa-3x text-warning mb-3"></i>
+                <h3>{{ total_late }}</h3>
+                <p class="text-muted">Late Days</p>
+            </div>
+        </div>
+    </div>
+    <div class="col-md-3">
+        <div class="card">
+            <div class="card-body text-center">
+                <i class="fas fa-chart-line fa-3x text-primary mb-3"></i>
+                <h3>{{ overall_percentage|floatformat:1 }}%</h3>
+                <p class="text-muted">Overall Attendance</p>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}

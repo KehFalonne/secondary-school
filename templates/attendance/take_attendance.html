@@ -1,0 +1,1615 @@
+{% extends 'base.html' %}
+
+{% block title %}Take Attendance{% endblock %}
+{% block page_title %}Take Attendance{% endblock %}
+
+{% block breadcrumb %}
+<li class="breadcrumb-item active">Attendance</li>
+{% endblock %}
+
+{% block page_actions %}
+{% endblock %}
+
+{% block content %}
+<div class="attendance-container">
+    <!-- Hero Section -->
+    <div class="hero-section">
+        <div class="hero-gradient"></div>
+        <div class="hero-content">
+            <div class="attendance-badge">
+                <i class="fas fa-clipboard-check"></i> ATTENDANCE MANAGEMENT
+            </div>
+            <h1 class="attendance-title">Take Attendance</h1>
+            <p class="hero-subtitle">Mark student attendance and track records</p>
+        </div>
+    </div>
+
+    <!-- Main Content -->
+    <div class="attendance-content">
+        <!-- Filter Card -->
+        <div class="filter-card">
+            <div class="filter-header">
+                <div class="filter-icon">
+                    <i class="fas fa-sliders-h"></i>
+                </div>
+                <h3>Attendance Settings</h3>
+            </div>
+            <form method="get" class="filter-form">
+                <div class="filter-grid">
+                    <div class="form-group-filter">
+                        <label for="date" class="filter-label">
+                            <i class="fas fa-calendar"></i> Select Date
+                        </label>
+                        <input type="date" id="date" name="date" class="filter-input" value="{{ selected_date|date:'Y-m-d' }}">
+                    </div>
+                    <div class="form-group-filter">
+                        <label for="class_id" class="filter-label">
+                            <i class="fas fa-building"></i> Select Class
+                        </label>
+                        <select id="class_id" name="class_id" class="filter-select" required>
+                            <option value="">-- Select Class --</option>
+                            {% for class in classes %}
+                            <option value="{{ class.id }}" {% if selected_class.id == class.id %}selected{% endif %}>
+                                {{ class.name }} - Section {{ class.section }}
+                            </option>
+                            {% endfor %}
+                        </select>
+                    </div>
+                    <div class="form-group-filter">
+                        <label for="subject_id" class="filter-label">
+                            <i class="fas fa-book"></i> Select Subject (Optional)
+                        </label>
+                        <select id="subject_id" name="subject_id" class="filter-select">
+                            <option value="">-- All Subjects --</option>
+                            {% for subject in subjects %}
+                            <option value="{{ subject.id }}">{{ subject.name }}</option>
+                            {% endfor %}
+                        </select>
+                    </div>
+                </div>
+                <div class="filter-actions">
+                    <button type="submit" class="btn-apply-filter">
+                        <i class="fas fa-search me-2"></i>Load Students
+                    </button>
+                </div>
+            </form>
+        </div>
+
+        {% if selected_class %}
+        <!-- Attendance Card -->
+        <div class="attendance-card">
+            <div class="attendance-header">
+                <div class="header-info">
+                    <h2 class="attendance-form-title">
+                        <i class="fas fa-clipboard-check"></i> {{ selected_class.name }}
+                    </h2>
+                    <p class="attendance-date">{{ selected_date|date:"l, d F Y" }}</p>
+                </div>
+                <div class="attendance-stats">
+                    <div class="stat-badge total">
+                        <span class="stat-value">{{ students.count }}</span>
+                        <span class="stat-label">Total Students</span>
+                    </div>
+                    <div class="stat-badge present">
+                        <span class="stat-value" id="presentCount">0</span>
+                        <span class="stat-label">Present</span>
+                    </div>
+                    <div class="stat-badge absent">
+                        <span class="stat-value" id="absentCount">0</span>
+                        <span class="stat-label">Absent</span>
+                    </div>
+                </div>
+            </div>
+
+            <form method="post" action="{% url 'take_attendance' %}?{{ request.GET.urlencode }}" id="attendanceForm">
+                {% csrf_token %}
+                <input type="hidden" name="date" value="{{ selected_date|date:'Y-m-d' }}">
+                <input type="hidden" name="class_id" value="{{ selected_class.id }}">
+                {% if selected_subject %}<input type="hidden" name="subject_id" value="{{ selected_subject.id }}">{% endif %}
+
+                <!-- Quick Actions -->
+                {% if students %}
+                <div class="quick-actions">
+                    <button type="button" class="quick-action-btn present-all" onclick="markAllPresent()" title="Mark All Present">
+                        <i class="fas fa-check-double"></i> Mark All Present
+                    </button>
+                    <button type="button" class="quick-action-btn absent-all" onclick="markAllAbsent()" title="Mark All Absent">
+                        <i class="fas fa-times-circle"></i> Mark All Absent
+                    </button>
+                </div>
+                {% endif %}
+
+                <!-- Student Attendance Table -->
+                <div class="student-list">
+                    {% if students %}
+                        {% for student in students %}
+                        <div class="student-attendance-item">
+                            <div class="student-info-box">
+                                <div class="student-avatar">
+                                    {% if student.user.profile_picture %}
+                                        <img src="{{ student.user.profile_picture.url }}" alt="{{ student.user.get_full_name }}">
+                                    {% else %}
+                                        <div class="avatar-placeholder">
+                                            {{ student.user.first_name|upper|first }}
+                                        </div>
+                                    {% endif %}
+                                </div>
+                                <div class="student-details">
+                                    <p class="student-name">{{ student.user.get_full_name }}</p>
+                                    <span class="student-meta">
+                                        <span class="roll-number">Roll #{{ student.roll_number }}</span>
+                                        <span class="admission-no">{{ student.admission_number }}</span>
+                                    </span>
+                                </div>
+                            </div>
+
+                            <div class="attendance-controls">
+                                <div class="status-selector">
+                                    <select name="status_{{ student.pk }}" class="status-select" onchange="updateCounters()">
+                                        {% for code, label in status_choices %}
+                                        <option value="{{ code }}" {% if student.attendance_record.status == code %}selected{% endif %}>
+                                            {{ label }}
+                                        </option>
+                                        {% endfor %}
+                                    </select>
+                                </div>
+
+                                <div class="quick-status-buttons">
+                                    <button type="button" class="status-btn present-btn" onclick="markStatus(event, 'Present')" title="Present">
+                                        <i class="fas fa-check"></i>
+                                    </button>
+                                    <button type="button" class="status-btn late-btn" onclick="markStatus(event, 'Late')" title="Late">
+                                        <i class="fas fa-clock"></i>
+                                    </button>
+                                    <button type="button" class="status-btn absent-btn" onclick="markStatus(event, 'Absent')" title="Absent">
+                                        <i class="fas fa-times"></i>
+                                    </button>
+                                </div>
+
+                                <div class="remarks-input">
+                                    <input type="text" name="remarks_{{ student.pk }}" 
+                                           class="remarks-field" 
+                                           placeholder="Remarks (optional)"
+                                           value="{{ student.attendance_record.remarks|default:'' }}">
+                                </div>
+                            </div>
+                        </div>
+                        {% endfor %}
+                    {% else %}
+                    <div class="empty-state">
+                        <i class="fas fa-inbox"></i>
+                        <h4>No Students Found</h4>
+                        <p>No students in this class</p>
+                    </div>
+                    {% endif %}
+                </div>
+
+                {% if students %}
+                <!-- Summary Section -->
+                <div class="attendance-summary-section">
+                    <div class="summary-grid">
+                        <div class="summary-card present-card">
+                            <div class="summary-icon">
+                                <i class="fas fa-user-check"></i>
+                            </div>
+                            <div class="summary-content">
+                                <p class="summary-label">Present</p>
+                                <p class="summary-value" id="summaryPresent">0</p>
+                            </div>
+                        </div>
+                        <div class="summary-card late-card">
+                            <div class="summary-icon">
+                                <i class="fas fa-hourglass-half"></i>
+                            </div>
+                            <div class="summary-content">
+                                <p class="summary-label">Late</p>
+                                <p class="summary-value" id="summaryLate">0</p>
+                            </div>
+                        </div>
+                        <div class="summary-card absent-card">
+                            <div class="summary-icon">
+                                <i class="fas fa-user-times"></i>
+                            </div>
+                            <div class="summary-content">
+                                <p class="summary-label">Absent</p>
+                                <p class="summary-value" id="summaryAbsent">0</p>
+                            </div>
+                        </div>
+                        <div class="summary-card percentage-card">
+                            <div class="summary-icon">
+                                <i class="fas fa-chart-pie"></i>
+                            </div>
+                            <div class="summary-content">
+                                <p class="summary-label">Attendance</p>
+                                <p class="summary-value" id="attendancePercentageValue">0%</p>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="attendance-progress">
+                        <div class="progress-bar-container">
+                            <div class="progress-bar" id="attendanceBar" style="width: 0%"></div>
+                        </div>
+                        <p class="progress-text" id="attendancePercentage">0% attendance</p>
+                    </div>
+
+                    <div class="notes-section">
+                        <label for="notes" class="notes-label">
+                            <i class="fas fa-sticky-note"></i> Additional Notes
+                        </label>
+                        <textarea id="notes" name="notes" class="notes-textarea" 
+                                  placeholder="Add any notes about today's attendance..."></textarea>
+                    </div>
+                </div>
+
+                <!-- Action Buttons -->
+                <div class="form-actions">
+                    <button type="button" class="btn-reset" onclick="resetForm()">
+                        <i class="fas fa-redo me-2"></i>Reset
+                    </button>
+                    <button type="submit" class="btn-save-attendance">
+                        <i class="fas fa-save me-2"></i>Save Attendance
+                    </button>
+                </div>
+                {% endif %}
+            </form>
+        </div>
+
+        <!-- Recent Attendance Records -->
+        <div class="recent-records-card">
+            <div class="records-header">
+                <div class="header-icon">
+                    <i class="fas fa-history"></i>
+                </div>
+                <h3>Recent Attendance Records</h3>
+            </div>
+
+            <div class="records-table-wrapper">
+                <table class="records-table">
+                    <thead>
+                        <tr>
+                            <th><i class="fas fa-calendar"></i> Date</th>
+                            <th><i class="fas fa-book"></i> Subject</th>
+                            <th><i class="fas fa-user-check"></i> Present</th>
+                            <th><i class="fas fa-user-times"></i> Absent</th>
+                            <th><i class="fas fa-chart-line"></i> Percentage</th>
+                            <th><i class="fas fa-user-tie"></i> Marked By</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        {% for record in recent_attendance %}
+                        <tr class="record-row">
+                            <td class="record-date">{{ record.date|date:"d M Y" }}</td>
+                            <td class="record-subject">{{ record.subject.name|default:"All Day" }}</td>
+                            <td class="record-present">
+                                <span class="badge-present">{{ record.present_count }}</span>
+                            </td>
+                            <td class="record-absent">
+                                <span class="badge-absent">{{ record.absent_count }}</span>
+                            </td>
+                            <td class="record-percentage">
+                                <div class="mini-progress">
+                                    <div class="mini-progress-fill" style="width: {{ record.percentage }}%"></div>
+                                </div>
+                                <span class="percentage-text">{{ record.percentage|floatformat:1 }}%</span>
+                            </td>
+                            <td class="record-marked-by">{{ record.marked_by.get_full_name }}</td>
+                        </tr>
+                        {% empty %}
+                        <tr class="empty-row">
+                            <td colspan="6">
+                                <div class="empty-state-table">
+                                    <i class="fas fa-calendar-times"></i>
+                                    <p>No recent attendance records</p>
+                                </div>
+                            </td>
+                        </tr>
+                        {% endfor %}
+                    </tbody>
+                </table>
+            </div>
+        </div>
+        {% endif %}
+    </div>
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+    function updateCounters() {
+        let present = 0, absent = 0, late = 0, halfDay = 0, excused = 0, sick = 0;
+        const statusSelects = document.querySelectorAll('.status-select');
+        const total = statusSelects.length;
+
+        if (total === 0) return;
+
+        statusSelects.forEach(select => {
+            const val = select.value;
+            if (val === 'Present') present++;
+            else if (val === 'Absent') absent++;
+            else if (val === 'Late') late++;
+            else if (val === 'Half Day') halfDay++;
+            else if (val === 'Excused') excused++;
+            else if (val === 'Sick') sick++;
+        });
+
+        document.getElementById('presentCount').textContent = present + late + halfDay;
+        document.getElementById('absentCount').textContent = absent + excused + sick;
+
+        document.getElementById('summaryPresent').textContent = present;
+        document.getElementById('summaryLate').textContent = late;
+        document.getElementById('summaryAbsent').textContent = absent;
+
+        const effectivePresent = present + late + (halfDay * 0.5);
+        const percentage = total > 0 ? (effectivePresent / total * 100) : 0;
+
+        const bar = document.getElementById('attendanceBar');
+        bar.style.width = percentage.toFixed(1) + '%';
+        bar.textContent = percentage.toFixed(1) + '%';
+
+        bar.className = 'progress-bar';
+        if (percentage >= 80) {
+            bar.classList.add('success');
+        } else if (percentage >= 50) {
+            bar.classList.add('warning');
+        } else {
+            bar.classList.add('danger');
+        }
+
+        document.getElementById('attendancePercentage').textContent = percentage.toFixed(1) + '% attendance';
+        document.getElementById('attendancePercentageValue').textContent = percentage.toFixed(1) + '%';
+    }
+
+    function markStatus(e, status) {
+        e.preventDefault();
+        const item = e.target.closest('.student-attendance-item');
+        const select = item.querySelector('.status-select');
+        select.value = status;
+        updateCounters();
+    }
+    
+    function markAllPresent() {
+        document.querySelectorAll('.status-select').forEach(select => {
+            select.value = 'Present';
+        });
+        updateCounters();
+    }
+    
+    function markAllAbsent() {
+        document.querySelectorAll('.status-select').forEach(select => {
+            select.value = 'Absent';
+        });
+        updateCounters();
+    }
+    
+    function resetForm() {
+        document.getElementById('attendanceForm').reset();
+        updateCounters();
+    }
+    
+    document.addEventListener('DOMContentLoaded', updateCounters);
+</script>
+{% endblock %}
+
+{% block extra_css %}
+<style>
+    /* ====== Container ====== */
+    .attendance-container {
+        background: linear-gradient(135deg, #f5f7fa 0%, #c3cfe2 100%);
+        min-height: 100vh;
+        padding-bottom: 3rem;
+        animation: fadeIn 0.6s ease;
+    }
+
+    /* ====== Hero Section ====== */
+    .hero-section {
+        position: relative;
+        height: 320px;
+        display: flex;
+        align-items: flex-end;
+        padding: 3rem 2rem;
+        overflow: hidden;
+        margin-bottom: 3rem;
+    }
+
+    .hero-gradient {
+        position: absolute;
+        top: 0;
+        left: 0;
+        right: 0;
+        bottom: 0;
+        background: linear-gradient(135deg, #4e73df 0%, #1cc88a 100%);
+        z-index: 0;
+    }
+
+    .hero-section::before {
+        content: '';
+        position: absolute;
+        top: 0;
+        left: 0;
+        right: 0;
+        bottom: 0;
+        background: 
+            radial-gradient(circle at 20% 50%, rgba(255,255,255,0.1) 0%, transparent 50%),
+            radial-gradient(circle at 80% 80%, rgba(255,255,255,0.1) 0%, transparent 50%);
+        z-index: 1;
+    }
+
+    .hero-content {
+        position: relative;
+        z-index: 2;
+        width: 100%;
+        max-width: 1200px;
+        margin: 0 auto;
+        padding: 0 1rem;
+    }
+
+    .attendance-badge {
+        display: inline-flex;
+        align-items: center;
+        gap: 0.5rem;
+        background: rgba(255, 255, 255, 0.25);
+        color: white;
+        padding: 0.6rem 1.2rem;
+        border-radius: 30px;
+        font-weight: 600;
+        font-size: 0.85rem;
+        margin-bottom: 1.5rem;
+        backdrop-filter: blur(10px);
+    }
+
+    .attendance-title {
+        font-size: 2.5rem;
+        font-weight: 800;
+        color: white;
+        margin: 0 0 0.5rem 0;
+        text-shadow: 0 2px 10px rgba(0,0,0,0.2);
+    }
+
+    .hero-subtitle {
+        font-size: 1rem;
+        color: rgba(255, 255, 255, 0.9);
+        margin: 0;
+    }
+
+    /* ====== Content ====== */
+    .attendance-content {
+        max-width: 1400px;
+        margin: 0 auto;
+        padding: 0 1rem;
+    }
+
+    /* ====== Filter Card ====== */
+    .filter-card {
+        background: linear-gradient(135deg, rgba(255, 255, 255, 0.95) 0%, rgba(255, 255, 255, 0.85) 100%);
+        border: 1px solid rgba(78, 115, 223, 0.1);
+        border-radius: 16px;
+        backdrop-filter: blur(10px);
+        padding: 2rem;
+        box-shadow: 0 8px 32px 0 rgba(31, 38, 135, 0.07);
+        margin-bottom: 2rem;
+        animation: slideInUp 0.6s ease;
+    }
+
+    .filter-header {
+        display: flex;
+        align-items: center;
+        gap: 1rem;
+        margin-bottom: 1.5rem;
+        padding-bottom: 1rem;
+        border-bottom: 2px solid rgba(78, 115, 223, 0.08);
+    }
+
+    .filter-icon {
+        width: 45px;
+        height: 45px;
+        border-radius: 10px;
+        background: linear-gradient(135deg, #4e73df 0%, #1cc88a 100%);
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        color: white;
+        font-size: 1.2rem;
+    }
+
+    .filter-header h3 {
+        margin: 0;
+        font-size: 1.2rem;
+        font-weight: 700;
+        color: #2e3440;
+    }
+
+    .filter-form {
+        display: flex;
+        flex-direction: column;
+        gap: 1.5rem;
+    }
+
+    .filter-grid {
+        display: grid;
+        grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
+        gap: 1.5rem;
+    }
+
+    .form-group-filter {
+        display: flex;
+        flex-direction: column;
+        gap: 0.5rem;
+    }
+
+    .filter-label {
+        font-weight: 600;
+        color: #2e3440;
+        font-size: 0.9rem;
+        display: flex;
+        align-items: center;
+        gap: 0.5rem;
+    }
+
+    .filter-label i {
+        color: #4e73df;
+    }
+
+    .filter-input,
+    .filter-select {
+        padding: 0.85rem 1rem;
+        border: 1.5px solid rgba(78, 115, 223, 0.2);
+        border-radius: 10px;
+        background: linear-gradient(135deg, rgba(255, 255, 255, 0.8) 0%, rgba(255, 255, 255, 0.6) 100%);
+        color: #2e3440;
+        font-size: 0.95rem;
+        transition: all 0.3s ease;
+        font-family: inherit;
+    }
+
+    .filter-input:focus,
+    .filter-select:focus {
+        outline: none;
+        border-color: #1cc88a;
+        background: white;
+        box-shadow: 0 0 0 4px rgba(28, 200, 138, 0.1);
+    }
+
+    .filter-actions {
+        display: flex;
+        gap: 1rem;
+        justify-content: flex-start;
+    }
+
+    .btn-apply-filter {
+        padding: 0.85rem 2rem;
+        border-radius: 10px;
+        font-weight: 600;
+        font-size: 0.95rem;
+        text-decoration: none;
+        border: none;
+        cursor: pointer;
+        transition: all 0.3s ease;
+        display: inline-flex;
+        align-items: center;
+        justify-content: center;
+        gap: 0.5rem;
+        background: linear-gradient(135deg, #4e73df 0%, #1cc88a 100%);
+        color: white;
+        box-shadow: 0 4px 15px rgba(78, 115, 223, 0.3);
+    }
+
+    .btn-apply-filter:hover {
+        transform: translateY(-2px);
+        box-shadow: 0 8px 25px rgba(78, 115, 223, 0.4);
+    }
+
+    /* ====== Attendance Card ====== */
+    .attendance-card {
+        background: linear-gradient(135deg, rgba(255, 255, 255, 0.95) 0%, rgba(255, 255, 255, 0.85) 100%);
+        border: 1px solid rgba(78, 115, 223, 0.1);
+        border-radius: 16px;
+        backdrop-filter: blur(10px);
+        padding: 2rem;
+        box-shadow: 0 8px 32px 0 rgba(31, 38, 135, 0.07);
+        margin-bottom: 2rem;
+        animation: slideInUp 0.6s ease 0.1s both;
+    }
+
+    .attendance-header {
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        margin-bottom: 2rem;
+        padding-bottom: 1.5rem;
+        border-bottom: 2px solid rgba(78, 115, 223, 0.08);
+    }
+
+    .header-info h2 {
+        margin: 0 0 0.3rem 0;
+        font-size: 1.5rem;
+        color: #2e3440;
+        font-weight: 700;
+        display: flex;
+        align-items: center;
+        gap: 0.75rem;
+    }
+
+    .attendance-form-title i {
+        color: #4e73df;
+    }
+
+    .attendance-date {
+        margin: 0;
+        font-size: 0.95rem;
+        color: #6c757d;
+    }
+
+    .attendance-stats {
+        display: flex;
+        gap: 1.5rem;
+        flex-wrap: wrap;
+    }
+
+    .stat-badge {
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+        gap: 0.5rem;
+        padding: 0.8rem 1.2rem;
+        border-radius: 10px;
+        border: 1px solid rgba(78, 115, 223, 0.15);
+    }
+
+    .stat-badge.total {
+        background: rgba(78, 115, 223, 0.1);
+        color: #4e73df;
+    }
+
+    .stat-badge.present {
+        background: rgba(28, 200, 138, 0.1);
+        color: #1cc88a;
+    }
+
+    .stat-badge.absent {
+        background: rgba(231, 76, 60, 0.1);
+        color: #e74c3c;
+    }
+
+    .stat-value {
+        font-size: 1.4rem;
+        font-weight: 800;
+    }
+
+    .stat-label {
+        font-size: 0.75rem;
+        font-weight: 600;
+        text-transform: uppercase;
+        letter-spacing: 0.5px;
+    }
+
+    /* ====== Quick Actions ====== */
+    .quick-actions {
+        display: flex;
+        gap: 1rem;
+        margin-bottom: 2rem;
+        flex-wrap: wrap;
+    }
+
+    .quick-action-btn {
+        padding: 0.8rem 1.5rem;
+        border: none;
+        border-radius: 10px;
+        font-weight: 600;
+        font-size: 0.9rem;
+        cursor: pointer;
+        transition: all 0.3s ease;
+        display: inline-flex;
+        align-items: center;
+        gap: 0.5rem;
+    }
+
+    .quick-action-btn.present-all {
+        background: linear-gradient(135deg, rgba(28, 200, 138, 0.2) 0%, rgba(28, 200, 138, 0.1) 100%);
+        color: #1cc88a;
+        border: 1px solid rgba(28, 200, 138, 0.3);
+    }
+
+    .quick-action-btn.present-all:hover {
+        background: linear-gradient(135deg, #1cc88a 0%, #13a968 100%);
+        color: white;
+        transform: translateY(-2px);
+    }
+
+    .quick-action-btn.absent-all {
+        background: linear-gradient(135deg, rgba(231, 76, 60, 0.2) 0%, rgba(231, 76, 60, 0.1) 100%);
+        color: #e74c3c;
+        border: 1px solid rgba(231, 76, 60, 0.3);
+    }
+
+    .quick-action-btn.absent-all:hover {
+        background: linear-gradient(135deg, #e74c3c 0%, #c0392b 100%);
+        color: white;
+        transform: translateY(-2px);
+    }
+
+    /* ====== Student List ====== */
+    .student-list {
+        display: flex;
+        flex-direction: column;
+        gap: 1.25rem;
+        margin-bottom: 2rem;
+        max-height: 600px;
+        overflow-y: auto;
+    }
+
+    .student-list::-webkit-scrollbar {
+        width: 8px;
+    }
+
+    .student-list::-webkit-scrollbar-track {
+        background: rgba(78, 115, 223, 0.05);
+        border-radius: 10px;
+    }
+
+    .student-list::-webkit-scrollbar-thumb {
+        background: linear-gradient(135deg, #4e73df 0%, #1cc88a 100%);
+        border-radius: 10px;
+    }
+
+    .student-attendance-item {
+        display: flex;
+        align-items: center;
+        gap: 1.5rem;
+        padding: 1.25rem;
+        background: linear-gradient(135deg, rgba(255, 255, 255, 0.5) 0%, rgba(255, 255, 255, 0.3) 100%);
+        border: 1px solid rgba(78, 115, 223, 0.1);
+        border-radius: 12px;
+        transition: all 0.3s ease;
+        animation: slideInUp 0.6s ease;
+    }
+
+    .student-attendance-item:hover {
+        background: linear-gradient(135deg, rgba(255, 255, 255, 0.7) 0%, rgba(255, 255, 255, 0.5) 100%);
+        box-shadow: 0 4px 12px rgba(78, 115, 223, 0.1);
+    }
+
+    .student-info-box {
+        display: flex;
+        align-items: center;
+        gap: 1rem;
+        flex: 1;
+        min-width: 200px;
+    }
+
+    .student-avatar {
+        width: 48px;
+        height: 48px;
+        border-radius: 50%;
+        background: linear-gradient(135deg, #4e73df 0%, #1cc88a 100%);
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        overflow: hidden;
+        flex-shrink: 0;
+    }
+
+    .student-avatar img {
+        width: 100%;
+        height: 100%;
+        object-fit: cover;
+    }
+
+    .avatar-placeholder {
+        width: 100%;
+        height: 100%;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        color: white;
+        font-weight: 700;
+        font-size: 1.2rem;
+    }
+
+    .student-details {
+        display: flex;
+        flex-direction: column;
+        gap: 0.2rem;
+    }
+
+    .student-name {
+        margin: 0;
+        font-weight: 700;
+        color: #2e3440;
+        font-size: 0.95rem;
+    }
+
+    .student-meta {
+        display: flex;
+        gap: 1rem;
+        font-size: 0.8rem;
+        color: #6c757d;
+    }
+
+    .roll-number,
+    .admission-no {
+        display: block;
+    }
+
+    .attendance-controls {
+        display: flex;
+        align-items: center;
+        gap: 1rem;
+        flex-wrap: wrap;
+        flex: 1;
+    }
+
+    .status-selector {
+        flex: 1;
+        min-width: 180px;
+    }
+
+    .status-select {
+        width: 100%;
+        padding: 0.7rem 1rem;
+        border: 1.5px solid rgba(78, 115, 223, 0.2);
+        border-radius: 8px;
+        background: linear-gradient(135deg, rgba(255, 255, 255, 0.8) 0%, rgba(255, 255, 255, 0.6) 100%);
+        color: #2e3440;
+        font-size: 0.85rem;
+        font-weight: 600;
+        cursor: pointer;
+        transition: all 0.3s ease;
+    }
+
+    .status-select:focus {
+        outline: none;
+        border-color: #1cc88a;
+        box-shadow: 0 0 0 3px rgba(28, 200, 138, 0.1);
+    }
+
+    .quick-status-buttons {
+        display: flex;
+        gap: 0.5rem;
+    }
+
+    .status-btn {
+        width: 36px;
+        height: 36px;
+        border-radius: 8px;
+        border: none;
+        cursor: pointer;
+        transition: all 0.3s ease;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        font-size: 0.95rem;
+    }
+
+    .status-btn.present-btn {
+        background: linear-gradient(135deg, rgba(28, 200, 138, 0.2) 0%, rgba(28, 200, 138, 0.1) 100%);
+        color: #1cc88a;
+        border: 1px solid rgba(28, 200, 138, 0.3);
+    }
+
+    .status-btn.present-btn:hover {
+        background: linear-gradient(135deg, #1cc88a 0%, #13a968 100%);
+        color: white;
+    }
+
+    .status-btn.late-btn {
+        background: linear-gradient(135deg, rgba(246, 194, 62, 0.2) 0%, rgba(246, 194, 62, 0.1) 100%);
+        color: #f6c23e;
+        border: 1px solid rgba(246, 194, 62, 0.3);
+    }
+
+    .status-btn.late-btn:hover {
+        background: linear-gradient(135deg, #f6c23e 0%, #daa520 100%);
+        color: #2e3440;
+    }
+
+    .status-btn.absent-btn {
+        background: linear-gradient(135deg, rgba(231, 76, 60, 0.2) 0%, rgba(231, 76, 60, 0.1) 100%);
+        color: #e74c3c;
+        border: 1px solid rgba(231, 76, 60, 0.3);
+    }
+
+    .status-btn.absent-btn:hover {
+        background: linear-gradient(135deg, #e74c3c 0%, #c0392b 100%);
+        color: white;
+    }
+
+    .remarks-input {
+        flex: 1;
+        min-width: 180px;
+    }
+
+    .remarks-field {
+        width: 100%;
+        padding: 0.7rem 1rem;
+        border: 1.5px solid rgba(78, 115, 223, 0.2);
+        border-radius: 8px;
+        background: linear-gradient(135deg, rgba(255, 255, 255, 0.8) 0%, rgba(255, 255, 255, 0.6) 100%);
+        color: #2e3440;
+        font-size: 0.85rem;
+        transition: all 0.3s ease;
+    }
+
+    .remarks-field::placeholder {
+        color: rgba(108, 117, 125, 0.5);
+    }
+
+    .remarks-field:focus {
+        outline: none;
+        border-color: #1cc88a;
+        box-shadow: 0 0 0 3px rgba(28, 200, 138, 0.1);
+    }
+
+    /* ====== Empty State ====== */
+    .empty-state {
+        text-align: center;
+        padding: 3rem 1rem;
+    }
+
+    .empty-state i {
+        font-size: 3.5rem;
+        color: #ccc;
+        margin-bottom: 1rem;
+    }
+
+    .empty-state h4 {
+        margin: 1rem 0 0.5rem 0;
+        color: #6c757d;
+        font-size: 1.1rem;
+    }
+
+    .empty-state p {
+        margin: 0;
+        color: #9ca3af;
+        font-size: 0.9rem;
+    }
+
+    /* ====== Summary Section ====== */
+    .attendance-summary-section {
+        padding: 2rem 0;
+        border-top: 2px solid rgba(78, 115, 223, 0.08);
+    }
+
+    .summary-grid {
+        display: grid;
+        grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+        gap: 1.5rem;
+        margin-bottom: 2rem;
+    }
+
+    .summary-card {
+        background: linear-gradient(135deg, rgba(255, 255, 255, 0.5) 0%, rgba(255, 255, 255, 0.3) 100%);
+        border-radius: 12px;
+        padding: 1.5rem;
+        display: flex;
+        align-items: center;
+        gap: 1.25rem;
+        border: 1px solid rgba(78, 115, 223, 0.1);
+        animation: slideInUp 0.6s ease;
+    }
+
+    .summary-icon {
+        width: 50px;
+        height: 50px;
+        border-radius: 10px;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        color: white;
+        font-size: 1.4rem;
+        flex-shrink: 0;
+    }
+
+    .summary-card.present-card .summary-icon {
+        background: linear-gradient(135deg, #1cc88a 0%, #13a968 100%);
+    }
+
+    .summary-card.late-card .summary-icon {
+        background: linear-gradient(135deg, #f6c23e 0%, #daa520 100%);
+    }
+
+    .summary-card.absent-card .summary-icon {
+        background: linear-gradient(135deg, #e74c3c 0%, #c0392b 100%);
+    }
+
+    .summary-card.percentage-card .summary-icon {
+        background: linear-gradient(135deg, #4e73df 0%, #224abe 100%);
+    }
+
+    .summary-label {
+        margin: 0;
+        font-size: 0.85rem;
+        color: #6c757d;
+        font-weight: 600;
+        text-transform: uppercase;
+        letter-spacing: 0.5px;
+    }
+
+    .summary-value {
+        margin: 0;
+        font-size: 1.8rem;
+        font-weight: 800;
+        color: #2e3440;
+    }
+
+    /* ====== Progress Bar ====== */
+    .attendance-progress {
+        margin-bottom: 2rem;
+    }
+
+    .progress-bar-container {
+        height: 12px;
+        background: rgba(78, 115, 223, 0.1);
+        border-radius: 10px;
+        overflow: hidden;
+        margin-bottom: 0.75rem;
+    }
+
+    .progress-bar {
+        height: 100%;
+        background: linear-gradient(90deg, #1cc88a 0%, #13a968 100%);
+        border-radius: 10px;
+        transition: width 0.3s ease;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        color: white;
+        font-size: 0.75rem;
+        font-weight: 700;
+    }
+
+    .progress-bar.warning {
+        background: linear-gradient(90deg, #f6c23e 0%, #daa520 100%);
+    }
+
+    .progress-bar.danger {
+        background: linear-gradient(90deg, #e74c3c 0%, #c0392b 100%);
+    }
+
+    .progress-text {
+        margin: 0;
+        color: #6c757d;
+        font-size: 0.9rem;
+        font-weight: 600;
+    }
+
+    /* ====== Notes Section ====== */
+    .notes-section {
+        margin-bottom: 2rem;
+    }
+
+    .notes-label {
+        display: flex;
+        align-items: center;
+        gap: 0.5rem;
+        font-weight: 600;
+        color: #2e3440;
+        font-size: 0.95rem;
+        margin-bottom: 0.75rem;
+    }
+
+    .notes-label i {
+        color: #4e73df;
+    }
+
+    .notes-textarea {
+        width: 100%;
+        padding: 1rem;
+        border: 1.5px solid rgba(78, 115, 223, 0.2);
+        border-radius: 10px;
+        background: linear-gradient(135deg, rgba(255, 255, 255, 0.8) 0%, rgba(255, 255, 255, 0.6) 100%);
+        color: #2e3440;
+        font-size: 0.9rem;
+        font-family: inherit;
+        resize: vertical;
+        min-height: 80px;
+        transition: all 0.3s ease;
+    }
+
+    .notes-textarea::placeholder {
+        color: rgba(108, 117, 125, 0.5);
+    }
+
+    .notes-textarea:focus {
+        outline: none;
+        border-color: #1cc88a;
+        box-shadow: 0 0 0 4px rgba(28, 200, 138, 0.1);
+    }
+
+    /* ====== Form Actions ====== */
+    .form-actions {
+        display: flex;
+        gap: 1rem;
+        justify-content: flex-end;
+        padding-top: 2rem;
+        border-top: 2px solid rgba(78, 115, 223, 0.08);
+    }
+
+    .btn-reset,
+    .btn-save-attendance {
+        padding: 0.9rem 2rem;
+        border-radius: 10px;
+        font-weight: 600;
+        font-size: 0.95rem;
+        text-decoration: none;
+        border: none;
+        cursor: pointer;
+        transition: all 0.3s ease;
+        display: inline-flex;
+        align-items: center;
+        justify-content: center;
+        gap: 0.5rem;
+    }
+
+    .btn-reset {
+        background: rgba(78, 115, 223, 0.1);
+        color: #4e73df;
+        border: 1.5px solid rgba(78, 115, 223, 0.2);
+    }
+
+    .btn-reset:hover {
+        background: rgba(78, 115, 223, 0.2);
+        border-color: rgba(78, 115, 223, 0.3);
+    }
+
+    .btn-save-attendance {
+        background: linear-gradient(135deg, #1cc88a 0%, #13a968 100%);
+        color: white;
+        box-shadow: 0 4px 15px rgba(28, 200, 138, 0.3);
+    }
+
+    .btn-save-attendance:hover {
+        transform: translateY(-2px);
+        box-shadow: 0 8px 25px rgba(28, 200, 138, 0.4);
+    }
+
+    /* ====== Recent Records Card ====== */
+    .recent-records-card {
+        background: linear-gradient(135deg, rgba(255, 255, 255, 0.95) 0%, rgba(255, 255, 255, 0.85) 100%);
+        border: 1px solid rgba(78, 115, 223, 0.1);
+        border-radius: 16px;
+        backdrop-filter: blur(10px);
+        padding: 2rem;
+        box-shadow: 0 8px 32px 0 rgba(31, 38, 135, 0.07);
+        animation: slideInUp 0.6s ease 0.2s both;
+    }
+
+    .records-header {
+        display: flex;
+        align-items: center;
+        gap: 1rem;
+        margin-bottom: 1.5rem;
+        padding-bottom: 1.5rem;
+        border-bottom: 2px solid rgba(78, 115, 223, 0.08);
+    }
+
+    .header-icon {
+        width: 45px;
+        height: 45px;
+        border-radius: 10px;
+        background: linear-gradient(135deg, #4e73df 0%, #1cc88a 100%);
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        color: white;
+        font-size: 1.2rem;
+    }
+
+    .records-header h3 {
+        margin: 0;
+        font-size: 1.2rem;
+        font-weight: 700;
+        color: #2e3440;
+    }
+
+    .records-table-wrapper {
+        overflow-x: auto;
+    }
+
+    .records-table {
+        width: 100%;
+        border-collapse: collapse;
+    }
+
+    .records-table thead th {
+        padding: 1.25rem 1rem;
+        text-align: left;
+        color: #2e3440;
+        font-weight: 700;
+        font-size: 0.95rem;
+        border-bottom: 2px solid rgba(78, 115, 223, 0.15);
+        background: rgba(78, 115, 223, 0.05);
+    }
+
+    .records-table thead th i {
+        color: #4e73df;
+        margin-right: 0.5rem;
+    }
+
+    .records-table tbody td {
+        padding: 1.25rem 1rem;
+        border-bottom: 1px solid rgba(78, 115, 223, 0.08);
+        color: #2e3440;
+    }
+
+    .record-row:hover {
+        background: rgba(78, 115, 223, 0.05);
+    }
+
+    .record-date {
+        font-weight: 600;
+    }
+
+    .record-subject {
+        color: #4e73df;
+        font-weight: 500;
+    }
+
+    .badge-present {
+        display: inline-block;
+        background: linear-gradient(135deg, rgba(28, 200, 138, 0.2) 0%, rgba(28, 200, 138, 0.1) 100%);
+        color: #1cc88a;
+        padding: 0.5rem 1rem;
+        border-radius: 6px;
+        font-weight: 700;
+        font-size: 0.9rem;
+    }
+
+    .badge-absent {
+        display: inline-block;
+        background: linear-gradient(135deg, rgba(231, 76, 60, 0.2) 0%, rgba(231, 76, 60, 0.1) 100%);
+        color: #e74c3c;
+        padding: 0.5rem 1rem;
+        border-radius: 6px;
+        font-weight: 700;
+        font-size: 0.9rem;
+    }
+
+    .mini-progress {
+        height: 6px;
+        background: rgba(78, 115, 223, 0.1);
+        border-radius: 10px;
+        overflow: hidden;
+        margin-bottom: 0.5rem;
+    }
+
+    .mini-progress-fill {
+        height: 100%;
+        background: linear-gradient(90deg, #1cc88a 0%, #13a968 100%);
+    }
+
+    .percentage-text {
+        font-size: 0.85rem;
+        color: #6c757d;
+        font-weight: 600;
+    }
+
+    .empty-state-table {
+        text-align: center;
+        padding: 2.5rem 1rem;
+    }
+
+    .empty-state-table i {
+        font-size: 2.5rem;
+        color: #ccc;
+        margin-bottom: 0.75rem;
+    }
+
+    .empty-state-table p {
+        margin: 0;
+        color: #6c757d;
+        font-size: 0.9rem;
+    }
+
+    /* ====== Animations ====== */
+    @keyframes fadeIn {
+        from { opacity: 0; }
+        to { opacity: 1; }
+    }
+
+    @keyframes slideInUp {
+        from {
+            opacity: 0;
+            transform: translateY(30px);
+        }
+        to {
+            opacity: 1;
+            transform: translateY(0);
+        }
+    }
+
+    /* ====== Responsive Design ====== */
+    @media (max-width: 1024px) {
+        .attendance-title {
+            font-size: 2rem;
+        }
+
+        .attendance-header {
+            flex-direction: column;
+            align-items: flex-start;
+            gap: 1rem;
+        }
+
+        .attendance-stats {
+            width: 100%;
+        }
+
+        .student-attendance-item {
+            flex-direction: column;
+            align-items: flex-start;
+        }
+
+        .attendance-controls {
+            width: 100%;
+        }
+
+        .status-selector {
+            min-width: auto;
+            width: 100%;
+        }
+
+        .remarks-input {
+            width: 100%;
+        }
+    }
+
+    @media (max-width: 768px) {
+        .hero-section {
+            height: auto;
+            min-height: 280px;
+            padding: 2rem 1rem 2.5rem;
+            margin-bottom: 1.5rem;
+        }
+
+        .attendance-badge {
+            font-size: 0.75rem;
+            padding: 0.5rem 1rem;
+        }
+
+        .attendance-title {
+            font-size: 1.5rem;
+            margin-bottom: 0.5rem;
+        }
+
+        .hero-subtitle {
+            font-size: 0.9rem;
+        }
+
+        .attendance-content {
+            padding: 0 0.75rem;
+        }
+
+        .filter-card,
+        .attendance-card,
+        .recent-records-card {
+            padding: 1.5rem 1rem;
+            margin-bottom: 1.5rem;
+            border-radius: 12px;
+        }
+
+        .filter-grid {
+            grid-template-columns: 1fr;
+            gap: 1rem;
+        }
+
+        .student-list {
+            max-height: 400px;
+        }
+
+        .student-attendance-item {
+            gap: 1rem;
+        }
+
+        .attendance-controls {
+            flex-direction: column;
+            width: 100%;
+        }
+
+        .summary-grid {
+            grid-template-columns: repeat(2, 1fr);
+            gap: 1rem;
+        }
+
+        .summary-card {
+            padding: 1rem;
+        }
+
+        .summary-icon {
+            width: 40px;
+            height: 40px;
+            font-size: 1.2rem;
+        }
+
+        .summary-value {
+            font-size: 1.4rem;
+        }
+
+        .form-actions {
+            flex-direction: column;
+            gap: 0.75rem;
+        }
+
+        .btn-reset,
+        .btn-save-attendance {
+            width: 100%;
+        }
+
+        .records-table thead th {
+            font-size: 0.85rem;
+            padding: 0.75rem;
+        }
+
+        .records-table tbody td {
+            padding: 0.75rem;
+            font-size: 0.9rem;
+        }
+    }
+
+    @media (max-width: 480px) {
+        .hero-section {
+            min-height: 240px;
+            padding: 1.5rem 1rem 2rem;
+        }
+
+        .attendance-badge {
+            font-size: 0.7rem;
+            padding: 0.4rem 0.8rem;
+        }
+
+        .attendance-title {
+            font-size: 1.25rem;
+            margin-bottom: 0.3rem;
+        }
+
+        .attendance-header {
+            gap: 0.75rem;
+        }
+
+        .stat-badge {
+            padding: 0.6rem 0.8rem;
+        }
+
+        .stat-value {
+            font-size: 1.1rem;
+        }
+
+        .filter-card,
+        .attendance-card,
+        .recent-records-card {
+            padding: 1rem 0.75rem;
+        }
+
+        .quick-action-btn {
+            padding: 0.7rem 1.2rem;
+            font-size: 0.85rem;
+        }
+
+        .student-attendance-item {
+            padding: 0.75rem;
+        }
+
+        .student-info-box {
+            min-width: auto;
+            flex: none;
+        }
+
+        .student-avatar {
+            width: 40px;
+            height: 40px;
+        }
+
+        .student-name {
+            font-size: 0.9rem;
+        }
+
+        .status-select,
+        .remarks-field {
+            padding: 0.6rem 0.8rem;
+            font-size: 0.8rem;
+        }
+
+        .status-btn {
+            width: 32px;
+            height: 32px;
+            font-size: 0.85rem;
+        }
+
+        .summary-grid {
+            grid-template-columns: 1fr;
+            gap: 0.75rem;
+        }
+
+        .summary-card {
+            padding: 0.75rem;
+        }
+
+        .summary-icon {
+            width: 36px;
+            height: 36px;
+            font-size: 1rem;
+        }
+
+        .summary-label {
+            font-size: 0.7rem;
+        }
+
+        .summary-value {
+            font-size: 1.2rem;
+        }
+    }
+
+    /* Dark Mode Support */
+    [data-bs-theme="dark"] .attendance-container {
+        background: linear-gradient(135deg, #1a1f2e 0%, #2d3436 100%);
+    }
+
+    [data-bs-theme="dark"] .filter-card,
+    [data-bs-theme="dark"] .attendance-card,
+    [data-bs-theme="dark"] .recent-records-card {
+        background: linear-gradient(135deg, rgba(45, 52, 64, 0.95) 0%, rgba(45, 52, 64, 0.85) 100%);
+    }
+
+    [data-bs-theme="dark"] .attendance-title,
+    [data-bs-theme="dark"] .filter-header h3,
+    [data-bs-theme="dark"] .records-header h3,
+    [data-bs-theme="dark"] .student-name,
+    [data-bs-theme="dark"] .summary-value,
+    [data-bs-theme="dark"] .records-table thead th {
+        color: #e0e0e0;
+    }
+
+    [data-bs-theme="dark"] .hero-subtitle,
+    [data-bs-theme="dark"] .filter-label,
+    [data-bs-theme="dark"] .attendance-date,
+    [data-bs-theme="dark"] .student-meta,
+    [data-bs-theme="dark"] .summary-label,
+    [data-bs-theme="dark"] .progress-text,
+    [data-bs-theme="dark"] .records-table tbody td {
+        color: #b0b0b0;
+    }
+
+    [data-bs-theme="dark"] .filter-input,
+    [data-bs-theme="dark"] .filter-select,
+    [data-bs-theme="dark"] .status-select,
+    [data-bs-theme="dark"] .remarks-field,
+    [data-bs-theme="dark"] .notes-textarea {
+        background: rgba(78, 115, 223, 0.1);
+        color: #e0e0e0;
+        border-color: rgba(78, 115, 223, 0.2);
+    }
+
+    [data-bs-theme="dark"] .student-attendance-item {
+        background: linear-gradient(135deg, rgba(45, 52, 64, 0.7) 0%, rgba(45, 52, 64, 0.5) 100%);
+        border-color: rgba(78, 115, 223, 0.15);
+    }
+
+    [data-bs-theme="dark"] .student-attendance-item:hover {
+        background: linear-gradient(135deg, rgba(78, 115, 223, 0.2) 0%, rgba(28, 200, 138, 0.1) 100%);
+    }
+
+    [data-bs-theme="dark"] .summary-card {
+        background: linear-gradient(135deg, rgba(45, 52, 64, 0.7) 0%, rgba(45, 52, 64, 0.5) 100%);
+        border-color: rgba(78, 115, 223, 0.15);
+    }
+
+    [data-bs-theme="dark"] .btn-reset {
+        background: rgba(78, 115, 223, 0.15);
+        color: #7fb3ff;
+        border-color: rgba(78, 115, 223, 0.3);
+    }
+
+    [data-bs-theme="dark"] .btn-reset:hover {
+        background: rgba(78, 115, 223, 0.25);
+        border-color: rgba(78, 115, 223, 0.4);
+    }
+
+    [data-bs-theme="dark"] .records-table thead th {
+        background: rgba(78, 115, 223, 0.08);
+        border-color: rgba(78, 115, 223, 0.15);
+    }
+
+    [data-bs-theme="dark"] .record-row:hover {
+        background: rgba(78, 115, 223, 0.08);
+    }
+</style>
+{% endblock %}

@@ -1,0 +1,799 @@
+<style>
+    /* ===== MODERN GLASSMORPHIC SIDEBAR ===== */
+    .sidebar {
+        background: linear-gradient(135deg, rgba(26, 28, 35, 0.95) 0%, rgba(21, 23, 30, 0.98) 100%);
+        backdrop-filter: blur(10px);
+        border-right: 1px solid rgba(255, 255, 255, 0.08);
+        box-shadow: 8px 0 32px rgba(0, 0, 0, 0.3);
+        min-height: 100vh;
+        width: 250px;
+        transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+        z-index: 1000;
+        overflow-y: auto;
+        scrollbar-width: thin;
+        scrollbar-color: rgba(78, 115, 223, 0.4) transparent;
+    }
+    
+    .sidebar::-webkit-scrollbar {
+        width: 6px;
+    }
+    
+    .sidebar::-webkit-scrollbar-thumb {
+        background-color: rgba(78, 115, 223, 0.4);
+        border-radius: 3px;
+    }
+
+    .sidebar::-webkit-scrollbar-thumb:hover {
+        background-color: rgba(78, 115, 223, 0.6);
+    }
+
+    .sidebar-header {
+        background: linear-gradient(135deg, rgba(78, 115, 223, 0.1) 0%, rgba(28, 200, 138, 0.05) 100%);
+        border-bottom: 1px solid rgba(78, 115, 223, 0.15);
+        padding: 1.5rem;
+        margin-bottom: 0.5rem;
+    }
+
+    .sidebar-brand {
+        font-family: 'Outfit', sans-serif;
+        letter-spacing: 1.2px;
+    }
+
+    .sidebar-brand h5 {
+        background: linear-gradient(135deg, #4e73df 0%, #1cc88a 100%);
+        -webkit-background-clip: text;
+        -webkit-text-fill-color: transparent;
+        background-clip: text;
+        font-size: 1rem;
+    }
+
+    .nav-link {
+        color: rgba(255, 255, 255, 0.7);
+        padding: 0.85rem 1.5rem;
+        font-weight: 500;
+        transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+        border-left: 3px solid transparent;
+        display: flex;
+        align-items: center;
+        font-size: 0.95rem;
+        position: relative;
+        margin: 0.25rem 0.5rem;
+        border-radius: 0 12px 12px 0;
+    }
+
+    .nav-link::before {
+        content: '';
+        position: absolute;
+        left: 0;
+        top: 0;
+        bottom: 0;
+        width: 3px;
+        background: linear-gradient(180deg, #4e73df, #1cc88a);
+        border-radius: 0 3px 3px 0;
+        transform: scaleY(0);
+        transition: transform 0.3s ease;
+    }
+
+    .nav-link:hover {
+        color: #fff;
+        background: rgba(78, 115, 223, 0.12);
+        padding-left: 1.75rem;
+    }
+
+    .nav-link:hover::before {
+        transform: scaleY(1);
+    }
+
+    .nav-link.active {
+        color: #4e73df;
+        background: rgba(78, 115, 223, 0.15);
+        border-left-color: #4e73df;
+        font-weight: 600;
+        box-shadow: inset 0 0 20px rgba(78, 115, 223, 0.1);
+    }
+
+    .nav-link.active::before {
+        transform: scaleY(1);
+    }
+
+    .nav-link i {
+        width: 20px;
+        text-align: center;
+        margin-right: 12px;
+        font-size: 1.1rem;
+        transition: transform 0.3s ease;
+    }
+
+    .nav-link:hover i,
+    .nav-link.active i {
+        transform: scale(1.15) rotate(5deg);
+    }
+
+    .sidebar-heading {
+        color: rgba(78, 115, 223, 0.7);
+        font-size: 0.7rem;
+        font-weight: 800;
+        text-transform: uppercase;
+        letter-spacing: 0.15em;
+        padding: 1.5rem 1.5rem 0.5rem;
+        margin-top: 1rem;
+        position: relative;
+    }
+
+    .sidebar-heading::after {
+        content: '';
+        position: absolute;
+        right: 1.5rem;
+        left: 1.5rem;
+        bottom: 0;
+        height: 1px;
+        background: linear-gradient(90deg, rgba(78, 115, 223, 0.3), rgba(28, 200, 138, 0.2), transparent);
+    }
+
+    .dropdown-divider {
+        border-top: 1px solid rgba(255, 255, 255, 0.05);
+        margin: 1rem 1.5rem;
+    }
+
+    /* Dropdown Styles */
+    .nav-link[data-bs-toggle="collapse"] {
+        position: relative;
+    }
+
+    .nav-link[data-bs-toggle="collapse"]::after {
+        content: "\f107";
+        font-family: "Font Awesome 5 Free";
+        font-weight: 900;
+        position: absolute;
+        right: 1.5rem;
+        transition: transform 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+    }
+
+    .nav-link[data-bs-toggle="collapse"][aria-expanded="true"]::after {
+        transform: rotate(-180deg);
+    }
+
+    .collapse-inner {
+        background: rgba(0, 0, 0, 0.25);
+        padding: 0.5rem 0;
+        border-radius: 8px;
+        margin: 0.5rem 0.5rem;
+        overflow: hidden;
+    }
+
+    .collapse-inner .nav-link {
+        padding-left: 3rem;
+        font-size: 0.9rem;
+        margin: 0.1rem 0;
+    }
+
+    /* Mobile Responsive Styles */
+    @media (max-width: 768px) {
+        .mobile-hidden {
+            display: none !important;
+        }
+
+        .sidebar {
+            position: fixed;
+            bottom: 0;
+            top: auto;
+            left: 0;
+            min-height: 0;
+            width: 100%;
+            height: auto;
+            max-height: 70vh;
+            transform: translateY(100%);
+            z-index: 1070;
+            border-top-left-radius: 20px;
+            border-top-right-radius: 20px;
+            border-right: none;
+            border-top: 1px solid rgba(255, 255, 255, 0.08);
+            padding-bottom: 20px;
+            overflow-y: auto;
+            overflow-x: hidden;
+            scrollbar-width: none;
+            -ms-overflow-style: none;
+        }
+        
+        .sidebar::-webkit-scrollbar {
+            display: none;
+        }
+        
+        .sidebar.show {
+            transform: translateY(0);
+            animation: slideUp 0.4s cubic-bezier(0.4, 0, 0.2, 1);
+        }
+
+        @keyframes slideUp {
+            from { transform: translateY(100%); opacity: 0; }
+            to { transform: translateY(0); opacity: 1; }
+        }
+        
+        .sidebar-header {
+            display: none;
+        }
+        
+        .nav-link:hover {
+            padding-left: 1.5rem;
+        }
+
+        .sidebar-overlay {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: rgba(0, 0, 0, 0.5);
+            z-index: 1040;
+            display: none;
+            backdrop-filter: blur(4px);
+            animation: fadeIn 0.3s ease;
+        }
+        
+        @keyframes fadeIn {
+            from { opacity: 0; }
+            to { opacity: 1; }
+        }
+        
+        .sidebar-overlay.show {
+            display: block;
+        }
+        
+        /* Bottom Navigation Bar */
+        .bottom-navbar {
+            position: fixed;
+            bottom: 0;
+            left: 0;
+            width: 100%;
+            height: 70px;
+            background: linear-gradient(180deg, rgba(26, 28, 35, 0.95) 0%, rgba(21, 23, 30, 0.98) 100%);
+            backdrop-filter: blur(10px);
+            display: flex;
+            justify-content: space-around;
+            align-items: center;
+            z-index: 1060;
+            box-shadow: 0 -2px 20px rgba(0, 0, 0, 0.3);
+            border-top: 1px solid rgba(78, 115, 223, 0.15);
+            overflow: hidden;
+        }
+
+        .bottom-nav-item {
+            color: rgba(255, 255, 255, 0.6);
+            text-align: center;
+            font-size: 0.65rem;
+            text-decoration: none;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            flex: 1;
+            transition: all 0.3s ease;
+            position: relative;
+        }
+
+        .bottom-nav-item i {
+            font-size: 1.3rem;
+            margin-bottom: 4px;
+            transition: transform 0.3s ease;
+        }
+
+        .bottom-nav-item:hover i {
+            transform: translateY(-2px) scale(1.1);
+        }
+
+        .bottom-nav-item:hover,
+        .bottom-nav-item.active {
+            color: #4e73df;
+        }
+
+        .bottom-nav-item.active::before {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: 50%;
+            transform: translateX(-50%);
+            width: 30px;
+            height: 2px;
+            background: linear-gradient(90deg, #4e73df, #1cc88a);
+            border-radius: 2px;
+        }
+    }
+
+    @media (min-width: 769px) {
+        .bottom-navbar {
+            display: none;
+        }
+    }
+</style>
+
+{% comment %}
+{# Older duplicate navigation block removed from rendering. #}
+<div class="sidebar" id="sidebar">
+    <!-- Mobile Handle -->
+    <div class="d-md-none d-flex justify-content-center py-3">
+        <div style="width: 40px; height: 4px; background: rgba(78, 115, 223, 0.3); border-radius: 2px;"></div>
+    </div>
+
+    <div class="sidebar-header">
+        <div class="d-flex align-items-center sidebar-brand">
+            <div class="bg-gradient-primary text-white rounded-3 d-flex align-items-center justify-content-center me-3 shadow" style="width: 40px; height: 40px; box-shadow: 0 4px 15px rgba(78, 115, 223, 0.3);">
+                <i class="fas fa-graduation-cap"></i>
+            </div>
+            <div>
+                <h5 class="text-white mb-0 fw-bold">{{ school_settings.school_name|truncatechars:15|default:"MPS" }}</h5>
+                <small class="text-white-50" style="font-size: 0.75rem;">{{ school_settings.current_session|default:"School System" }}</small>
+            </div>
+        </div>
+    </div>
+    
+    <nav class="nav flex-column pb-5">
+        {% if user.user_type == 'admin' %}
+            <!-- Admin Menu -->
+            <div class="sidebar-heading"><i class="fas fa-zap me-2" style="font-size: 0.8rem;"></i>Core</div>
+            <a class="nav-link mobile-hidden {% if request.resolver_match.url_name == 'dashboard' %}active{% endif %}" href="{% url 'dashboard' %}">
+                <i class="fas fa-tachometer-alt me-2"></i>Dashboard
+            </a>
+            
+            <div class="sidebar-heading"><i class="fas fa-cube me-2" style="font-size: 0.8rem;"></i>Management</div>
+            
+            <!-- People Dropdown -->
+            <a class="nav-link collapsed" href="#" data-bs-toggle="collapse" data-bs-target="#collapsePeople" aria-expanded="false">
+                <i class="fas fa-users me-2"></i>People
+            </a>
+            <div class="collapse" id="collapsePeople">
+                <div class="collapse-inner">
+                    <a class="nav-link mobile-hidden {% if request.resolver_match.url_name == 'student_list' %}active{% endif %}" href="{% url 'student_list' %}">Students</a>
+                    <a class="nav-link {% if request.resolver_match.url_name == 'student_create' %}active{% endif %}" href="{% url 'student_create' %}">Add Student</a>
+                    <a class="nav-link mobile-hidden {% if request.resolver_match.url_name == 'teacher_list' %}active{% endif %}" href="{% url 'teacher_list' %}">Teachers</a>
+                    <a class="nav-link {% if request.resolver_match.url_name == 'teacher_create' %}active{% endif %}" href="{% url 'teacher_create' %}">Add Teacher</a>
+                </div>
+            </div>
+
+            <!-- Academics Dropdown -->
+            <a class="nav-link collapsed" href="#" data-bs-toggle="collapse" data-bs-target="#collapseAcademics" aria-expanded="false">
+                <i class="fas fa-university me-2"></i>Academics
+            </a>
+            <div class="collapse" id="collapseAcademics">
+                <div class="collapse-inner">
+                    <a class="nav-link mobile-hidden" href="{% url "class_list" %}">Classes</a>
+                    <a class="nav-link" href="{% url "subject_list" %}">Subjects</a>
+                    <a class="nav-link" href="{% url "timetable" %}">Timetable</a>
+                </div>
+            </div>
+            
+            <!-- Examination Dropdown -->
+            <a class="nav-link collapsed" href="#" data-bs-toggle="collapse" data-bs-target="#collapseExams" aria-expanded="false">
+                <i class="fas fa-file-alt me-2"></i>Examination
+            </a>
+            <div class="collapse" id="collapseExams">
+                <div class="collapse-inner">
+                    <a class="nav-link" href="{% url "exam_list" %}">Exams</a>
+                    <a class="nav-link" href="{% url "grade_list" %}">Grades</a>
+                    <a class="nav-link" href="{% url "report_card_list" %}">Report Cards</a>
+                </div>
+            </div>
+            
+            <!-- Attendance Dropdown -->
+            <a class="nav-link collapsed" href="#" data-bs-toggle="collapse" data-bs-target="#collapseAttendance" aria-expanded="false">
+                <i class="fas fa-calendar-check me-2"></i>Attendance
+            </a>
+            <div class="collapse" id="collapseAttendance">
+                <div class="collapse-inner">
+                    <a class="nav-link" href="{% url "take_attendance" %}">Take Attendance</a>
+                    <a class="nav-link" href="{% url "attendance_report" %}">Reports</a>
+                </div>
+            </div>
+            
+            <!-- Finance Dropdown -->
+            <a class="nav-link collapsed" href="#" data-bs-toggle="collapse" data-bs-target="#collapseFinance" aria-expanded="false">
+                <i class="fas fa-money-bill-wave me-2"></i>Finance
+            </a>
+            <div class="collapse" id="collapseFinance">
+                <div class="collapse-inner">
+                    <a href="{% url 'fee_dashboard' %}" class="nav-link {% if request.resolver_match.url_name == 'fee_dashboard' %}active{% endif %}">
+                        <span>Dashboard</span>
+                    </a>
+                    <a href="{% url 'student_fee_list' %}" class="nav-link {% if request.resolver_match.url_name == 'student_fee_list' %}active{% endif %}">
+                        <span>Student Fees</span>
+                    </a>
+                </div>
+            </div>
+            
+            <div class="sidebar-heading"><i class="fas fa-sliders-h me-2" style="font-size: 0.8rem;"></i>Configuration</div>
+            <a class="nav-link" href="{% url 'access_request_list' %}">
+                <i class="fas fa-user-check me-2"></i>Access Requests
+            </a>
+            <a class="nav-link" href="{% url 'email_management' %}">
+                <i class="fas fa-envelope me-2"></i>Email Management
+            </a>
+            <a class="nav-link" href="{% url 'system_settings' %}">
+                <i class="fas fa-cog me-2"></i>System Settings
+            </a>
+            
+        {% elif user.user_type == 'teacher' %}
+            <!-- Teacher Menu -->
+            <a class="nav-link mobile-hidden {% if request.resolver_match.url_name == 'dashboard' %}active{% endif %}" href="{% url 'dashboard' %}">
+                <i class="fas fa-tachometer-alt me-2"></i>Dashboard
+            </a>
+            
+            <div class="sidebar-heading"><i class="fas fa-book-open me-2" style="font-size: 0.8rem;"></i>My Classes</div>
+            <a class="nav-link" href="#">
+                <i class="fas fa-users me-2"></i>My Students
+            </a>
+            
+            <div class="sidebar-heading"><i class="fas fa-clipboard-check me-2" style="font-size: 0.8rem;"></i>Attendance</div>
+            <a class="nav-link mobile-hidden" href="{% url "take_attendance" %}">
+                <i class="fas fa-clipboard-check me-2"></i>Take Attendance
+            </a>
+            
+            <div class="sidebar-heading"><i class="fas fa-star me-2" style="font-size: 0.8rem;"></i>Grading</div>
+            <a class="nav-link mobile-hidden" href="{% url 'exam_list' %}">
+                <i class="fas fa-edit me-2"></i>Enter Grades
+            </a>
+            
+            <div class="sidebar-heading"><i class="fas fa-calendar me-2" style="font-size: 0.8rem;"></i>Schedule</div>
+            <a class="nav-link mobile-hidden" href="{% url 'timetable' %}">
+                <i class="fas fa-calendar-alt me-2"></i>My Schedule
+            </a>
+            
+        {% elif user.user_type == 'student' %}
+            <!-- Student Menu -->
+            <a class="nav-link mobile-hidden {% if request.resolver_match.url_name == 'dashboard' %}active{% endif %}" href="{% url 'dashboard' %}">
+                <i class="fas fa-tachometer-alt me-2"></i>Dashboard
+            </a>
+            
+            <div class="sidebar-heading"><i class="fas fa-book me-2" style="font-size: 0.8rem;"></i>Academic Info</div>
+            <a class="nav-link" href="#">
+                <i class="fas fa-user-circle me-2"></i>My Profile
+            </a>
+            <a class="nav-link" href="#">
+                <i class="fas fa-chart-line me-2"></i>My Grades
+            </a>
+            <a class="nav-link mobile-hidden" href="{% url "attendance_report" %}">
+                <i class="fas fa-calendar-check me-2"></i>My Attendance
+            </a>
+            <a class="nav-link mobile-hidden" href="{% url "my_report_cards" %}">
+                <i class="fas fa-file-pdf me-2"></i>Report Cards
+            </a>
+            <a class="nav-link mobile-hidden" href="{% url 'timetable' %}">
+                <i class="fas fa-calendar-alt me-2"></i>Timetable
+            </a>
+        {% endif %}
+    </nav>
+</div>
+
+<!-- Bottom Navbar (Mobile Only) -->
+<div class="bottom-navbar">
+    <a href="{% url 'dashboard' %}" class="bottom-nav-item {% if request.resolver_match.url_name == 'dashboard' %}active{% endif %}">
+        <i class="fas fa-tachometer-alt"></i>
+        <span>Home</span>
+    </a>
+    
+    {% if user.user_type == 'student' %}
+        <a href="{% url 'my_report_cards' %}" class="bottom-nav-item">
+            <i class="fas fa-file-pdf"></i>
+            <span>Reports</span>
+        </a>
+        <a href="{% url 'attendance_report' %}" class="bottom-nav-item">
+            <i class="fas fa-calendar-check"></i>
+            <span>Attend</span>
+        </a>
+        <a href="{% url 'timetable' %}" class="bottom-nav-item">
+            <i class="fas fa-calendar-alt"></i>
+            <span>Time</span>
+        </a>
+    {% elif user.user_type == 'teacher' %}
+        <a href="{% url 'take_attendance' %}" class="bottom-nav-item">
+            <i class="fas fa-clipboard-check"></i>
+            <span>Attend</span>
+        </a>
+        <a href="{% url 'exam_list' %}" class="bottom-nav-item">
+            <i class="fas fa-edit"></i>
+            <span>Grades</span>
+        </a>
+        <a href="{% url 'timetable' %}" class="bottom-nav-item">
+            <i class="fas fa-calendar-alt"></i>
+            <span>Time</span>
+        </a>
+    {% else %}
+        <!-- Admin defaults -->
+        <a href="{% url 'student_list' %}" class="bottom-nav-item">
+            <i class="fas fa-user-graduate"></i>
+            <span>Students</span>
+        </a>
+        <a href="{% url 'teacher_list' %}" class="bottom-nav-item">
+            <i class="fas fa-chalkboard-teacher"></i>
+            <span>Teachers</span>
+        </a>
+        <a href="{% url 'class_list' %}" class="bottom-nav-item">
+            <i class="fas fa-book"></i>
+            <span>Classes</span>
+        </a>
+    {% endif %}
+
+    <a href="javascript:void(0);" class="bottom-nav-item" id="mobileMenuToggle">
+        <i class="fas fa-bars"></i>
+        <span>More</span>
+    </a>
+</div>
+
+<!-- Sidebar Overlay for Mobile -->
+<div class="sidebar-overlay" id="sidebarOverlay"></div>
+
+<script>
+    document.addEventListener('DOMContentLoaded', function() {
+        const sidebar = document.getElementById('sidebar');
+        const sidebarOverlay = document.getElementById('sidebarOverlay');
+        const sidebarToggleBtn = document.getElementById('sidebarToggleBtn');
+        const mobileMenuToggle = document.getElementById('mobileMenuToggle');
+
+        function toggleSidebar() {
+            sidebar.classList.toggle('show');
+            sidebarOverlay.classList.toggle('show');
+        }
+
+        if (sidebarToggleBtn) {
+            sidebarToggleBtn.addEventListener('click', function(e) {
+                e.preventDefault();
+                toggleSidebar();
+            });
+        }
+
+        if (mobileMenuToggle) {
+            mobileMenuToggle.addEventListener('click', function(e) {
+                e.preventDefault();
+                toggleSidebar();
+            });
+        }
+
+        if (sidebarOverlay) {
+            sidebarOverlay.addEventListener('click', toggleSidebar);
+        }
+    });
+</script>
+{% endcomment %}
+
+
+<div class="sidebar" id="sidebar">
+    <!-- Mobile Handle -->
+    <div class="d-md-none d-flex justify-content-center py-3">
+        <div style="width: 40px; height: 4px; background: rgba(255,255,255,0.2); border-radius: 2px;"></div>
+    </div>
+
+    <div class="sidebar-header">
+        <div class="d-flex align-items-center sidebar-brand">
+            <div class="bg-primary text-white rounded-3 d-flex align-items-center justify-content-center me-3 shadow-sm" style="width: 40px; height: 40px;">
+                <i class="fas fa-graduation-cap"></i>
+            </div>
+            <div>
+                <h5 class="text-white mb-0 fw-bold">{{ school_settings.school_name|truncatechars:15|default:"MPS" }}</h5>
+                <small class="text-white-50" style="font-size: 0.75rem;">{{ school_settings.current_session|default:"School System" }}</small>
+            </div>
+        </div>
+    </div>
+    
+    <nav class="nav flex-column pb-5">
+        {% if user.user_type == 'admin' %}
+            <!-- Admin Menu -->
+            <div class="sidebar-heading">Core</div>
+            <a class="nav-link mobile-hidden {% if request.resolver_match.url_name == 'dashboard' %}active{% endif %}" href="{% url 'dashboard' %}">
+                <i class="fas fa-tachometer-alt me-2"></i>Dashboard
+            </a>
+            
+            <div class="sidebar-heading">Management</div>
+            
+            <!-- People Dropdown -->
+            <a class="nav-link collapsed" href="#" data-bs-toggle="collapse" data-bs-target="#collapsePeople" aria-expanded="false">
+                <i class="fas fa-users me-2"></i>People
+            </a>
+            <div class="collapse" id="collapsePeople">
+                <div class="collapse-inner">
+                    <a class="nav-link mobile-hidden {% if request.resolver_match.url_name == 'student_list' %}active{% endif %}" href="{% url 'student_list' %}">Students</a>
+                    <a class="nav-link {% if request.resolver_match.url_name == 'student_create' %}active{% endif %}" href="{% url 'student_create' %}">Add Student</a>
+                    <a class="nav-link mobile-hidden {% if request.resolver_match.url_name == 'teacher_list' %}active{% endif %}" href="{% url 'teacher_list' %}">Teachers</a>
+                    <a class="nav-link {% if request.resolver_match.url_name == 'teacher_create' %}active{% endif %}" href="{% url 'teacher_create' %}">Add Teacher</a>
+                </div>
+            </div>
+
+            <!-- Academics Dropdown -->
+            <a class="nav-link collapsed" href="#" data-bs-toggle="collapse" data-bs-target="#collapseAcademics" aria-expanded="false">
+                <i class="fas fa-university me-2"></i>Academics
+            </a>
+            <div class="collapse" id="collapseAcademics">
+                <div class="collapse-inner">
+                    <a class="nav-link mobile-hidden" href="{% url "class_list" %}">Classes</a>
+                    <a class="nav-link" href="{% url "subject_list" %}">Subjects</a>
+                    <a class="nav-link" href="{% url "timetable" %}">Timetable</a>
+                </div>
+            </div>
+            
+            <!-- Examination Dropdown -->
+            <a class="nav-link collapsed" href="#" data-bs-toggle="collapse" data-bs-target="#collapseExams" aria-expanded="false">
+                <i class="fas fa-file-alt me-2"></i>Examination
+            </a>
+            <div class="collapse" id="collapseExams">
+                <div class="collapse-inner">
+                    <a class="nav-link" href="{% url "exam_list" %}">Exams</a>
+                    <a class="nav-link" href="{% url "grade_list" %}">Grades</a>
+                    <a class="nav-link" href="{% url "report_card_list" %}">Report Cards</a>
+                </div>
+            </div>
+            
+            <!-- Attendance Dropdown -->
+            <a class="nav-link collapsed" href="#" data-bs-toggle="collapse" data-bs-target="#collapseAttendance" aria-expanded="false">
+                <i class="fas fa-calendar-check me-2"></i>Attendance
+            </a>
+            <div class="collapse" id="collapseAttendance">
+                <div class="collapse-inner">
+                    <a class="nav-link" href="{% url "take_attendance" %}">Take Attendance</a>
+                    <a class="nav-link" href="{% url "attendance_report" %}">Reports</a>
+                </div>
+            </div>
+            
+            <!-- Finance Dropdown -->
+            <a class="nav-link collapsed" href="#" data-bs-toggle="collapse" data-bs-target="#collapseFinance" aria-expanded="false">
+                <i class="fas fa-money-bill-wave me-2"></i>Finance
+            </a>
+            <div class="collapse" id="collapseFinance">
+                <div class="collapse-inner">
+                    <a href="{% url 'fee_dashboard' %}" class="nav-link {% if request.resolver_match.url_name == 'fee_dashboard' %}active{% endif %}">
+                        <span>Dashboard</span>
+                    </a>
+                    <a href="{% url 'student_fee_list' %}" class="nav-link {% if request.resolver_match.url_name == 'student_fee_list' %}active{% endif %}">
+                        <span>Student Fees</span>
+                    </a>
+                </div>
+            </div>
+            
+            <div class="sidebar-heading">Configuration</div>
+            <a class="nav-link" href="{% url 'access_request_list' %}">
+                <i class="fas fa-user-check me-2"></i>Access Requests
+            </a>
+            <a class="nav-link" href="{% url 'email_management' %}">
+                <i class="fas fa-envelope me-2"></i>Email Management
+            </a>
+            <a class="nav-link" href="{% url 'system_settings' %}">
+                <i class="fas fa-cog me-2"></i>System Settings
+            </a>
+            
+        {% elif user.user_type == 'teacher' %}
+            <!-- Teacher Menu -->
+            <a class="nav-link mobile-hidden {% if request.resolver_match.url_name == 'dashboard' %}active{% endif %}" href="{% url 'dashboard' %}">
+                <i class="fas fa-tachometer-alt me-2"></i>Dashboard
+            </a>
+            
+            <div class="sidebar-heading">My Classes</div>
+            <a class="nav-link" href="#">
+                <i class="fas fa-users me-2"></i>My Students
+            </a>
+            
+            <div class="sidebar-heading">Attendance</div>
+            <a class="nav-link mobile-hidden" href="{% url "take_attendance" %}">
+                <i class="fas fa-clipboard-check me-2"></i>Take Attendance
+            </a>
+            
+            <div class="sidebar-heading">Grading</div>
+            <a class="nav-link mobile-hidden" href="{% url 'exam_list' %}">
+                <i class="fas fa-edit me-2"></i>Enter Grades
+            </a>
+            
+            <div class="sidebar-heading">Schedule</div>
+            <a class="nav-link mobile-hidden" href="{% url 'timetable' %}">
+                <i class="fas fa-calendar-alt me-2"></i>My Schedule
+            </a>
+            
+        {% elif user.user_type == 'student' %}
+            <!-- Student Menu -->
+            <a class="nav-link mobile-hidden {% if request.resolver_match.url_name == 'dashboard' %}active{% endif %}" href="{% url 'dashboard' %}">
+                <i class="fas fa-tachometer-alt me-2"></i>Dashboard
+            </a>
+            
+            <div class="sidebar-heading">Academic Info</div>
+            <a class="nav-link" href="#">
+                <i class="fas fa-user-circle me-2"></i>My Profile
+            </a>
+            <a class="nav-link" href="#">
+                <i class="fas fa-chart-line me-2"></i>My Grades
+            </a>
+            <a class="nav-link mobile-hidden" href="{% url "attendance_report" %}">
+                <i class="fas fa-calendar-check me-2"></i>My Attendance
+            </a>
+            <a class="nav-link mobile-hidden" href="{% url "my_report_cards" %}">
+                <i class="fas fa-file-pdf me-2"></i>Report Cards
+            </a>
+            <a class="nav-link mobile-hidden" href="{% url 'timetable' %}">
+                <i class="fas fa-calendar-alt me-2"></i>Timetable
+            </a>
+        {% endif %}
+    </nav>
+</div>
+
+<!-- Bottom Navbar (Mobile Only) -->
+<div class="bottom-navbar">
+    <a href="{% url 'dashboard' %}" class="bottom-nav-item {% if request.resolver_match.url_name == 'dashboard' %}active{% endif %}">
+        <i class="fas fa-tachometer-alt"></i>
+        <span>Home</span>
+    </a>
+    
+    {% if user.user_type == 'student' %}
+        <a href="{% url 'my_report_cards' %}" class="bottom-nav-item">
+            <i class="fas fa-file-pdf"></i>
+            <span>Reports</span>
+        </a>
+        <a href="{% url 'attendance_report' %}" class="bottom-nav-item">
+            <i class="fas fa-calendar-check"></i>
+            <span>Attend</span>
+        </a>
+        <a href="{% url 'timetable' %}" class="bottom-nav-item">
+            <i class="fas fa-calendar-alt"></i>
+            <span>Time</span>
+        </a>
+    {% elif user.user_type == 'teacher' %}
+        <a href="{% url 'take_attendance' %}" class="bottom-nav-item">
+            <i class="fas fa-clipboard-check"></i>
+            <span>Attend</span>
+        </a>
+        <a href="{% url 'exam_list' %}" class="bottom-nav-item">
+            <i class="fas fa-edit"></i>
+            <span>Grades</span>
+        </a>
+        <a href="{% url 'timetable' %}" class="bottom-nav-item">
+            <i class="fas fa-calendar-alt"></i>
+            <span>Time</span>
+        </a>
+    {% else %}
+        <!-- Admin defaults -->
+        <a href="{% url 'student_list' %}" class="bottom-nav-item">
+            <i class="fas fa-user-graduate"></i>
+            <span>Students</span>
+        </a>
+        <a href="{% url 'teacher_list' %}" class="bottom-nav-item">
+            <i class="fas fa-chalkboard-teacher"></i>
+            <span>Teachers</span>
+        </a>
+        <a href="{% url 'class_list' %}" class="bottom-nav-item">
+            <i class="fas fa-book"></i>
+            <span>Classes</span>
+        </a>
+    {% endif %}
+
+    <a href="javascript:void(0);" class="bottom-nav-item" id="mobileMenuToggle">
+        <i class="fas fa-bars"></i>
+        <span>More</span>
+    </a>
+</div>
+
+<!-- Sidebar Overlay for Mobile -->
+<div class="sidebar-overlay" id="sidebarOverlay"></div>
+
+<script>
+    document.addEventListener('DOMContentLoaded', function() {
+        const sidebar = document.getElementById('sidebar');
+        const sidebarOverlay = document.getElementById('sidebarOverlay');
+        const sidebarToggleBtn = document.getElementById('sidebarToggleBtn'); // In header
+        const mobileMenuToggle = document.getElementById('mobileMenuToggle'); // Bottom nav "More"
+
+        function toggleSidebar() {
+            sidebar.classList.toggle('show');
+            sidebarOverlay.classList.toggle('show');
+        }
+
+        if (sidebarToggleBtn) {
+            sidebarToggleBtn.addEventListener('click', function(e) {
+                e.preventDefault();
+                toggleSidebar();
+            });
+        }
+
+        if (mobileMenuToggle) {
+            mobileMenuToggle.addEventListener('click', function(e) {
+                e.preventDefault();
+                toggleSidebar();
+            });
+        }
+
+        if (sidebarOverlay) {
+            sidebarOverlay.addEventListener('click', toggleSidebar);
+        }
+    });
+</script>
